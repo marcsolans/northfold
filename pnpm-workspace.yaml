@@ -1,0 +1,14 @@
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - esbuild
+  - prisma
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
+peerDependencyRules:
+  # eslint-config-next 16.4 supports ESLint 10, but some bundled plugins have not
+  # widened their peer ranges yet (see node_modules/next/dist/docs, ESLint page).
+  allowedVersions:
+    eslint-plugin-import>eslint: "10"
+    eslint-plugin-jsx-a11y>eslint: "10"
+    eslint-plugin-react>eslint: "10"
