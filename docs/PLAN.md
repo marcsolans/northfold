@@ -24,12 +24,12 @@ Conventional Commit.
 
 ## Phase 2 — Auth
 
-- [ ] Better Auth (email/password + Google) with Prisma adapter
-- [ ] `role` not accepted as input
-- [ ] Sign-in / sign-up pages (React Hook Form + Zod)
-- [ ] `requireUser()` / `requireAdmin()` helpers
-- [ ] `proxy.ts` optimistic redirects
-- [ ] Rate limiting on sign-in / sign-up
+- [x] Better Auth (email/password + Google) with Prisma adapter
+- [x] `role` not accepted as input
+- [x] Sign-in / sign-up pages (React Hook Form + Zod)
+- [x] `requireUser()` / `requireAdmin()` helpers
+- [x] `proxy.ts` optimistic redirects
+- [x] Rate limiting on sign-in / sign-up
 
 ## Phase 3 — UI kit + layouts
 

@@ -20,3 +20,8 @@ One line per decision: **decision** — reason.
 - **`OrderItem.variantId` is nullable (`ON DELETE SET NULL`)** — removing a variant in the admin must never break order history, which relies on snapshots anyway.
 - **Orders carry `stockDeducted`, `needsReview` and `reviewReason`** — restocking on cancel must only return stock that was actually taken, and oversold Stripe payments need a visible admin flag.
 - **Seed images come from images.unsplash.com (Unsplash License), each checked to load and to match its category** — the only image host reachable from the build VM; uploads go to Cloudinary.
+- **Sign-in/sign-up call Better Auth from the browser (`authClient`), not through Server Actions** — `auth.api.*` calls skip Better Auth's rate limiter and origin checks; the HTTP route enforces both.
+- **`requireAdmin()` bypasses Better Auth's 5-minute cookie cache** — a demoted admin or revoked session loses access on the next request, not after the cache expires.
+- **Server Actions run inside `runAction()`** — one place maps authorization and user-facing errors to `ActionResult`, logs everything else with context and returns a generic message.
+- **`proxy.ts` only checks for the presence of a session cookie** — it cannot validate sessions without a DB hit; pages, actions and route handlers do the real check. It also never redirects signed-in users away from auth pages (a stale cookie would loop).
+- **No email verification** — no email provider is configured; Google sign-in into an existing password account therefore requires the password (Better Auth's safe default, `requireLocalEmailVerified`).
