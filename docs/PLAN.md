@@ -60,10 +60,10 @@ Conventional Commit.
 
 ## Phase 7 — Stripe
 
-- [ ] Checkout Session creation (cents at the boundary, 30 min expiry)
-- [ ] Webhook: signature check, idempotency via `StripeEvent`, paid / expired handling, oversell flag
-- [ ] Success page polling while the webhook is pending
-- [ ] Integration tests with signed test payloads
+- [x] Checkout Session creation (cents at the boundary, 30 min expiry)
+- [x] Webhook: signature check, idempotency via `StripeEvent`, paid / expired handling, oversell flag
+- [x] Success page polling while the webhook is pending
+- [x] Integration tests with signed test payloads
 
 ## Phase 8 — Customer account
 

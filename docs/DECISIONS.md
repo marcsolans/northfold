@@ -38,3 +38,8 @@ One line per decision: **decision** — reason.
 - **`placeOrder` returns a redirect URL instead of calling `redirect()`** — the client decides between client navigation (COD confirmation) and leaving for Stripe, and the action stays easy to test.
 - **The rate limit is consumed before input validation** — malformed requests count against the limit too.
 - **Saved addresses are re-validated with `addressSchema` when used at checkout** — an address stored under older rules cannot slip through.
+- **The `StripeEvent` insert and the event's effects share one transaction** — a duplicate delivery hits the primary key and is skipped, while a failed run rolls back the marker too, so Stripe's retry is not lost (inserting the id first in its own transaction would drop events whose processing failed).
+- **Oversold payments keep the order PAID + PENDING with `needsReview`; partial decrements are compensated in the same transaction** — an order is either fully stocked or not at all, and an admin decides to refund or restock.
+- **The webhook also verifies `amount_total`/currency against the stored order total** — a mismatch is flagged for review instead of silently fulfilling.
+- **Checkout Sessions expire 30 minutes + 60 s after creation** — Stripe's minimum is 30 minutes measured on its own clock; the buffer avoids rejected requests.
+- **The webhook route verifies with the static `Stripe.webhooks.constructEvent`** — signature checks need only the webhook secret, not an API client.

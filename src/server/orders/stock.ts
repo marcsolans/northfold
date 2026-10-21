@@ -16,8 +16,9 @@ export interface StockLine {
 export async function decrementStock(
   tx: Prisma.TransactionClient,
   lines: readonly StockLine[],
-): Promise<{ failed: string[] }> {
+): Promise<{ failed: string[]; taken: StockLine[] }> {
   const failed: string[] = [];
+  const taken: StockLine[] = [];
   const ordered = [...lines].sort((a, b) => a.variantId.localeCompare(b.variantId));
   for (const line of ordered) {
     const { count } = await tx.productVariant.updateMany({
@@ -25,8 +26,9 @@ export async function decrementStock(
       data: { stock: { decrement: line.quantity } },
     });
     if (count === 0) failed.push(line.label);
+    else taken.push(line);
   }
-  return { failed };
+  return { failed, taken };
 }
 
 /** Puts stock back for lines whose variant still exists. */
