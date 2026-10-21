@@ -17,15 +17,19 @@ from messer_runtime.testing import Harness, anthropic_reply
 
 async def test_demo_completion_is_free(runtime: Harness, make_org) -> None:  # type: ignore[no-untyped-def]
     org, _ = await make_org()
-    result = await llm.complete(org_id=org.id, messages="Resume en una frase: la factura 12 está pagada.",
-                                tier="fast", purpose="test")
+    result = await llm.complete(
+        org_id=org.id, messages="Resume en una frase: la factura 12 está pagada.", tier="fast", purpose="test"
+    )
     assert result.text and result.demo and result.cost_usd == 0
     async with system_session() as s:
         assert (await s.execute(select(CreditLedger).where(CreditLedger.kind == "usage"))).first() is None
 
 
-async def test_real_completion_charges_credits(runtime: Harness, make_org,  # type: ignore[no-untyped-def]
-                                               monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_real_completion_charges_credits(
+    runtime: Harness,
+    make_org,  # type: ignore[no-untyped-def]
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from messer_runtime import gateway
 
     monkeypatch.setattr(get_settings(), "anthropic_api_key", "sk-ant-test")
@@ -48,8 +52,9 @@ async def test_real_completion_charges_credits(runtime: Harness, make_org,  # ty
 async def test_refusal_is_typed(runtime: Harness, make_org) -> None:  # type: ignore[no-untyped-def]
     org, _ = await make_org()
     async with system_session() as s:
-        await credits.add_entry(s, org_id=org.id, kind="adjustment", amount=-(await credits.balance(s, org.id)),
-                                note="test")
+        await credits.add_entry(
+            s, org_id=org.id, kind="adjustment", amount=-(await credits.balance(s, org.id)), note="test"
+        )
     with pytest.raises(llm.LlmRefused) as info:
         await llm.complete(org_id=org.id, messages="Hola")
     assert info.value.error_type == "credits_exhausted"

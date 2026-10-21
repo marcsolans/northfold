@@ -129,6 +129,18 @@ def _text_of(output: Any) -> str:
     return ""
 
 
+def _prompt_parts(prompt: Any) -> tuple[str, list[str]]:
+    """Text and attachment names of an agent prompt (a string or a user message with content blocks)."""
+    if isinstance(prompt, str):
+        return prompt, []
+    if isinstance(prompt, dict):
+        raw = prompt.get("content")
+        blocks: list[Any] = raw if isinstance(raw, list) else []
+        names = [str(b.get("name") or "archivo") for b in blocks if isinstance(b, dict) and b.get("type") == "file"]
+        return _text_of(prompt), names
+    return "", []
+
+
 class RunExecutor:
     def __init__(self, pool: SandboxPool) -> None:
         self.pool = pool
@@ -311,9 +323,17 @@ class RunExecutor:
                 if conv is not None:
                     conv.last_run_id = run.id
                     messages = list(conv.messages or [])
-                    prompt = req.input.get("prompt")
-                    if isinstance(prompt, str) and prompt and not req.resume:
-                        messages.append({"role": "user", "text": prompt, "run_id": run_id, "at": now().isoformat()})
+                    prompt_text, attachments = _prompt_parts(req.input.get("prompt"))
+                    if (prompt_text or attachments) and not req.resume:
+                        entry: dict[str, Any] = {
+                            "role": "user",
+                            "text": prompt_text,
+                            "run_id": run_id,
+                            "at": now().isoformat(),
+                        }
+                        if attachments:
+                            entry["attachments"] = attachments
+                        messages.append(entry)
                     text = _text_of(run.output)
                     if text:
                         messages.append(
@@ -352,7 +372,7 @@ class RunExecutor:
         self, s: Any, *, run: Run, member: Workforce, approvals: list[dict[str, Any]], req: RunRequest
     ) -> list[dict[str, Any]]:
         tools_cfg = {str(t.get("name") or t.get("key")): t for t in (member.config_json or {}).get("tools", [])}
-        prompt = req.input.get("prompt") if isinstance(req.input.get("prompt"), str) else ""
+        prompt, _ = _prompt_parts(req.input.get("prompt"))
         rows: list[dict[str, Any]] = []
         for event in approvals:
             tool_name = str(event.get("runnable_name") or event.get("path", "").rsplit(".", 1)[-1])

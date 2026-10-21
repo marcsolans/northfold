@@ -155,3 +155,26 @@ async def test_public_api_requires_deployment_and_runs_development(client: httpx
     assert first["status"] == "success"
     second = (await client.get(f"/api/v1/runs/{uuid.UUID(again.json()['run_id'])}")).json()
     assert second["parent_run_id"] == str(uuid.UUID(out["run_id"]))
+
+
+async def test_attachments_and_context_files(client: httpx.AsyncClient, runtime: Harness) -> None:
+    pid = await _setup(client, [])
+    up = await client.post(f"/api/v1/projects/{pid}/uploads",
+                           files={"file": ("nota.txt", b"La factura 12 vence el 30 de octubre.", "text/plain")})
+    assert up.status_code == 201, up.text
+    ctx = await client.post(f"/api/v1/projects/{pid}/workforce/soporte/context-files",
+                            files={"file": ("tarifas.md", "# Tarifas\nPlan Pro: 199 €/mes".encode(), "text/markdown")})
+    assert ctx.status_code == 201, ctx.text
+    member = (await client.get(f"/api/v1/projects/{pid}/workforce/soporte")).json()
+    assert member["config"]["context_files"][0]["name"] == "tarifas.md"
+    assert "context_prompt(__file__" in member["code"]
+    events = await _sse(client, f"/api/v1/projects/{pid}/workforce/soporte/chat",
+                        {"message": "Resume el adjunto", "attachments": [up.json()["id"]]})
+    assert events[-1]["type"] == "RUN_FINISHED" and events[-1]["status"] == "success", json.dumps([e.get("error") for e in events if e["type"] in ("OUTPUT", "RUN_FINISHED")])[:3000]
+    conv = (await client.get(f"/api/v1/projects/{pid}/conversations/{events[0]['conversation_id']}")).json()
+    assert conv["messages"][0]["attachments"] == ["nota.txt"]
+    bad = await client.post(f"/api/v1/projects/{pid}/workforce/soporte/chat",
+                            json={"message": "x", "attachments": ["orgs/otra/projects/x/uploads/a/b.txt"]})
+    assert bad.status_code == 400
+    removed = await client.delete(f"/api/v1/projects/{pid}/workforce/soporte/context-files/tarifas.md")
+    assert removed.status_code == 204

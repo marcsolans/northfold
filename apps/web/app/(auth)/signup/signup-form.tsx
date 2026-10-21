@@ -43,7 +43,7 @@ export function SignupForm() {
         invitation_token: invitation,
         accept_terms: true,
       });
-      const target = plan ? `/app/settings/billing?plan=${encodeURIComponent(plan)}` : (res.redirect ?? "/onboarding");
+      const target = plan ? `/onboarding?plan=${encodeURIComponent(plan)}` : (res.redirect ?? "/onboarding");
       router.push(target);
       router.refresh();
     } catch (err) {

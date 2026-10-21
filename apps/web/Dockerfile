@@ -6,7 +6,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 COPY apps/web/scripts apps/web/scripts
 COPY packages/ui/package.json packages/ui/package.json
-COPY packages/messer-sdk-ts/package.json packages/messer-sdk-ts/package.json
 COPY tests/e2e/package.json tests/e2e/package.json
 RUN pnpm install --frozen-lockfile --filter @messer/web...
 
@@ -28,6 +27,9 @@ COPY --from=build /repo/apps/web/.next/standalone ./
 COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /repo/apps/web/public ./apps/web/public
 COPY --from=build /repo/apps/web/messages ./apps/web/messages
+# Public docs and legal pages are rendered from the repository's Markdown (see apps/web/lib/content/files.ts).
+COPY docs ./docs
+COPY legal ./legal
 USER messer
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]

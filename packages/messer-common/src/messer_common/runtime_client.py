@@ -69,6 +69,11 @@ async def schema(project_id: uuid.UUID, name: str, ref: str = "HEAD") -> dict[st
     return await _get(f"/internal/v1/projects/{project_id}/workforce/{name}/schema", {"ref": ref})
 
 
+async def warm(project_id: uuid.UUID, ref: str) -> dict[str, Any]:
+    """Fetch the code at ``ref`` and start its sandbox so the first production run is fast."""
+    return await _post(f"/internal/v1/projects/{project_id}/warm", {"ref": ref}, 180)
+
+
 async def sandboxes() -> dict[str, Any]:
     return await _get("/internal/v1/sandboxes", {})
 

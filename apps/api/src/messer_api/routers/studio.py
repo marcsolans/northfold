@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import base64
 import json
+import mimetypes
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -18,6 +20,7 @@ from messer_common import audit, runtime_client
 from messer_common.db import Principal, rls_session
 from messer_common.db.models import Conversation, EvalRun
 from messer_common.runtime_client import RuntimeUnavailable
+from messer_common.storage import StorageError, get_storage
 
 from ..deps import ensure_project_access, get_db, require_role
 from ..errors import ApiError, NotFound
@@ -61,6 +64,7 @@ def stream_response(events: AsyncIterator[str]) -> StreamingResponse:
 class ChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=100_000)
     conversation_id: uuid.UUID | None = None
+    attachments: list[str] = Field(default_factory=list, max_length=10, description="ids from POST …/uploads")
 
 
 class ConversationOut(BaseModel):
@@ -138,7 +142,7 @@ async def chat(
         "project_id": str(project.id),
         "workforce": member.name,
         "ref": "HEAD",
-        "input": {"prompt": body.message},
+        "input": {"prompt": await _prompt_with_attachments(project.org_id, project.id, body)},
         "parent_run_id": parent.hex if parent else None,
         "environment": "development",
         "channel": "studio",
@@ -328,3 +332,103 @@ async def workflow_graph(
             status_code=503,
             details={"detail": str(exc)[:300]},
         ) from exc
+
+
+# ------------------------------------------------------------------------------------- uploads & context
+
+UPLOAD_MAX_BYTES = 20 * 1024 * 1024
+
+
+def _upload_prefix(org_id: uuid.UUID, project_id: uuid.UUID) -> str:
+    return f"orgs/{org_id}/projects/{project_id}/uploads/"
+
+
+class UploadOut(BaseModel):
+    id: str
+    name: str
+    mime: str
+    size: int
+
+
+async def _read_upload(file: UploadFile, limit: int) -> bytes:
+    data = await file.read(limit + 1)
+    if len(data) > limit:
+        raise ApiError(f"El archivo supera {limit // (1024 * 1024)} MB", code="file_too_large", status_code=413)
+    if not data:
+        raise ApiError("El archivo está vacío", code="empty_file")
+    return data
+
+
+@router.post("/uploads", response_model=UploadOut, status_code=201)
+async def upload_attachment(
+    project_id: uuid.UUID,
+    file: UploadFile = File(...),
+    principal: Principal = Depends(require_role("builder")),
+    session: AsyncSession = Depends(get_db),
+) -> UploadOut:
+    """Store a chat attachment (images, PDFs, documents) for the next message."""
+    ensure_project_access(principal, project_id)
+    project = await svc.get_project(session, project_id)
+    data = await _read_upload(file, UPLOAD_MAX_BYTES)
+    name = svc.safe_filename(file.filename or "archivo")
+    mime = file.content_type or mimetypes.guess_type(name)[0] or "application/octet-stream"
+    key = f"{_upload_prefix(project.org_id, project.id)}{uuid.uuid4().hex}/{name}"
+    await get_storage().put(key, data, mime)
+    return UploadOut(id=key, name=name, mime=mime, size=len(data))
+
+
+async def _prompt_with_attachments(org_id: uuid.UUID, project_id: uuid.UUID, body: ChatIn) -> Any:
+    if not body.attachments:
+        return body.message
+    prefix = _upload_prefix(org_id, project_id)
+    content: list[dict[str, Any]] = [{"type": "text", "text": body.message}]
+    for key in body.attachments:
+        if not key.startswith(prefix) or ".." in key:
+            raise ApiError("Adjunto no válido", code="invalid_attachment")
+        try:
+            data = await get_storage().get(key)
+        except StorageError as exc:
+            raise NotFound("Adjunto no encontrado") from exc
+        name = key.rsplit("/", 1)[-1]
+        mime = mimetypes.guess_type(name)[0] or "application/octet-stream"
+        content.append({"type": "file", "name": name, "file": f"data:{mime};base64,{base64.b64encode(data).decode()}"})
+    return {"role": "user", "content": content}
+
+
+@router.post("/workforce/{name}/context-files", status_code=201)
+async def add_context_file(
+    project_id: uuid.UUID,
+    name: str,
+    file: UploadFile = File(...),
+    principal: Principal = Depends(require_role("builder")),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Attach a reference document whose text is appended to the agent's system prompt."""
+    ensure_project_access(principal, project_id)
+    project = await svc.get_project(session, project_id)
+    member = await svc.get_member(session, project, name)
+    data = await _read_upload(file, svc.CONTEXT_FILE_MAX_BYTES)
+    entry = await svc.add_context_file(
+        session,
+        principal,
+        project,
+        member,
+        filename=file.filename or "archivo",
+        data=data,
+        mime=file.content_type or "application/octet-stream",
+    )
+    return entry.model_dump()
+
+
+@router.delete("/workforce/{name}/context-files/{filename}", status_code=204)
+async def remove_context_file(
+    project_id: uuid.UUID,
+    name: str,
+    filename: str,
+    principal: Principal = Depends(require_role("builder")),
+    session: AsyncSession = Depends(get_db),
+) -> None:
+    ensure_project_access(principal, project_id)
+    project = await svc.get_project(session, project_id)
+    member = await svc.get_member(session, project, name)
+    await svc.remove_context_file(session, principal, project, member, filename)

@@ -81,9 +81,34 @@ class PromptVariable(BaseModel):
 
 
 class ContextFile(BaseModel):
+    """A file stored next to the agent (``workforce/<name>/context/<name>``) whose text joins the system prompt."""
+
     name: str
-    storage_key: str
     mime: str = "application/octet-stream"
+    size: int = 0
+
+
+class McpServerConfig(BaseModel):
+    """Remote MCP server (streamable HTTP). Header values may reference project secrets as ``$SECRET_NAME``."""
+
+    name: str
+    url: str
+    headers: dict[str, str] = Field(default_factory=dict)
+    approval: Literal["none", "destructive", "all"] = "destructive"
+
+    @field_validator("name")
+    @classmethod
+    def _valid_server_name(cls, v: str) -> str:
+        if not _IDENT.match(v):
+            raise ValueError("El nombre del servidor MCP debe usar minúsculas, números y guiones bajos")
+        return v
+
+    @field_validator("url")
+    @classmethod
+    def _valid_url(cls, v: str) -> str:
+        if not v.startswith(("https://", "http://")):
+            raise ValueError("La URL del servidor MCP debe empezar por https://")
+        return v
 
 
 class AgentConfig(BaseModel):
@@ -100,6 +125,7 @@ class AgentConfig(BaseModel):
     tools: list[ToolConfig] = Field(default_factory=list)
     knowledge_bases: list[str] = Field(default_factory=list)
     context_files: list[ContextFile] = Field(default_factory=list)
+    mcp_servers: list[McpServerConfig] = Field(default_factory=list)
     guardrails: list[GuardrailConfig] = Field(default_factory=list)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
@@ -145,7 +171,44 @@ def _py(value: Any) -> str:
     raise TypeError(f"unsupported literal {type(value)}")
 
 
+_SELF_GATED = {"send_email", "http_request"}  # factories that already gate side effects
+
+
 def _render_tool(tool: ToolConfig, config: AgentConfig) -> str:
+    expr = _render_tool_expr(tool, config)
+    if tool.requires_approval and tool.type != "connector" and tool.key not in _SELF_GATED:
+        return f"require_approval({expr})"
+    return expr
+
+
+_SECRET_REF = re.compile(r"\$([A-Z][A-Z0-9_]*)")
+
+
+def _render_header_value(value: str) -> str:
+    """``"Bearer $TOKEN"`` → ``"Bearer " + os.environ.get("TOKEN", "")`` (secrets live in the sandbox env)."""
+    parts: list[str] = []
+    pos = 0
+    for m in _SECRET_REF.finditer(value):
+        if m.start() > pos:
+            parts.append(_py(value[pos : m.start()]))
+        parts.append(f'os.environ.get({_py(m.group(1))}, "")')
+        pos = m.end()
+    if pos < len(value):
+        parts.append(_py(value[pos:]))
+    return " + ".join(parts) if parts else '""'
+
+
+def _render_mcp(server: McpServerConfig) -> str:
+    headers = "{" + ", ".join(f"{_py(k)}: {_render_header_value(v)}" for k, v in server.headers.items()) + "}"
+    args = [f"name={_py(server.name)}", 'transport="http"', f"url={_py(server.url)}"]
+    if server.headers:
+        args.append(f"headers={headers}")
+    if server.approval != "none":
+        args.append(f"approval={_py(server.approval)}")
+    return f"MCPServer({', '.join(args)})"
+
+
+def _render_tool_expr(tool: ToolConfig, config: AgentConfig) -> str:
     if tool.type == "builtin":
         if tool.key == "knowledge_search":
             return f"knowledge_search(kb_ids={_py(config.knowledge_bases)})"
@@ -220,17 +283,27 @@ def render_agent_code(config: AgentConfig, *, has_custom_tools: bool = False) ->
     compaction = _render_compaction(config.memory)
     if compaction:
         imports.append(f"from messer.core.memory_compaction import {compaction.split('(')[0]}")
+    if any(t.requires_approval and t.type != "connector" and t.key not in _SELF_GATED for t in config.tools):
+        factories.append("require_approval")
+    if config.context_files:
+        factories.append("context_prompt")
+    if config.mcp_servers:
+        imports.append("from messer.core import MCPServer")
+        if any(_SECRET_REF.search(v) for srv in config.mcp_servers for v in srv.headers.values()):
+            imports.insert(0, "import os\n")
     if factories:
         imports.append(f"from messer.platform.tools import {', '.join(sorted(set(factories)))}")
     if has_custom_tools or any(t.type == "custom" for t in config.tools):
         imports.append("from . import tools as custom_tools")
 
-    tools = ",\n        ".join(_render_tool(t, config) for t in config.tools)
+    tools = ",\n        ".join(
+        [_render_tool(t, config) for t in config.tools] + [_render_mcp(m) for m in config.mcp_servers]
+    )
     kwargs = [
         f"name={_py(config.name)}",
         f"description={_py(config.description)}",
         f"model={_py(config.resolved_model())}",
-        "system_prompt=SYSTEM_PROMPT",
+        "system_prompt=SYSTEM_PROMPT + CONTEXT" if config.context_files else "system_prompt=SYSTEM_PROMPT",
         f"max_tokens={int(config.max_tokens)}",
         f"max_iter={int(config.max_iter)}",
     ]
@@ -250,6 +323,7 @@ def render_agent_code(config: AgentConfig, *, has_custom_tools: bool = False) ->
         "tools": [t.model_dump(exclude_none=True) for t in config.tools],
         "knowledge_bases": config.knowledge_bases,
         "context_files": [c.model_dump() for c in config.context_files],
+        "mcp_servers": [m.model_dump() for m in config.mcp_servers],
         "guardrails": [g.model_dump() for g in config.guardrails],
         "memory": config.memory.model_dump(),
         "voice": config.voice.model_dump(),
@@ -261,6 +335,11 @@ def render_agent_code(config: AgentConfig, *, has_custom_tools: bool = False) ->
         + "\n".join(imports)
         + "\n\n"
         + f"SYSTEM_PROMPT = {_py(config.system_prompt)}\n\n"
+        + (
+            f"CONTEXT = context_prompt(__file__, {_py([c.name for c in config.context_files])})\n\n"
+            if config.context_files
+            else ""
+        )
         + f"STUDIO = {_py(studio_meta)}\n\n"
         + f"agent = Agent(\n    {body},\n)\n"
     )
@@ -300,6 +379,8 @@ def parse_agent_code(code: str) -> AgentConfig | None:
     try:
         kw = {k.arg: k.value for k in call.keywords if k.arg}
         prompt_node = kw.get("system_prompt")
+        if isinstance(prompt_node, ast.BinOp) and isinstance(prompt_node.op, ast.Add):
+            prompt_node = prompt_node.left  # SYSTEM_PROMPT + CONTEXT
         if isinstance(prompt_node, ast.Name):
             prompt_node = assigns.get(prompt_node.id)
         system_prompt = _literal(prompt_node) if prompt_node is not None else ""
@@ -312,9 +393,25 @@ def parse_agent_code(code: str) -> AgentConfig | None:
         tools_node = kw.get("tools")
         tool_calls = tools_node.elts if isinstance(tools_node, ast.List) else []
         studio_tools = [ToolConfig.model_validate(t) for t in studio.get("tools", [])]
-        if len(tool_calls) != len(studio_tools):
+        studio_mcp = [McpServerConfig.model_validate(m) for m in studio.get("mcp_servers", [])]
+        if len(tool_calls) != len(studio_tools) + len(studio_mcp):
             return None
-        for node, cfg in zip(tool_calls, studio_tools, strict=True):
+        for node, mcp in zip(tool_calls[len(studio_tools) :], studio_mcp, strict=True):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "MCPServer"):
+                return None
+            url_kw = next((k.value for k in node.keywords if k.arg == "url"), None)
+            if url_kw is None or _literal(url_kw) != mcp.url:
+                return None
+        for node, cfg in zip(tool_calls[: len(studio_tools)], studio_tools, strict=True):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "require_approval"
+                and node.args
+            ):
+                if not cfg.requires_approval:
+                    return None
+                node = node.args[0]
             if cfg.type == "custom":
                 if not (isinstance(node, ast.Attribute) and node.attr == cfg.key):
                     return None
@@ -338,6 +435,7 @@ def parse_agent_code(code: str) -> AgentConfig | None:
             tools=studio_tools,
             knowledge_bases=studio.get("knowledge_bases", []),
             context_files=studio.get("context_files", []),
+            mcp_servers=studio_mcp,
             guardrails=studio.get("guardrails", []),
             memory=studio.get("memory", {}),
             voice=studio.get("voice", {}),

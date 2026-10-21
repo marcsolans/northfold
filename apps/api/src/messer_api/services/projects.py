@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -16,7 +17,13 @@ from messer_common.db import Principal
 from messer_common.db.models import Environment, Org, Plan, Project, User, Version, Workforce
 from messer_common.plans import limit_value
 from messer_common.projects_repo import ProjectRepo
-from messer_common.studio.agent_spec import AgentConfig, default_agent_config, parse_agent_code, render_agent_code
+from messer_common.studio.agent_spec import (
+    AgentConfig,
+    ContextFile,
+    default_agent_config,
+    parse_agent_code,
+    render_agent_code,
+)
 from messer_common.studio.project_files import agent_member_files, initial_project_files, member_manifest
 
 from ..errors import ApiError, Conflict, NotFound, PlanLimitExceeded
@@ -350,3 +357,85 @@ async def restore_version(
         diff={"version": version.version},
     )
     return commit
+
+
+# ------------------------------------------------------------------------------------------ context files
+
+CONTEXT_FILE_MAX_BYTES = 5 * 1024 * 1024
+CONTEXT_FILE_SUFFIXES = (".md", ".txt", ".csv", ".json", ".yaml", ".yml", ".xml", ".tsv", ".html", ".pdf", ".docx")
+_SAFE_FILENAME = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def safe_filename(name: str) -> str:
+    base = _SAFE_FILENAME.sub("_", name.strip().replace("\\", "/").rsplit("/", 1)[-1]).strip("._")
+    return base[:120] or "archivo"
+
+
+async def add_context_file(
+    session: AsyncSession,
+    principal: Principal,
+    project: Project,
+    member: Workforce,
+    *,
+    filename: str,
+    data: bytes,
+    mime: str,
+) -> ContextFile:
+    name = safe_filename(filename)
+    if not name.lower().endswith(CONTEXT_FILE_SUFFIXES):
+        raise ApiError(
+            "Formato no admitido para archivos de contexto",
+            code="unsupported_file",
+            details={"allowed": list(CONTEXT_FILE_SUFFIXES)},
+        )
+    if len(data) > CONTEXT_FILE_MAX_BYTES:
+        raise ApiError("El archivo supera 5 MB", code="file_too_large", status_code=413)
+    entry = ContextFile(name=name, mime=mime or "application/octet-stream", size=len(data))
+    author = await author_for(session, principal)
+    files: dict[str, str | bytes | None] = {f"{member.path}/context/{name}": data}
+    if member.source_mode == "config":
+        config = AgentConfig.model_validate(member.config_json)
+        config.context_files = [c for c in config.context_files if c.name != name] + [entry]
+        files[f"{member.path}/agent.py"] = render_agent_code(config)
+        files[f"{member.path}/messer.yaml"] = member_manifest(
+            member_id=str(member.id), kind=member.kind, source_mode="config", config=config.model_dump(mode="json")
+        )
+        member.config_json = config.model_dump(mode="json")
+    await repo_for(project).write(
+        files, message=f"Add context file {name} to {member.name}", author=author.name, email=author.email
+    )
+    await audit.record(
+        session,
+        action="workforce.context_file_added",
+        principal=principal,
+        entity_type="workforce",
+        entity_id=member.id,
+        diff={"file": name, "size": len(data)},
+    )
+    return entry
+
+
+async def remove_context_file(
+    session: AsyncSession, principal: Principal, project: Project, member: Workforce, name: str
+) -> None:
+    author = await author_for(session, principal)
+    files: dict[str, str | bytes | None] = {f"{member.path}/context/{safe_filename(name)}": None}
+    if member.source_mode == "config":
+        config = AgentConfig.model_validate(member.config_json)
+        config.context_files = [c for c in config.context_files if c.name != name]
+        files[f"{member.path}/agent.py"] = render_agent_code(config)
+        files[f"{member.path}/messer.yaml"] = member_manifest(
+            member_id=str(member.id), kind=member.kind, source_mode="config", config=config.model_dump(mode="json")
+        )
+        member.config_json = config.model_dump(mode="json")
+    await repo_for(project).write(
+        files, message=f"Remove context file {name} from {member.name}", author=author.name, email=author.email
+    )
+    await audit.record(
+        session,
+        action="workforce.context_file_removed",
+        principal=principal,
+        entity_type="workforce",
+        entity_id=member.id,
+        diff={"file": name},
+    )

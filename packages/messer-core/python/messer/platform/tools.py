@@ -411,3 +411,68 @@ def web_search() -> Any:
     from ..tools import WebSearch
 
     return WebSearch()
+
+
+# ------------------------------------------------------------------------------------------ helpers
+
+
+def require_approval(tool: Tool, *, prompt: str | None = None) -> Tool:
+    """Mark any tool as requiring human approval before it runs (the run pauses on an approval gate)."""
+    tool.requires_approval = True
+    if prompt:
+        tool.approval_prompt = prompt
+    return tool
+
+
+_TEXT_SUFFIXES = {".md", ".txt", ".csv", ".json", ".yaml", ".yml", ".xml", ".tsv"}
+CONTEXT_MAX_CHARS = 200_000
+
+
+def _file_text(path: Any) -> str:
+    suffix = path.suffix.lower()
+    if suffix in _TEXT_SUFFIXES:
+        return path.read_text(encoding="utf-8", errors="replace")
+    if suffix == ".html":
+        return _html_to_text(path.read_text(encoding="utf-8", errors="replace"))
+    if suffix == ".pdf":
+        try:
+            import pymupdf  # type: ignore[import-not-found]
+        except ImportError:  # pragma: no cover - documents extra not installed
+            return ""
+        with pymupdf.open(str(path)) as doc:
+            return "\n".join(page.get_text() for page in doc)
+    if suffix == ".docx":
+        try:
+            import docx  # type: ignore[import-not-found]
+        except ImportError:  # pragma: no cover - documents extra not installed
+            return ""
+        return "\n".join(p.text for p in docx.Document(str(path)).paragraphs)
+    return ""
+
+
+def context_prompt(module_file: str, names: list[str], *, max_chars: int = CONTEXT_MAX_CHARS) -> str:
+    """Text of the agent's context files (``context/`` next to ``agent.py``), appended to the system prompt.
+
+    Read once at import time; files that cannot be read as text are skipped. The total is capped so a large
+    file cannot exhaust the context window.
+    """
+    from pathlib import Path
+
+    base = Path(module_file).resolve().parent / "context"
+    parts: list[str] = []
+    budget = max_chars
+    for name in names:
+        path = (base / name).resolve()
+        if base not in path.parents or not path.is_file():
+            continue
+        text = _file_text(path).strip()
+        if not text:
+            continue
+        chunk = text[:budget]
+        parts.append(f"## Archivo de contexto: {name}\n\n{chunk}")
+        budget -= len(chunk)
+        if budget <= 0:
+            break
+    if not parts:
+        return ""
+    return "\n\n# Archivos de contexto\n\n" + "\n\n".join(parts)

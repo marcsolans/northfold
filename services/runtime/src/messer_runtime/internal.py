@@ -12,11 +12,15 @@ from __future__ import annotations
 
 import html
 import json
+import mimetypes
+import re
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from typing import Any
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -25,6 +29,8 @@ from messer_common.db import system_session
 from messer_common.db.models import Connection, KnowledgeBase, Workforce
 from messer_common.email import OutgoingEmail, get_email_adapter
 from messer_common.logging import get_logger
+from messer_common.security import TokenError, sign_payload, verify_signed_payload
+from messer_common.storage import StorageError, get_storage
 
 from . import gateway
 from .code_cache import ensure_checkout
@@ -171,6 +177,58 @@ async def tool_proxy(
     except _ToolProxyError as exc:
         return JSONResponse({"error": {"type": "invalid_request", "message": exc.message}}, status_code=exc.status)
     return JSONResponse({"tool": tool_name, "provider": "messer", "version": "1", "output": output})
+
+
+# ------------------------------------------------------------------------------------------------ files
+
+FILE_URL_TTL_S = 30 * 24 * 3600
+FILE_MAX_BYTES = 50 * 1024 * 1024
+
+
+@router.post("/files")
+async def upload_file(
+    request: Request, file: UploadFile = File(...), claims: SandboxClaims = Depends(sandbox_claims)
+) -> JSONResponse:
+    """Engine file persistence (attachments, generated files): stored per project, served by signed URL."""
+    data = await file.read(FILE_MAX_BYTES + 1)
+    if len(data) > FILE_MAX_BYTES:
+        return JSONResponse(
+            {"error": {"type": "file_too_large", "message": "El archivo supera 50 MB"}}, status_code=413
+        )
+    name = re.sub(r"[^A-Za-z0-9._-]+", "_", (file.filename or "file").rsplit("/", 1)[-1])[:120] or "file"
+    mime = file.content_type or mimetypes.guess_type(name)[0] or "application/octet-stream"
+    key = f"orgs/{claims.org_id}/projects/{claims.project_id}/run-files/{uuid.uuid4().hex}/{name}"
+    await get_storage().put(key, data, mime)
+    token = sign_payload({"purpose": "file", "key": key}, ttl_s=FILE_URL_TTL_S)
+    base = str(request.app.state.pool.internal_base_url)
+    now = datetime.now(UTC)
+    return JSONResponse(
+        {
+            "id": key,
+            "name": name,
+            "content_type": mime,
+            "content_length": len(data),
+            "created_at": now.isoformat(),
+            "expires_at": (now + timedelta(seconds=FILE_URL_TTL_S)).isoformat(),
+            "url": f"{base}/internal/v1/files/{quote(key)}?token={token}",
+        }
+    )
+
+
+@router.get("/files/{key:path}")
+async def download_file(key: str, token: str) -> Response:
+    try:
+        claims = verify_signed_payload(token)
+    except TokenError as exc:
+        raise HTTPException(status_code=403, detail="invalid file token") from exc
+    if claims.get("purpose") != "file" or claims.get("key") != key:
+        raise HTTPException(status_code=403, detail="invalid file token")
+    try:
+        data = await get_storage().get(key)
+    except StorageError as exc:
+        raise HTTPException(status_code=404, detail="file not found") from exc
+    mime = mimetypes.guess_type(key)[0] or "application/octet-stream"
+    return Response(content=data, media_type=mime, headers={"Cache-Control": "private, max-age=3600"})
 
 
 # ------------------------------------------------------------------------------------------- knowledge
@@ -364,6 +422,24 @@ async def member_schema(project_id: uuid.UUID, name: str, request: Request, ref:
     if res.status_code != 200:
         return JSONResponse({"error": {"type": "sandbox", "message": res.text[:2000]}}, status_code=502)
     return JSONResponse(res.json())
+
+
+class WarmBody(BaseModel):
+    ref: str = "HEAD"
+
+
+@router.post("/projects/{project_id}/warm", dependencies=[Depends(require_service)])
+async def warm(project_id: uuid.UUID, body: WarmBody, request: Request) -> JSONResponse:
+    """Prepare the sandbox for a commit ahead of traffic (deployments). Old sandboxes keep serving their runs."""
+    async with system_session() as s:
+        member = (
+            await s.execute(select(Workforce).where(Workforce.project_id == project_id).limit(1))
+        ).scalar_one_or_none()
+    if member is None:
+        commit, _ = await ensure_checkout(project_id, body.ref)
+        return JSONResponse({"commit": commit, "sandbox": False})
+    sbx, _ = await _member_sandbox(request, project_id, member.name, body.ref)
+    return JSONResponse({"commit": sbx.commit, "sandbox": True})
 
 
 @router.get("/sandboxes", dependencies=[Depends(require_service)])

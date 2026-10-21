@@ -25,8 +25,13 @@ async def run_member_evals(member_dir: Path, tags: list[str] | None = None) -> d
     evals_dir = member_dir / "evals"
     if not evals_dir.is_dir():
         return {"total": 0, "passed": 0, "failed": 0, "total_duration": 0.0, "results": []}
+    # Every YAML file under evals/ is a suite (the engine CLI only picks "eval*.yaml" by name).
+    files = sorted(p for p in evals_dir.rglob("*.y*ml") if p.suffix in (".yaml", ".yml") and p.name != "evalconf.yaml")
     try:
-        evals = collect_evals(evals_dir, tags=set(tags) if tags else None)
+        evals = [e for f in files for e in collect_evals(f, tags=set(tags) if tags else None)]
+        names = [e.name for e in evals]
+        if len(names) != len(set(names)):
+            raise ValueError("Hay evals con el mismo nombre en varios archivos")
     except (ValueError, FileNotFoundError, ImportError, SyntaxError) as exc:
         return {
             "total": 0,
