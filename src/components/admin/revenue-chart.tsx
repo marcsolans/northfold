@@ -25,11 +25,17 @@ function label(date: string): string {
 /** Daily revenue from paid orders over the last 30 days. */
 export function RevenueChart({ data }: { data: { date: string; revenue: number }[] }) {
   const total = data.reduce((sum, point) => sum + point.revenue, 0);
+  const sales = data.filter((point) => point.revenue > 0);
   return (
     <figure>
       <div className="h-64 w-full" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
+          <AreaChart
+            data={data}
+            margin={{ top: 8, right: 20, left: 0, bottom: 0 }}
+            // The chart is decorative for assistive tech; the caption below carries the data.
+            accessibilityLayer={false}
+          >
             <defs>
               <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.25} />
@@ -69,6 +75,15 @@ export function RevenueChart({ data }: { data: { date: string; revenue: number }
       </div>
       <figcaption className="sr-only">
         Revenue over the last 30 days: {formatMoney(total)} in total.
+        {sales.length > 0 ? (
+          <ul>
+            {sales.map((point) => (
+              <li key={point.date}>
+                {label(point.date)}: {formatMoney(point.revenue)}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </figcaption>
     </figure>
   );

@@ -17,8 +17,22 @@ import { PRICING, STORE } from "@/lib/store-config";
 import {
   getProductBySlug,
   getRelatedProducts,
+  getSitemapProducts,
   type ProductDetailDTO,
 } from "@/server/queries/catalog";
+
+/**
+ * Prerenders every active product at build time, so its content, metadata and image preload are
+ * in the static HTML. Products added later get the App Shell first and are cached after their
+ * first visit. Cache Components needs at least one param: an empty catalog (a fresh deployment
+ * before seeding) prerenders a placeholder that resolves to "not found".
+ */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const products = await getSitemapProducts();
+  return products.length > 0
+    ? products.map(({ slug }) => ({ slug }))
+    : [{ slug: "__no-products-yet__" }];
+}
 
 function summary(description: string): string {
   return description.length > 155 ? `${description.slice(0, 152).trimEnd()}…` : description;
@@ -81,7 +95,7 @@ function ProductJsonLd({ product }: { product: ProductDetailDTO }) {
 }
 
 async function RelatedProducts({ product }: { product: ProductDetailDTO }) {
-  const related = await getRelatedProducts(product, 4);
+  const related = await getRelatedProducts(product.id, product.category, product.productType);
   if (related.length === 0) return null;
   return (
     <section aria-labelledby="related-heading" className="mt-24">

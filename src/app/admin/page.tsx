@@ -23,11 +23,13 @@ import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { orderNumber } from "@/lib/orders";
 import { pluralize } from "@/lib/utils";
+import { requireAdminPage } from "@/server/auth/session";
 import { getDashboardStats } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "Overview" };
 
 async function Overview() {
+  await requireAdminPage();
   const stats = await getDashboardStats();
 
   return (
@@ -109,7 +111,7 @@ async function Overview() {
               All orders
             </Link>
           </div>
-          <Table>
+          <Table label="Recent orders">
             <TableHead>
               <tr>
                 <TableHeaderCell>Order</TableHeaderCell>
@@ -157,7 +159,7 @@ async function Overview() {
           <h2 id="low-stock" className="mb-3 text-base font-medium">
             Low stock (≤ 5)
           </h2>
-          <Table>
+          <Table label="Low stock variants">
             <TableHead>
               <tr>
                 <TableHeaderCell>Product</TableHeaderCell>

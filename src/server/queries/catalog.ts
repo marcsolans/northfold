@@ -194,25 +194,24 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailDTO |
   };
 }
 
-/** Same category first, preferring the same product type. */
+/**
+ * Same category first, preferring the same product type. Takes only stable primitives: they are
+ * the cache key, and passing the product itself would change the key whenever its stock does.
+ */
 export async function getRelatedProducts(
-  product: Pick<ProductCardDTO, "id" | "category" | "productType">,
+  productId: string,
+  category: Category,
+  productType: ProductType,
   take = 4,
 ): Promise<ProductCardDTO[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(CACHE_TAGS.products);
 
-  const sameType = await listProducts(
-    { id: { not: product.id }, category: product.category, productType: product.productType },
-    take,
-  );
+  const sameType = await listProducts({ id: { not: productId }, category, productType }, take);
   if (sameType.length >= take) return sameType;
   const others = await listProducts(
-    {
-      id: { notIn: [product.id, ...sameType.map((p) => p.id)] },
-      category: product.category,
-    },
+    { id: { notIn: [productId, ...sameType.map((p) => p.id)] }, category },
     take - sameType.length,
   );
   return [...sameType, ...others];

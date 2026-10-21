@@ -1,10 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = Number(process.env.E2E_PORT ?? 3100);
-const BASE_URL = `http://localhost:${PORT}`;
-const E2E_DATABASE_URL =
-  process.env.E2E_DATABASE_URL ??
-  "postgresql://northfold:northfold@localhost:5432/northfold_e2e?schema=public";
+import { E2E_BASE_URL as BASE_URL, E2E_DATABASE_URL, E2E_PORT as PORT } from "./e2e/support/env";
 
 // A preinstalled Chromium can be used instead of Playwright's download (e.g. in sandboxes).
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;

@@ -1,6 +1,15 @@
 import { randomUUID } from "node:crypto";
 
-import type { Category, ProductType, Role, Size } from "@/generated/prisma/enums";
+import type {
+  Category,
+  OrderStatus,
+  PaymentMethod,
+  PaymentStatus,
+  ProductType,
+  Role,
+  Size,
+} from "@/generated/prisma/enums";
+import { money, toMoneyString } from "@/lib/money";
 
 import { prisma } from "./db";
 
@@ -76,4 +85,60 @@ export const testAddress = {
 
 export async function createAddress(userId: string, isDefault = false) {
   return prisma.address.create({ data: { ...testAddress, userId, isDefault } });
+}
+
+/** Inserts an order directly (bypassing checkout) with one line of a $40 item plus $10 shipping. */
+export async function createOrder(
+  userId: string,
+  overrides: {
+    status?: OrderStatus;
+    paymentMethod?: PaymentMethod;
+    paymentStatus?: PaymentStatus;
+    needsReview?: boolean;
+    shippingFullName?: string;
+    variantId?: string;
+    quantity?: number;
+    createdAt?: Date;
+  } = {},
+) {
+  const quantity = overrides.quantity ?? 1;
+  const subtotal = money("40.00").times(quantity);
+  const paid = overrides.paymentStatus === "PAID";
+  return prisma.order.create({
+    data: {
+      userId,
+      status: overrides.status ?? "PENDING",
+      paymentMethod: overrides.paymentMethod ?? "CASH_ON_DELIVERY",
+      paymentStatus: overrides.paymentStatus ?? "PENDING",
+      needsReview: overrides.needsReview ?? false,
+      paidAt: paid ? new Date() : null,
+      subtotal: toMoneyString(subtotal),
+      shippingFee: "10.00",
+      tax: "0.00",
+      total: toMoneyString(subtotal.plus(10)),
+      shippingFullName: overrides.shippingFullName ?? testAddress.fullName,
+      shippingPhone: testAddress.phone,
+      shippingLine1: testAddress.line1,
+      shippingCity: testAddress.city,
+      shippingState: testAddress.state,
+      shippingPostalCode: testAddress.postalCode,
+      shippingCountry: testAddress.country,
+      ...(overrides.createdAt ? { createdAt: overrides.createdAt } : {}),
+      items: {
+        create: [
+          {
+            variantId: overrides.variantId ?? null,
+            productName: "Test Product",
+            productSlug: "test-product",
+            imageUrl: "https://images.unsplash.com/photo-test",
+            size: "M",
+            colorName: "Black",
+            sku: "TEST-SKU",
+            unitPrice: "40.00",
+            quantity,
+          },
+        ],
+      },
+    },
+  });
 }

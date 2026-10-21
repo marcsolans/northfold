@@ -141,7 +141,11 @@ describe("product queries", () => {
 
   it("finds related products in the same category, excluding the product itself", async () => {
     const { linenShirt, tee } = await seedCatalog();
-    const related = await getRelatedProducts(linenShirt);
+    const related = await getRelatedProducts(
+      linenShirt.id,
+      linenShirt.category,
+      linenShirt.productType,
+    );
     expect(related.map((p) => p.id)).toEqual([tee.id]);
   });
 

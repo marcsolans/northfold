@@ -2,10 +2,22 @@ import { type HTMLAttributes, type TdHTMLAttributes, type ThHTMLAttributes } fro
 
 import { cn } from "@/lib/utils";
 
-/** Horizontally scrollable on small screens so wide admin tables never break the layout. */
-export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
+/**
+ * Horizontally scrollable on small screens so wide admin tables never break the layout. The
+ * scroll container is a named, focusable region so keyboard users can scroll it too.
+ */
+export function Table({
+  label,
+  className,
+  ...props
+}: HTMLAttributes<HTMLTableElement> & { label: string }) {
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-border bg-card">
+    <div
+      role="region"
+      aria-label={label}
+      tabIndex={0}
+      className="w-full overflow-x-auto rounded-lg border border-border bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    >
       <table
         className={cn("w-full min-w-max border-collapse text-left text-sm", className)}
         {...props}

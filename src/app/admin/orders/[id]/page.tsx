@@ -13,12 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/format";
 import { orderNumber } from "@/lib/orders";
+import { requireAdminPage } from "@/server/auth/session";
 import { getAdminOrder } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "Order" };
 
 async function AdminOrder({ params }: Pick<PageProps<"/admin/orders/[id]">, "params">) {
   const { id } = await params;
+  await requireAdminPage(`/admin/orders/${id}`);
   const order = await getAdminOrder(id);
   if (!order) notFound();
 

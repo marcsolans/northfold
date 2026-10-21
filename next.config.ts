@@ -8,19 +8,19 @@ const cloudinaryCloud = process.env.CLOUDINARY_CLOUD_NAME;
 /**
  * Static Content-Security-Policy. A nonce-based CSP would force every page to render
  * dynamically, which defeats Partial Prerendering, so inline scripts are allowed instead and
- * everything else is locked down to the origins the store actually uses:
- * Stripe (Checkout redirect, Stripe.js), Cloudinary (product images) and Unsplash (seed images).
+ * everything else is locked down to what the store actually uses. Stripe Checkout is a
+ * top-level redirect (no Stripe.js, no iframes), so Stripe needs no allowance here; images come
+ * from Cloudinary (uploads) and Unsplash (seed data).
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://js.stripe.com${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
+  "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com",
   "font-src 'self'",
-  "connect-src 'self' https://api.stripe.com",
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
-  // Progressive-enhancement form posts may redirect to Stripe Checkout.
-  "form-action 'self' https://checkout.stripe.com",
+  "connect-src 'self'",
+  "frame-src 'none'",
+  "form-action 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",

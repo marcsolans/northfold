@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { addressSchema } from "./address";
+import { addressSchema, toShippingCountry } from "./address";
 import { changePasswordSchema, safeRedirectPath, signInSchema, signUpSchema } from "./auth";
 import { cartLinesSchema } from "./cart";
 import { parseShopFilters } from "./catalog";
 import { checkoutFormSchema, EMPTY_ADDRESS, placeOrderSchema, toPlaceOrderInput } from "./checkout";
+import { parseAdminOrderFilters, updateOrderStatusSchema } from "./order";
 import { productFormSchema } from "./product";
 
 const validAddress = {
@@ -246,5 +247,33 @@ describe("checkoutFormSchema", () => {
     expect(placeOrderSchema.safeParse(toPlaceOrderInput(values, items)).success).toBe(true);
     const saved = toPlaceOrderInput({ ...values, shippingChoice: "addr_9" }, items);
     expect(saved.shipping).toEqual({ type: "saved", addressId: "addr_9" });
+  });
+});
+
+describe("toShippingCountry", () => {
+  it("keeps supported codes and falls back for unknown ones", () => {
+    expect(toShippingCountry("SE")).toBe("SE");
+    expect(toShippingCountry("ZZ")).toBe("US");
+  });
+});
+
+describe("parseAdminOrderFilters", () => {
+  it("parses valid filters", () => {
+    expect(
+      parseAdminOrderFilters({ status: "SHIPPED", payment: "STRIPE", q: "  ada  ", page: "3" }),
+    ).toEqual({ status: "SHIPPED", payment: "STRIPE", q: "ada", page: 3 });
+  });
+
+  it("ignores unknown values instead of failing the page", () => {
+    expect(
+      parseAdminOrderFilters({ status: "LOST", payment: ["BITCOIN"], q: "   ", page: "-1" }),
+    ).toEqual({ status: undefined, payment: undefined, q: undefined, page: 1 });
+  });
+});
+
+describe("updateOrderStatusSchema", () => {
+  it("rejects unknown statuses", () => {
+    const result = updateOrderStatusSchema.safeParse({ orderId: "order_1", status: "LOST" });
+    expect(result.success).toBe(false);
   });
 });

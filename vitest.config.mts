@@ -35,7 +35,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts", "src/server/**/*.ts", "src/stores/**/*.ts"],
-      exclude: ["**/*.test.ts", "src/generated/**"],
+      // auth-client.ts is the browser-side Better Auth client; it is exercised by the E2E suite.
+      exclude: ["**/*.test.ts", "src/generated/**", "src/lib/auth-client.ts"],
       reporter: ["text", "html", "json-summary"],
       thresholds: { lines: 80, functions: 80, statements: 80, branches: 75 },
     },

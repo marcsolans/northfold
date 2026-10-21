@@ -58,7 +58,7 @@ async function ShopResults({ filters }: { filters: Filters }) {
       <p className="mb-6 text-sm text-muted-foreground" aria-live="polite">
         {pluralize(result.total, "product")}
       </p>
-      <ProductGrid products={result.products} preloadFirst={2} layout="sidebar" />
+      <ProductGrid products={result.products} priorityFirst={2} layout="sidebar" />
       <Pagination
         className="mt-14"
         page={result.page}
@@ -94,7 +94,10 @@ async function ShopContent({ searchParams }: Pick<PageProps<"/shop">, "searchPar
         <aside aria-label="Filters" className="hidden lg:block">
           <ShopFilters key={stateKey} filters={filters} />
         </aside>
-        <section aria-label="Products">
+        <section aria-labelledby="products-heading">
+          <h2 id="products-heading" className="sr-only">
+            Products
+          </h2>
           <Suspense key={stateKey} fallback={<ProductGridSkeleton count={6} layout="sidebar" />}>
             <ShopResults filters={filters} />
           </Suspense>

@@ -2,10 +2,9 @@ import { z } from "zod";
 
 import { Category, ProductType, Size } from "@/generated/prisma/enums";
 
-import { firstParam, pageSchema, rawParam, type RawParam } from "./common";
+import { isSortOption, type SortOption } from "../navigation";
 
-export const SORT_OPTIONS = ["newest", "price-asc", "price-desc"] as const;
-export type SortOption = (typeof SORT_OPTIONS)[number];
+import { firstParam, pageSchema, rawParam, type RawParam } from "./common";
 
 /** Accepts `?size=S&size=M` and `?size=S,M`; drops anything that is not a known value. */
 function multiEnum<const T extends readonly string[]>(values: T) {
@@ -25,10 +24,6 @@ const optionalPrice = rawParam.transform((raw) => {
     ? Math.floor(parsed)
     : undefined;
 });
-
-function isSortOption(value: string | undefined): value is SortOption {
-  return (SORT_OPTIONS as readonly (string | undefined)[]).includes(value);
-}
 
 /**
  * Parses the shop's URL search params. Invalid values are ignored rather than rejected, so a

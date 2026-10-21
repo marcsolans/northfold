@@ -21,11 +21,13 @@ import {
 import { formatDate } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { firstParam, pageSchema } from "@/lib/validators/common";
+import { requireAdminPage } from "@/server/auth/session";
 import { listCustomers } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "Customers" };
 
 async function Customers({ searchParams }: Pick<PageProps<"/admin/customers">, "searchParams">) {
+  await requireAdminPage("/admin/customers");
   const params = await searchParams;
   const q = firstParam(params.q)?.trim().slice(0, 100) || undefined;
   const page = pageSchema.parse(firstParam(params.page));
@@ -59,7 +61,7 @@ async function Customers({ searchParams }: Pick<PageProps<"/admin/customers">, "
         <EmptyState icon={<HiOutlineUsers />} title="No customers found" />
       ) : (
         <>
-          <Table>
+          <Table label="Customers">
             <TableHead>
               <tr>
                 <TableHeaderCell>Customer</TableHeaderCell>

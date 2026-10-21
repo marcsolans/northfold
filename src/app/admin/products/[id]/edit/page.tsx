@@ -10,12 +10,14 @@ import { ProductForm } from "@/components/admin/product-form";
 import { buttonClasses } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { features } from "@/env";
+import { requireAdminPage } from "@/server/auth/session";
 import { getAdminProduct } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "Edit product" };
 
 async function EditProduct({ params }: Pick<PageProps<"/admin/products/[id]/edit">, "params">) {
   const { id } = await params;
+  await requireAdminPage(`/admin/products/${id}/edit`);
   const product = await getAdminProduct(id);
   if (!product) notFound();
 

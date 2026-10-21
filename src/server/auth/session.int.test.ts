@@ -4,7 +4,17 @@ import { actAs, signInAs, signUpUser, TEST_PASSWORD } from "../../../tests/auth"
 import { prisma, resetDatabase } from "../../../tests/db";
 
 import { auth } from "./auth";
-import { AuthorizationError, getCurrentUser, requireAdmin, requireUser } from "./session";
+import {
+  AuthorizationError,
+  getCurrentUser,
+  requireAdmin,
+  requireAdminPage,
+  requireUser,
+  requireUserPage,
+} from "./session";
+
+/** next/navigation's redirect() throws an error whose digest carries the target URL. */
+const redirectTo = (url: string) => ({ digest: expect.stringContaining(`;${url};`) });
 
 beforeEach(resetDatabase);
 
@@ -102,5 +112,28 @@ describe("getCurrentUser", () => {
   it("returns null without a session", async () => {
     actAs(null);
     await expect(getCurrentUser()).resolves.toBeNull();
+  });
+});
+
+describe("page guards", () => {
+  it("send anonymous visitors to sign-in with a return path", async () => {
+    actAs(null);
+    await expect(requireUserPage("/account/orders")).rejects.toMatchObject(
+      redirectTo("/sign-in?redirectTo=%2Faccount%2Forders"),
+    );
+    await expect(requireAdminPage()).rejects.toMatchObject(
+      redirectTo("/sign-in?redirectTo=%2Fadmin"),
+    );
+  });
+
+  it("send signed-in customers from admin pages to the store", async () => {
+    const user = await signInAs("USER");
+    await expect(requireUserPage("/account")).resolves.toMatchObject({ id: user.id });
+    await expect(requireAdminPage()).rejects.toMatchObject(redirectTo("/"));
+  });
+
+  it("let admins through", async () => {
+    const admin = await signInAs("ADMIN");
+    await expect(requireAdminPage()).resolves.toMatchObject({ id: admin.id, role: "ADMIN" });
   });
 });

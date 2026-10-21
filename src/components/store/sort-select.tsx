@@ -4,13 +4,8 @@ import { useRouter } from "next/navigation";
 import { useOptimistic, useTransition } from "react";
 
 import { Select } from "@/components/ui/select";
-import { SORT_LABELS } from "@/lib/navigation";
+import { isSortOption, SORT_LABELS, SORT_OPTIONS } from "@/lib/navigation";
 import { type ShopUrlState, shopHref } from "@/lib/shop-url";
-import { SORT_OPTIONS, type SortOption } from "@/lib/validators/catalog";
-
-function isSortOption(value: string): value is SortOption {
-  return (SORT_OPTIONS as readonly string[]).includes(value);
-}
 
 export function SortSelect({ filters }: { filters: ShopUrlState }) {
   const router = useRouter();

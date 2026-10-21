@@ -10,11 +10,12 @@ const MAX_SWATCHES = 4;
 
 export function ProductCard({
   product,
-  preload = false,
+  priority = false,
   sizes = "(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, 50vw",
 }: {
   product: ProductCardDTO;
-  preload?: boolean;
+  /** Above-the-fold card: load its image eagerly and first (it is likely the LCP element). */
+  priority?: boolean;
   sizes?: string;
 }) {
   const [primary, secondary] = product.images;
@@ -29,7 +30,8 @@ export function ProductCard({
             alt={primary.alt}
             fill
             sizes={sizes}
-            preload={preload}
+            loading={priority ? "eager" : undefined}
+            fetchPriority={priority ? "high" : undefined}
             className={cn(
               "object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]",
               secondary && "group-hover:opacity-0",
@@ -37,12 +39,13 @@ export function ProductCard({
           />
         ) : null}
         {secondary ? (
+          // Hover swap only: not displayed (so, being lazy, never downloaded) on touch screens.
           <Image
             src={secondary.url}
             alt=""
             fill
             sizes={sizes}
-            className="object-cover opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-100"
+            className="hidden object-cover opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-100 [@media(hover:hover)]:block"
           />
         ) : null}
         <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
@@ -91,18 +94,18 @@ type GridLayout = keyof typeof GRID_COLUMNS;
 
 export function ProductGrid({
   products,
-  preloadFirst = 0,
+  priorityFirst = 0,
   layout = "wide",
 }: {
   products: ProductCardDTO[];
-  preloadFirst?: number;
+  priorityFirst?: number;
   layout?: GridLayout;
 }) {
   return (
     <ul className={cn("grid gap-x-4 gap-y-10 sm:gap-x-6", GRID_COLUMNS[layout])}>
       {products.map((product, index) => (
         <li key={product.id}>
-          <ProductCard product={product} preload={index < preloadFirst} />
+          <ProductCard product={product} priority={index < priorityFirst} />
         </li>
       ))}
     </ul>

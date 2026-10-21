@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// Zod probes `new Function()` for a faster parser; the CSP forbids eval, so skip the probe (and
+// the violation report it triggers in browsers). Every schema module imports this file.
+z.config({ jitless: true });
+
 /** Trimmed, required text with a friendly error. */
 export const requiredText = (label: string, max = 200) =>
   z

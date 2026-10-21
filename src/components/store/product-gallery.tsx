@@ -1,10 +1,35 @@
 "use client";
 
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import { useState } from "react";
+import { preload } from "react-dom";
 
 import { cn } from "@/lib/utils";
 import type { ProductImageDTO } from "@/server/queries/catalog";
+
+const STRIP_SIZES = "85vw";
+const MAIN_SIZES = "(min-width: 1024px) 50vw, 80vw";
+
+/**
+ * The first image is the LCP element, but each layout renders it at a different size. One
+ * high-priority preload per breakpoint means a phone only fetches the strip image and a desktop
+ * only the main one (a plain `preload` prop would fetch both everywhere).
+ */
+function preloadFirstImage(url: string) {
+  for (const [sizes, media] of [
+    [STRIP_SIZES, "(max-width: 639.98px)"],
+    [MAIN_SIZES, "(min-width: 640px)"],
+  ] as const) {
+    const { props } = getImageProps({ src: url, alt: "", fill: true, sizes });
+    preload(props.src, {
+      as: "image",
+      imageSrcSet: props.srcSet,
+      imageSizes: props.sizes,
+      fetchPriority: "high",
+      media,
+    });
+  }
+}
 
 /**
  * Mobile: swipeable, scroll-snapping strip. Desktop: main image with thumbnail buttons.
@@ -18,6 +43,7 @@ export function ProductGallery({
 }) {
   const [active, setActive] = useState(0);
   const current = images[active] ?? images[0];
+  if (images[0]) preloadFirstImage(images[0].url);
 
   if (!current) {
     return (
@@ -37,7 +63,7 @@ export function ProductGallery({
         role="region"
         tabIndex={0}
       >
-        {images.map((image, index) => (
+        {images.map((image) => (
           <div
             key={image.url}
             className="relative aspect-[4/5] w-[85%] shrink-0 snap-center overflow-hidden rounded-lg bg-surface"
@@ -46,8 +72,7 @@ export function ProductGallery({
               src={image.url}
               alt={image.alt}
               fill
-              preload={index === 0}
-              sizes="85vw"
+              sizes={STRIP_SIZES}
               className="object-cover"
             />
           </div>
@@ -79,8 +104,7 @@ export function ProductGallery({
             src={current.url}
             alt={current.alt}
             fill
-            preload={active === 0}
-            sizes="(min-width: 1024px) 50vw, 80vw"
+            sizes={MAIN_SIZES}
             className="animate-fade-in object-cover"
           />
         </div>

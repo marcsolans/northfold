@@ -24,6 +24,7 @@ import { formatMoney } from "@/lib/money";
 import { CATEGORY_LABELS, PRODUCT_TYPE_LABELS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { firstParam, pageSchema } from "@/lib/validators/common";
+import { requireAdminPage } from "@/server/auth/session";
 import { listAdminProducts, type ProductStatusFilter } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "Products" };
@@ -44,6 +45,7 @@ function hrefFor(state: { q?: string; status: ProductStatusFilter; page?: number
 }
 
 async function Products({ searchParams }: Pick<PageProps<"/admin/products">, "searchParams">) {
+  await requireAdminPage("/admin/products");
   const params = await searchParams;
   const q = firstParam(params.q)?.trim().slice(0, 100) || undefined;
   const requested = firstParam(params.status);
@@ -101,7 +103,7 @@ async function Products({ searchParams }: Pick<PageProps<"/admin/products">, "se
         />
       ) : (
         <>
-          <Table>
+          <Table label="Products">
             <TableHead>
               <tr>
                 <TableHeaderCell>Product</TableHeaderCell>

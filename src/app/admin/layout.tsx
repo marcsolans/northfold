@@ -11,8 +11,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Redirects non-admins before any admin UI renders. This is a UX gate only: every admin query,
- * Server Action and route handler calls requireAdmin() itself.
+ * Redirects non-admins before any admin UI renders. This is a UX gate only: Next.js renders pages
+ * in parallel with their layouts, so every admin page calls requireAdminPage() before loading
+ * data, and every admin query, Server Action and route handler calls requireAdmin() itself.
  */
 async function AdminGate({ children }: { children: ReactNode }) {
   await requireAdminPage();

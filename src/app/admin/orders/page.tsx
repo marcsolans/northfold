@@ -31,6 +31,7 @@ import { formatMoney } from "@/lib/money";
 import { orderNumber } from "@/lib/orders";
 import { firstParam } from "@/lib/validators/common";
 import { type AdminOrderFilters, parseAdminOrderFilters } from "@/lib/validators/order";
+import { requireAdminPage } from "@/server/auth/session";
 import { listAdminOrders } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "Orders" };
@@ -47,6 +48,7 @@ function hrefFor(filters: AdminOrderFilters & { review: boolean }, page: number)
 }
 
 async function Orders({ searchParams }: Pick<PageProps<"/admin/orders">, "searchParams">) {
+  await requireAdminPage("/admin/orders");
   const params = await searchParams;
   const filters = { ...parseAdminOrderFilters(params), review: firstParam(params.review) === "1" };
   const result = await listAdminOrders(filters);
@@ -114,7 +116,7 @@ async function Orders({ searchParams }: Pick<PageProps<"/admin/orders">, "search
         />
       ) : (
         <>
-          <Table>
+          <Table label="Orders">
             <TableHead>
               <tr>
                 <TableHeaderCell>Order</TableHeaderCell>

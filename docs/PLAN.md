@@ -82,11 +82,11 @@ Conventional Commit.
 
 ## Phase 10 — Hardening
 
-- [ ] Security headers + CSP
-- [ ] Accessibility + Lighthouse pass (home, shop, product)
-- [ ] `loading.tsx` / `error.tsx` / `not-found.tsx` for main segments
-- [ ] E2E suite green
-- [ ] Coverage of `src/lib` + `src/server` ≥ 80%
+- [x] Security headers + CSP
+- [x] Accessibility + Lighthouse pass (home, shop, product)
+- [x] `loading.tsx` / `error.tsx` / `not-found.tsx` for main segments
+- [x] E2E suite green
+- [x] Coverage of `src/lib` + `src/server` ≥ 80%
 
 ## Phase 11 — Docs + deploy prep
 
