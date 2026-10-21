@@ -1,0 +1,76 @@
+# Decisions
+
+One line per decision: **decision** — reason.
+
+- **Local PostgreSQL 16 for development, integration tests and CI; Neon only in deployed environments** — no `DATABASE_URL`/`DIRECT_URL` were provided and `neon.tech` is not reachable from the build VM.
+- **TypeScript 6.0 (not 7.0)** — TS 7 (native port) is not yet supported by typescript-eslint (`<6.1.0`), which type-aware linting needs.
+- **ESLint 10 with pnpm `peerDependencyRules` for three eslint-config-next plugins** — ESLint 9 is end-of-life; Next.js documents ESLint 10 support, only the plugins' peer ranges lag.
+- **Prisma 7.10 (not 8.0)** — npm `latest` for `prisma` is an 8.0 release candidate; Better Auth's adapter supports Prisma ≤ 7.
+- **Cache Components on (create-next-app default)** — catalog reads use `"use cache"` + tags, per-request UI streams in `<Suspense>`; no `export const dynamic` (it is not allowed with Cache Components).
+- **Static CSP with `'unsafe-inline'` scripts instead of nonces** — nonce CSP forces every page to render dynamically, which disables Partial Prerendering.
+- **Integrations (Stripe, Google, Cloudinary) are optional in `src/env.ts`, validated all-or-nothing** — the store runs locally with only Postgres; the UI hides a payment/sign-in/upload option that is not configured.
+- **Vitest config is `.mts`** — the package is CommonJS (Next.js default) and Vite's native config loader warns about ESM in `.ts`.
+- **GitHub Actions pinned to major tags (`checkout@v5`, `setup-node@v5`, `pnpm/action-setup@v4`, `upload-artifact@v4`)** — release pages are not reachable from the build VM to confirm newer majors; these are known-good.
+- **Free shipping applies at subtotal ≥ $100** — "free over $100" is treated as inclusive, the customer-friendly reading.
+- **Test databases are migrated with `prisma migrate deploy` and emptied with `TRUNCATE`, never `migrate reset`** — Prisma blocks destructive commands when driven by an AI agent; the deploy + truncate flow is also faster. `scripts/reset-test-db.ts` refuses any database not named `*_test`/`*_e2e`.
+- **Better Auth models keep their default Prisma names and get snake_case via `@@map`/`@map`** — Better Auth's `modelName`/`fields` options rename the Prisma client API itself.
+- **One Postgres-backed fixed-window rate limiter (`rate_limit_windows`, single atomic upsert)** — shared by Better Auth (`rateLimit.customStorage.consume`) and `placeOrder`; in-memory limits are per serverless instance and useless on Vercel.
+- **Re-seeding never overwrites stock** — variants are upserted by SKU and stock is only set on creation, so `pnpm db:seed` is safe on a database with real inventory.
+- **Shoes and kids' items reuse the `Size` enum (XS–XXL) with a size guide in the description** — the spec fixes the enum; a separate shoe-size enum would be a schema change outside it.
+- **`OrderItem.variantId` is nullable (`ON DELETE SET NULL`)** — removing a variant in the admin must never break order history, which relies on snapshots anyway.
+- **Orders carry `stockDeducted`, `needsReview` and `reviewReason`** — restocking on cancel must only return stock that was actually taken, and oversold Stripe payments need a visible admin flag.
+- **Seed images come from images.unsplash.com (Unsplash License), each checked to load and to match its category** — the only image host reachable from the build VM; uploads go to Cloudinary.
+- **Sign-in/sign-up call Better Auth from the browser (`authClient`), not through Server Actions** — `auth.api.*` calls skip Better Auth's rate limiter and origin checks; the HTTP route enforces both.
+- **`requireAdmin()` bypasses Better Auth's 5-minute cookie cache** — a demoted admin or revoked session loses access on the next request, not after the cache expires.
+- **Server Actions run inside `runAction()`** — one place maps authorization and user-facing errors to `ActionResult`, logs everything else with context and returns a generic message.
+- **`proxy.ts` only checks for the presence of a session cookie** — it cannot validate sessions without a DB hit; pages, actions and route handlers do the real check. It also never redirects signed-in users away from auth pages (a stale cookie would loop).
+- **No email verification** — no email provider is configured; Google sign-in into an existing password account therefore requires the password (Better Auth's safe default, `requireLocalEmailVerified`).
+- **The storefront navbar does not read the session** — the account icon links to `/account` (the proxy/page sends anonymous users to sign-in), so the shared shell stays fully static and prerenderable.
+- **Mobile menu and modals use the native `<dialog>` with `showModal()`** — focus trap, inert background, Escape and focus return come from the platform; the menu also closes itself when React's Activity hides its route.
+- **Admin layout gate + per-query/per-action `requireAdmin()`** — the layout redirect is UX; the checks inside every admin read and mutation are the security boundary.
+- **Unknown/archived product URLs render the 404 page with `noindex` but HTTP 200** — with Partial Prerendering the static shell streams before the page resolves, so `notFound()` cannot change the status; a real 404 would need a DB lookup in `proxy.ts` on every product request. Search engines treat `noindex` pages as soft 404s.
+- **Catalog reads are cached with `"use cache"` + the `products` tag; stock-changing mutations call `revalidateTag("products", "max")`** — listings and product pages stay static/fast, and the cart and checkout always re-validate stock on the server, so a briefly stale "in stock" badge can never oversell.
+- **Shop filters use `useOptimistic` + `router.push`** — clicks reflect instantly while the server re-renders from the URL; without JavaScript the filter panel is a plain GET form.
+- **`validateCart` is a public Server Action (guest carts allowed)** — it is read-only, validates input with Zod and returns only catalog data; `knownPrice`/`label` from the browser are used solely to describe changes.
+- **The cart re-validates whenever the cart page becomes visible** — Activity re-runs effects when a hidden route is shown, so returning to the bag always shows live stock and prices.
+- **Stripe orders take stock only when payment is confirmed (webhook); COD orders take it at placement** — abandoned card checkouts never hold inventory; the conditional decrement at payment time catches the rare oversell and flags the order for review.
+- **Stock decrements run in variant-id order** — concurrent transactions lock rows in the same order, avoiding deadlocks.
+- **`placeOrder` returns a redirect URL instead of calling `redirect()`** — the client decides between client navigation (COD confirmation) and leaving for Stripe, and the action stays easy to test.
+- **The rate limit is consumed before input validation** — malformed requests count against the limit too.
+- **Saved addresses are re-validated with `addressSchema` when used at checkout** — an address stored under older rules cannot slip through.
+- **The `StripeEvent` insert and the event's effects share one transaction** — a duplicate delivery hits the primary key and is skipped, while a failed run rolls back the marker too, so Stripe's retry is not lost (inserting the id first in its own transaction would drop events whose processing failed).
+- **Oversold payments keep the order PAID + PENDING with `needsReview`; partial decrements are compensated in the same transaction** — an order is either fully stocked or not at all, and an admin decides to refund or restock.
+- **The webhook also verifies `amount_total`/currency against the stored order total** — a mismatch is flagged for review instead of silently fulfilling.
+- **Checkout Sessions expire 30 minutes + 60 s after creation** — Stripe's minimum is 30 minutes measured on its own clock; the buffer avoids rejected requests.
+- **The webhook route verifies with the static `Stripe.webhooks.constructEvent`** — signature checks need only the webhook secret, not an API client.
+- **Password changes call Better Auth from the browser with `revokeOtherSessions`** — the HTTP route applies the `/change-password` rate limit, and other devices are signed out; name changes go through `auth.api.updateUser` so the session cookie cache is refreshed.
+- **Customers can cancel only PENDING cash-on-delivery orders; admins follow the full state machine** — card orders already charged need an admin (refund) decision.
+- **Exactly one default address is maintained in a transaction** — setting a default clears the previous one; deleting the default promotes the most recent remaining address.
+- **Admin images can be uploaded to Cloudinary or added by https URL from allowed hosts (Cloudinary, Unsplash)** — the admin works before Cloudinary is configured and E2E tests need no third-party upload; `next/image` and the CSP allow exactly those hosts.
+- **Uploads are checked by magic bytes, not the browser's MIME type, and go to a fixed Cloudinary folder** — a renamed file is rejected, and `discardUploadedImage` only deletes ids under that folder that no product uses.
+- **Removed Cloudinary images are destroyed after the database write commits** — a failed save never deletes an image that is still referenced; at worst an orphan is left behind.
+- **Variants that appear in orders cannot be removed, and products with orders cannot be deleted** — archive the product or set stock to 0 instead; order history keeps its link to the catalog.
+- **SKUs are suggested from the slug's initials, its last word, size and colour, and stay editable** — the "Auto" button gives a readable, mostly unique default; the unique index is the real guarantee and its violation is reported on the field.
+- **Admin stock edits set absolute values** — simple to reason about in a single-admin store; concurrent checkouts can still only take stock through the conditional decrement.
+- **Cancelling a paid card order refunds it in full first (idempotency key `refund:<orderId>`), then cancels and restocks** — if Stripe refuses the refund the order is left untouched; a pending card order gets its Checkout Session expired (best effort) and is marked FAILED.
+- **Moving an order to PROCESSING takes its stock if it was never taken** — this is how an admin fulfils an oversold card order after restocking; card orders must be PAID first.
+- **Cash-on-delivery orders become PAID when marked DELIVERED** — that is when the money is collected, so revenue only counts it then.
+- **Revenue counts PAID orders by `paidAt`, with UTC day boundaries** — refunded or unpaid orders never inflate the numbers, and the 30-day series comes from one `generate_series` query.
+- **The customers list shows every account with a role badge; "total spent" sums PAID orders only** — admins are customers too, and the number matches the revenue figures.
+- **The CSP has no Stripe allowances** — Checkout is a top-level redirect and Stripe.js is never loaded, so scripts, frames, connections and form posts stay `'self'`-only.
+- **Loading states live in each page's own `<Suspense>` skeletons, not segment `loading.tsx` files** — with Cache Components every route's static shell (headings, filters, navigation) is prerendered and shown instantly, so a segment-wide placeholder would only hide content that is already there.
+- **Error boundaries per area (store, auth, account, admin) plus `global-error`, showing only the error digest** — users keep the surrounding navigation, and the digest matches the server log without leaking the message.
+- **Every admin page calls `requireAdminPage()` before loading data, besides the layout gate and the queries' own `requireAdmin()`** — pages render in parallel with layouts, so without it a customer opening `/admin` made the queries throw (safely, but as logged errors) before the layout's redirect won.
+- **Cached functions take only stable primitive arguments** — a cache key built from a whole product (including stock) changed between Partial Prerendering's warming and final passes after an order, which Next.js reports as an unexpected cache miss.
+- **The E2E suite checks every page at 375 px and 1440 px for horizontal overflow and serious/critical axe (WCAG 2.1 AA) violations** — layout and accessibility regressions fail CI instead of relying on manual screenshots.
+- **The first admin in E2E is created the documented way: sign up, then re-run the seed with `ADMIN_EMAILS`** — the setup project exercises the same path as a real deployment.
+- **Zod runs `jitless`** — its eval-based fast path is blocked by the CSP (no `'unsafe-eval'`), and skipping the probe keeps browsers from logging a CSP violation on every page with a form or filter.
+- **Product pages are prerendered for every active product (`generateStaticParams`)** — content, metadata and the hero image preload ship in the static HTML (mobile Lighthouse 87 → 93); products added later get the App Shell and are cached after their first visit. An empty catalog prerenders a placeholder that resolves to "not found", because Cache Components requires at least one param.
+- **The product gallery preloads its first image once per breakpoint (`media` + `fetchpriority=high`)** — the phone strip and the desktop main image use different sizes; plain `preload` props fetched both everywhere.
+- **Shop grid images above the fold use `loading="eager"` + `fetchPriority="high"` instead of `preload`** — the grid streams after the shell, so a preload link could never reach `<head>`; hover-swap images are `display: none` on touch screens so they are never downloaded.
+- **Sort options live in the Zod-free `navigation.ts`** — importing a constant from a schema module pulled Zod (~30 KB) into the shop's client bundle.
+- **The shop keeps per-filter document titles even though its metadata streams** — the grid depends on search params, so metadata is appended after the shell; Next.js documents this as read correctly by crawlers that run JavaScript (Googlebot) and serves blocking metadata to HTML-only bots. Lighthouse flags it (SEO 92).
+- **Integration tests refuse to run against a database whose name does not end in `_test`/`_e2e`** — every test truncates all tables, so a mistyped `TEST_DATABASE_URL` must never reach real data.
+- **The admin overview stacks its tables instead of placing them side by side** — beside the sidebar, half the width cannot fit an order table's columns at 1440 px, and a scrolling table hides the total.
+- **`vercel.json` sets the build command to `pnpm vercel-build` (migrations, then `next build`)** — explicit instead of relying on Vercel picking up a `vercel-build` script, so every deployment applies pending migrations before the new code serves traffic.
+- **`pnpm db:seed --admins-only` promotes `ADMIN_EMAILS` without touching the catalog** — a full re-seed re-syncs the demo products, which would revert admin edits to them in production.
