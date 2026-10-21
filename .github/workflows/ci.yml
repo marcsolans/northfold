@@ -30,6 +30,7 @@ jobs:
         ports: ["6379:6379"]
     env:
       MESSER_TEST_DB_HOST: localhost:5432
+      MESSER_TEST_PG_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
       PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
@@ -37,8 +38,6 @@ jobs:
       - name: Prepare database roles
         run: |
           psql -h localhost -U postgres -c "CREATE ROLE messer LOGIN PASSWORD 'messer' CREATEROLE CREATEDB"
-          psql -h localhost -U postgres -c "CREATE DATABASE messer_test OWNER messer"
-          psql -h localhost -U postgres -d messer_test -c "CREATE EXTENSION vector; CREATE EXTENSION pg_trgm; CREATE EXTENSION unaccent;"
       - run: uv sync --all-packages --frozen
       - name: Ruff
         run: uv run --no-sync ruff check $(ls -d packages/messer-common apps/api services/* packages/connectors packages/messer-sdk-py infra/migrations 2>/dev/null)
@@ -52,7 +51,7 @@ jobs:
         run: ../../.venv/bin/python -m pytest -q --no-cov -n 4 -o addopts="" -m "not integration" python/tests
       - name: Platform tests (API, RLS, services)
         run: |
-          # The test fixtures create databases with `su postgres`; in CI the database already exists.
+          # Each package's test session recreates its database through MESSER_TEST_PG_ADMIN_URL.
           uv run --no-sync pytest $(ls -d apps/api/tests packages/*/tests services/*/tests 2>/dev/null)
 
   web:

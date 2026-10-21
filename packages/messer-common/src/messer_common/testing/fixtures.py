@@ -18,32 +18,52 @@ from messer_common.settings import REPO_ROOT, get_settings
 KEEP_TABLES = {"alembic_version", "plans", "model_prices", "feature_flags", "connectors", "templates"}
 
 
-def _ensure_database() -> None:
+def _admin_sql(statements: list[str], database: str = "postgres") -> None:
+    """Run admin SQL: via MESSER_TEST_PG_ADMIN_URL (CI) or `su postgres` (local peer auth)."""
+    admin_url = os.environ.get("MESSER_TEST_PG_ADMIN_URL")
+    if admin_url:
+        import psycopg
+
+        base = admin_url.rsplit("/", 1)[0]
+        with psycopg.connect(f"{base}/{database}", autocommit=True) as conn:
+            for stmt in statements:
+                conn.execute(stmt)  # type: ignore[arg-type]
+        return
+    for stmt in statements:
+        subprocess.run(
+            ["su", "postgres", "-c", f'psql -v ON_ERROR_STOP=1 -d {database} -c "{stmt}"'],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+
+def _recreate_database() -> None:
+    """Fresh database per test session so every migration (including newly edited ones) runs."""
     settings = get_settings()
     db = settings.database_url.rsplit("/", 1)[1]
-    exists = subprocess.run(
-        ["su", "postgres", "-c", f"psql -tAc \"SELECT 1 FROM pg_database WHERE datname='{db}'\""],
-        capture_output=True,
-        text=True,
-        check=False,
+    if not db.startswith("messer_test"):
+        raise RuntimeError(f"refusing to recreate non-test database {db}")
+    _admin_sql(
+        [
+            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{db}' AND pid <> pg_backend_pid()",
+            f"DROP DATABASE IF EXISTS {db}",
+            f"CREATE DATABASE {db} OWNER messer",
+        ]
     )
-    if exists.returncode == 0 and exists.stdout.strip() != "1":
-        subprocess.run(["su", "postgres", "-c", f"createdb -O messer {db}"], check=True)
-        subprocess.run(
-            [
-                "su",
-                "postgres",
-                "-c",
-                f"psql -d {db} -c 'CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_trgm; "
-                "CREATE EXTENSION IF NOT EXISTS unaccent;'",
-            ],
-            check=True,
-        )
+    _admin_sql(
+        [
+            "CREATE EXTENSION IF NOT EXISTS vector",
+            "CREATE EXTENSION IF NOT EXISTS pg_trgm",
+            "CREATE EXTENSION IF NOT EXISTS unaccent",
+        ],
+        database=db,
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)
 def migrated_database() -> None:
-    _ensure_database()
+    _recreate_database()
     env = dict(os.environ)
     res = subprocess.run(
         [

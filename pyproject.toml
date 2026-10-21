@@ -132,18 +132,24 @@ members = [
   "packages/messer-core",
   "packages/messer-common",
   "apps/api",
+  "services/worker",
+  "services/scheduler",
 ]
 
 [tool.uv.sources]
 messer-core = { workspace = true }
 messer-common = { workspace = true }
 messer-api = { workspace = true }
+messer-worker = { workspace = true }
+messer-scheduler = { workspace = true }
 
 [dependency-groups]
 dev = [
   "messer-core[all]",
   "messer-common",
   "messer-api",
+  "messer-worker",
+  "messer-scheduler",
   "httpx>=0.28",
   "lancedb>=0.25.3",
   "pyngrok>=7.2.3",

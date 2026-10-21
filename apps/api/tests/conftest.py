@@ -2,15 +2,8 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
+import httpx
 import pytest
-
-from messer_common.testing import configure_test_env
-
-configure_test_env()
-
-import httpx  # noqa: E402
-
-pytest_plugins = ["messer_common.testing.fixtures"]
 
 
 @pytest.fixture

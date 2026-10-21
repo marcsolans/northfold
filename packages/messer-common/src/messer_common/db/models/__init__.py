@@ -117,3 +117,13 @@ __all__ = [
     "Version",
     "Workforce",
 ]
+
+# Workstream model modules (e.g. ``db/models/billing_extra.py``) are imported automatically so their tables
+# register on ``Base.metadata`` (Alembic autogenerate, tests) without editing this file.
+import importlib as _importlib
+import pkgutil as _pkgutil
+
+_CORE_MODULES = {"access", "billing", "execution", "interfaces", "knowledge", "projects"}
+for _info in _pkgutil.iter_modules(__path__):
+    if _info.name not in _CORE_MODULES and not _info.name.startswith("_"):
+        _importlib.import_module(f"{__name__}.{_info.name}")

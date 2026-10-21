@@ -12,6 +12,8 @@ members = [
     "messer-common",
     "messer-core",
     "messer-monorepo",
+    "messer-scheduler",
+    "messer-worker",
 ]
 constraints = [
     { name = "aiofiles", specifier = "==25.1.0" },
@@ -1402,6 +1404,8 @@ dev = [
     { name = "messer-api" },
     { name = "messer-common" },
     { name = "messer-core", extra = ["all"] },
+    { name = "messer-scheduler" },
+    { name = "messer-worker" },
     { name = "pyngrok" },
     { name = "pyright" },
     { name = "pytest" },
@@ -1421,6 +1425,8 @@ dev = [
     { name = "messer-api", editable = "apps/api" },
     { name = "messer-common", editable = "packages/messer-common" },
     { name = "messer-core", extras = ["all"], editable = "packages/messer-core" },
+    { name = "messer-scheduler", editable = "services/scheduler" },
+    { name = "messer-worker", editable = "services/worker" },
     { name = "pyngrok", specifier = ">=7.2.3" },
     { name = "pyright", specifier = ">=1.1.400" },
     { name = "pytest", specifier = ">=8.3.4" },
@@ -1429,6 +1435,40 @@ dev = [
     { name = "pytest-xdist", specifier = ">=3.6.1" },
     { name = "ruff", specifier = ">=0.9.3" },
     { name = "yappi", specifier = ">=1.7.6" },
+]
+
+[[package]]
+name = "messer-scheduler"
+version = "1.0.0"
+source = { editable = "services/scheduler" }
+dependencies = [
+    { name = "croniter" },
+    { name = "messer-api" },
+    { name = "messer-common" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "croniter", specifier = ">=6.0" },
+    { name = "messer-api", editable = "apps/api" },
+    { name = "messer-common", editable = "packages/messer-common" },
+]
+
+[[package]]
+name = "messer-worker"
+version = "1.0.0"
+source = { editable = "services/worker" }
+dependencies = [
+    { name = "arq" },
+    { name = "messer-api" },
+    { name = "messer-common" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "arq", specifier = ">=0.26" },
+    { name = "messer-api", editable = "apps/api" },
+    { name = "messer-common", editable = "packages/messer-common" },
 ]
 
 [[package]]

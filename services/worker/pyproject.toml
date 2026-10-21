@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-worker"
+version = "1.0.0"
+description = "Messer background worker (arq): ingestion, syncs, composer builders, evals, deploys, triggers."
+requires-python = ">=3.12"
+dependencies = [
+  "messer-common",
+  "messer-api",
+  "arq>=0.26",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/messer_worker"]
