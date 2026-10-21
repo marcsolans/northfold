@@ -90,6 +90,6 @@ Conventional Commit.
 
 ## Phase 11 — Docs + deploy prep
 
-- [ ] README (pitch, screenshots, features, stack, Mermaid diagram, key decisions, setup, tests, test cards)
-- [ ] `docs/DEPLOY.md` (Vercel + Neon checklist)
-- [ ] Final verification and report
+- [x] README (pitch, screenshots, features, stack, Mermaid diagram, key decisions, setup, tests, test cards)
+- [x] `docs/DEPLOY.md` (Vercel + Neon checklist)
+- [x] Final verification and report

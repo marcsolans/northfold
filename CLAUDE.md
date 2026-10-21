@@ -23,6 +23,7 @@ make a new one.
 | New migration                | `pnpm db:migrate --name <name>`                          |
 | Apply migrations (prod/CI)   | `pnpm db:deploy`                                         |
 | Seed (idempotent)            | `pnpm db:seed`                                           |
+| Promote `ADMIN_EMAILS` only  | `pnpm db:seed --admins-only`                             |
 | Format                       | `pnpm format`                                            |
 
 Prisma 7 refuses `migrate reset` when run by an AI agent: test databases are prepared with
@@ -30,6 +31,13 @@ Prisma 7 refuses `migrate reset` when run by an AI agent: test databases are pre
 After changing Better Auth options that affect the schema, regenerate with
 `pnpm dlx auth@1.7.12 generate` (the CLI cannot load files importing `server-only`, so point it at
 a temporary copy of `src/server/auth/auth.ts`) and keep the `@@map`/`@map` naming.
+
+E2E builds the app and serves it on port 3100 against a freshly migrated and seeded
+`northfold_e2e` (`scripts/e2e-server.sh`); the setup project signs up `ada@northfold.test` and
+`admin@northfold.test` and promotes the admin through the seed. With a preinstalled Chromium set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` (here: `/opt/pw-browsers/chromium`). Every page is checked
+for horizontal overflow and axe violations at 375 px and 1440 px (`e2e/support/pages.ts`) — add
+new pages there.
 
 Local PostgreSQL: `service postgresql start`. Databases: `northfold` (dev),
 `northfold_test` (Vitest integration), `northfold_e2e` (Playwright). Role/password:

@@ -101,7 +101,7 @@ async function Overview() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-8">
         <section aria-labelledby="recent-orders" className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
             <h2 id="recent-orders" className="text-base font-medium">

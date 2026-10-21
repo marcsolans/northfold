@@ -6,6 +6,9 @@
  * - Variants are upserted by SKU; stock is only set when a variant is created, so re-seeding
  *   never overwrites real inventory.
  * - Users listed in ADMIN_EMAILS are promoted to ADMIN (they must have signed up first).
+ *
+ * `pnpm db:seed --admins-only` only promotes admins, leaving the catalog untouched (re-seeding
+ * re-syncs the seeded products' names, descriptions, prices and images).
  */
 import "dotenv/config";
 
@@ -112,6 +115,10 @@ async function promoteAdmins(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  if (process.argv.includes("--admins-only")) {
+    await promoteAdmins();
+    return;
+  }
   console.info(`Seeding ${SEED_PRODUCTS.length} products…`);
   for (const [index, product] of SEED_PRODUCTS.entries()) {
     await seedProduct(product, index);
