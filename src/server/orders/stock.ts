@@ -54,6 +54,9 @@ export class OutOfStockError extends Error {
   }
 }
 
-export function outOfStockMessage(labels: readonly string[]): string {
-  return `Sorry — ${labels.join(", ")} ${labels.length === 1 ? "is" : "are"} no longer available in the quantity you chose. Please review your bag.`;
+export function outOfStockMessage(
+  labels: readonly string[],
+  hint = "Please review your bag.",
+): string {
+  return `Sorry — ${labels.join(", ")} ${labels.length === 1 ? "is" : "are"} no longer available in the quantity needed. ${hint}`;
 }

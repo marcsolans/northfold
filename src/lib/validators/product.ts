@@ -2,14 +2,16 @@ import { z } from "zod";
 
 import { Category, ProductType, Size } from "@/generated/prisma/enums";
 
+import { isAllowedImageUrl } from "../image-validation";
+
 import { idSchema, moneyStringSchema, requiredText } from "./common";
 
 export const MAX_PRODUCT_IMAGES = 6;
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
 
 export const productImageSchema = z.object({
-  url: z.url({ error: "Invalid image URL" }),
+  url: z.url({ error: "Invalid image URL" }).refine(isAllowedImageUrl, {
+    error: "Images must be hosted on Cloudinary or Unsplash (https)",
+  }),
   publicId: z.string().trim().max(255).nullable(),
   alt: requiredText("Alt text", 160),
 });

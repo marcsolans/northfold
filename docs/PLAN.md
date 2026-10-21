@@ -74,11 +74,11 @@ Conventional Commit.
 
 ## Phase 9 — Admin
 
-- [ ] Overview: revenue (today / 30d / all), orders by status, customers, low stock, recent orders, chart
-- [ ] Products: table, search, create/edit (RHF + Zod), images (upload, preview, reorder, remove), variants editor, archive vs delete
-- [ ] Orders: filters, detail, status changes via state machine (restock on cancel)
-- [ ] Customers: order count + total spent
-- [ ] `requireAdmin()` inside every admin action, proven by tests
+- [x] Overview: revenue (today / 30d / all), orders by status, customers, low stock, recent orders, chart
+- [x] Products: table, search, create/edit (RHF + Zod), images (upload, preview, reorder, remove), variants editor, archive vs delete
+- [x] Orders: filters, detail, status changes via state machine (restock on cancel)
+- [x] Customers: order count + total spent
+- [x] `requireAdmin()` inside every admin action, proven by tests
 
 ## Phase 10 — Hardening
 

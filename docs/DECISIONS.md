@@ -46,3 +46,14 @@ One line per decision: **decision** — reason.
 - **Password changes call Better Auth from the browser with `revokeOtherSessions`** — the HTTP route applies the `/change-password` rate limit, and other devices are signed out; name changes go through `auth.api.updateUser` so the session cookie cache is refreshed.
 - **Customers can cancel only PENDING cash-on-delivery orders; admins follow the full state machine** — card orders already charged need an admin (refund) decision.
 - **Exactly one default address is maintained in a transaction** — setting a default clears the previous one; deleting the default promotes the most recent remaining address.
+- **Admin images can be uploaded to Cloudinary or added by https URL from allowed hosts (Cloudinary, Unsplash)** — the admin works before Cloudinary is configured and E2E tests need no third-party upload; `next/image` and the CSP allow exactly those hosts.
+- **Uploads are checked by magic bytes, not the browser's MIME type, and go to a fixed Cloudinary folder** — a renamed file is rejected, and `discardUploadedImage` only deletes ids under that folder that no product uses.
+- **Removed Cloudinary images are destroyed after the database write commits** — a failed save never deletes an image that is still referenced; at worst an orphan is left behind.
+- **Variants that appear in orders cannot be removed, and products with orders cannot be deleted** — archive the product or set stock to 0 instead; order history keeps its link to the catalog.
+- **SKUs are suggested from the slug's initials, its last word, size and colour, and stay editable** — the "Auto" button gives a readable, mostly unique default; the unique index is the real guarantee and its violation is reported on the field.
+- **Admin stock edits set absolute values** — simple to reason about in a single-admin store; concurrent checkouts can still only take stock through the conditional decrement.
+- **Cancelling a paid card order refunds it in full first (idempotency key `refund:<orderId>`), then cancels and restocks** — if Stripe refuses the refund the order is left untouched; a pending card order gets its Checkout Session expired (best effort) and is marked FAILED.
+- **Moving an order to PROCESSING takes its stock if it was never taken** — this is how an admin fulfils an oversold card order after restocking; card orders must be PAID first.
+- **Cash-on-delivery orders become PAID when marked DELIVERED** — that is when the money is collected, so revenue only counts it then.
+- **Revenue counts PAID orders by `paidAt`, with UTC day boundaries** — refunded or unpaid orders never inflate the numbers, and the 30-day series comes from one `generate_series` query.
+- **The customers list shows every account with a role badge; "total spent" sums PAID orders only** — admins are customers too, and the number matches the revenue figures.
