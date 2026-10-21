@@ -1,0 +1,81 @@
+# Messer — full local stack: `docker compose up`
+# Web http://localhost:3000 · API http://localhost:8000/api/docs · Mailpit http://localhost:8025
+name: messer
+
+x-python-env: &python-env
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    MESSER_ENV: local
+    DATABASE_URL: postgresql+psycopg://messer:messer@postgres:5432/messer
+    DATABASE_APP_URL: postgresql+psycopg://messer_app:messer_app@postgres:5432/messer
+    DATABASE_READONLY_URL: postgresql+psycopg://messer_readonly:messer_readonly@postgres:5432/messer
+    REDIS_URL: redis://redis:6379/0
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    MESSER_EMAIL_PROVIDER: smtp
+    MESSER_WEB_URL: http://localhost:3000
+    MESSER_API_URL: http://api:8000
+    MESSER_PROJECTS_DIR: /data/projects
+    MESSER_STORAGE_DIR: /data/storage
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d messer"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["8025:8025", "1025:1025"]
+
+  migrate:
+    <<: *python-env
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["sh", "-c", "alembic -c infra/migrations/alembic.ini upgrade head && python -m messer_api.cli bootstrap"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    volumes: ["appdata:/data"]
+
+  api:
+    <<: *python-env
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["uvicorn", "messer_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+    ports: ["8000:8000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: ["appdata:/data"]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        MESSER_API_URL: http://api:8000
+    environment:
+      MESSER_API_URL: http://api:8000
+      MESSER_WEB_URL: http://localhost:3000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  appdata:

@@ -1,0 +1,179 @@
+"""
+Bash tool for secure shell command execution with pattern validation.
+
+Args:
+    allowed_patterns: String or list of strings defining allowed command patterns.
+                     Supports shell-style wildcards where '*' matches any sequence.
+                     Use "*" to allow any command (use with caution).
+
+Pattern Matching:
+    - '*' in patterns is converted to regex that matches quoted strings or word characters
+    - Command chains (&&, ||, |, ;) are validated by checking each part separately
+    - Patterns are anchored (must match entire command)
+
+Security Features:
+    - Commands are validated against patterns before execution
+    - Async subprocess execution with stdout/stderr capture
+    - Return code and output tracking
+
+Examples:
+    Basic usage:
+        Bash("echo *")              # Allow any echo command
+        Bash(["ls *", "pwd"])       # Allow ls with args and pwd
+        Bash("git status")          # Allow only exact git status
+
+    Command chains:
+        Bash("cd * && ls *")        # Allow cd followed by ls
+        Bash("make && make test")   # Allow specific build sequence
+
+    Wildcard patterns:
+        Bash("python *.py")         # Allow python with .py files
+        Bash("*")                   # Allow any command (dangerous)
+
+Returns:
+    Dict containing:
+        - stdout: Command output as string
+        - stderr: Error output as string
+        - returncode: Process exit code
+
+Warning:
+    Pattern matching uses regex conversion and may not catch all edge cases.
+    Complex shell syntax, escape sequences, or unusual command structures might
+    bypass validation. Please submit issues or pull requests if you encounter
+    commands that behave unexpectedly with the pattern matching system.
+"""
+
+import asyncio
+import re
+from pathlib import Path
+from typing import Any
+
+from pydantic import PrivateAttr, model_validator
+
+from ..core.tool import Tool
+from ..state import get_run_context
+
+
+class Bash(Tool):
+    allowed_patterns: str | list[str]
+
+    _compiled_patterns: list[re.Pattern] = PrivateAttr(default_factory=list)
+
+    @model_validator(mode="after")
+    def _compile_patterns(self) -> "Bash":
+        if isinstance(self.allowed_patterns, str):
+            self.allowed_patterns = [self.allowed_patterns]
+
+        if not self.allowed_patterns:
+            raise ValueError("At least one allowed pattern must be provided")
+
+        compiled_patterns = []
+        for pattern in self.allowed_patterns:
+            if not isinstance(pattern, str):
+                raise TypeError(f"Pattern must be a string, got {type(pattern)}")
+            regex_pattern = pattern.strip()
+            if not regex_pattern:
+                raise ValueError("Pattern cannot be empty or whitespace only")
+
+            # Special case: if pattern is just "*", accept everything
+            if regex_pattern == "*":
+                compiled_patterns.append(re.compile(r"^.*$"))
+                continue
+
+            parts = regex_pattern.split()
+
+            # Build regex by processing each part
+            regex_parts = []
+            for i, part in enumerate(parts):
+                if "*" in part:
+                    # Wildcard: replace with argument pattern
+                    arg_pattern = r"""(?:(['"]).*?\1|[\w\/\\\-\.\,\*~:]+)(?:\s+(?:(['"]).*?\2|[\w\/\\\-\.\,\*~:]+))*"""
+                    # If this is not the first part, require space before it, but make the whole thing optional
+                    if i > 0:
+                        regex_parts.append(r"(?:\s+" + arg_pattern + r")?")
+                    else:
+                        # First part with wildcard - just make it optional
+                        regex_parts.append(r"(?:" + arg_pattern + r")?")
+                else:
+                    # Literal part: escape and add word boundary if it's alphanumeric
+                    escaped = re.escape(part)
+                    # Add word boundary after if the part ends with alphanumeric
+                    if part[-1].isalnum():
+                        escaped = escaped + r"\b"
+
+                    if i > 0:
+                        regex_parts.append(r"\s+" + escaped)
+                    else:
+                        regex_parts.append(escaped)
+
+            regex_pattern = "".join(regex_parts)
+            regex_pattern = f"^{regex_pattern}$"
+            compiled_patterns.append(re.compile(regex_pattern))
+
+        self._compiled_patterns = compiled_patterns
+        return self
+
+    def __init__(self, allowed_patterns: str | list[str], **kwargs: Any):
+        async def _execute_command(command: str) -> dict[str, Any]:
+            command = command.strip()
+
+            # Check if command matches any allowed pattern
+            command_allowed = False
+            for compiled_pattern in self._compiled_patterns:
+                if compiled_pattern.match(command):
+                    command_allowed = True
+                    break
+
+            if not command_allowed:
+                # Split by multiple operators: &&, ||, |, ;
+                chain_parts = re.split(r"\s*(?:\|\||\&\&|\||\;)\s*", command)
+                for part in chain_parts:
+                    part_allowed = False
+                    for compiled_pattern in self._compiled_patterns:
+                        if compiled_pattern.match(part):
+                            part_allowed = True
+                            break
+                    if not part_allowed:
+                        raise ValueError(
+                            f"Command '{command}' does not match any allowed patterns: {self.allowed_patterns}"
+                        )
+
+            # Resolve working directory
+            run_context = get_run_context()
+            if run_context:
+                cwd = run_context.resolve_cwd()
+            else:
+                cwd = Path.cwd()
+
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=str(cwd),
+            )
+
+            stdout, stderr = await process.communicate()
+            stdout = stdout.decode("utf-8") if stdout else ""
+            stderr = stderr.decode("utf-8") if stderr else ""
+
+            return {
+                "stdout": stdout,
+                "stderr": stderr,
+                "returncode": process.returncode,
+            }
+
+        super().__init__(
+            name="bash",
+            description=f"Execute a bash command. Allowed patterns: {allowed_patterns}",
+            handler=_execute_command,
+            allowed_patterns=allowed_patterns,
+            background_mode="auto",
+            **kwargs,
+        )
+
+    def get_config(self) -> dict[str, Any]:
+        """See base class."""
+        return {
+            **super().get_config(),
+            **self._annotate_config({"allowed_patterns": self.allowed_patterns}),
+        }

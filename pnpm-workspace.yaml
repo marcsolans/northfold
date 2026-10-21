@@ -1,0 +1,10 @@
+packages:
+  - "apps/web"
+  - "packages/ui"
+  - "packages/messer-sdk-ts"
+  - "tests/e2e"
+onlyBuiltDependencies:
+  - "@tailwindcss/oxide"
+  - "sharp"
+  - "esbuild"
+  - "unrs-resolver"

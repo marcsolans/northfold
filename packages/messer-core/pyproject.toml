@@ -1,0 +1,188 @@
+# Modified by Messer: packaging renamed and version pinned (see NOTICE).
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-core"
+version = "2.7.39"
+description = "Simple, performant, battle-tested framework for building reliable AI applications"
+readme = "README.md"
+authors = [{ name = "Messer" }]
+license.file = "LICENSE"
+urls."Source" = "https://github.com/marcsolans/northfold"
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Information Technology",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Internet",
+]
+requires-python = ">=3.11"
+
+dependencies = [
+  "anthropic>=0.84.0,<1",
+  "httpx>=0.28.0",
+  "mcp>=1.26.0,<2",
+  "openai>=2.24.0,<3",
+  "pydantic[email]>=2.10.6",
+  "python-dotenv>=1.0.1",
+  "pyyaml>=6.0.2",
+  "structlog>=25.1.0",
+  "typing-extensions>=4.14.1",
+  "uuid7>=0.1.0",
+]
+
+[project.optional-dependencies]
+codegen = [
+  "libcst>=1.8.6",
+  "ruff>=0.9.3",
+]
+documents = [
+  "openpyxl>=3.1.5",
+  "pymupdf>=1.27.1",
+  "python-docx>=1.1.2",
+]
+evals = [
+  "rich>=14.2.0",
+]
+server = [
+  "fastapi>=0.115.8",
+  "ormsgpack>=1.5.0",
+  "uvicorn>=0.34.0",
+  "websockets>=15.0.1",
+]
+voice = [
+  "aiortc>=1.9.0",
+  "huggingface-hub>=0.28.0",
+  "onnxruntime>=1.20.0",
+  "transformers>=4.40.0",
+]
+"voice-livekit" = [
+  "livekit>=1.1.14",
+]
+all = [
+  "messer-core[codegen]",
+  "messer-core[documents]",
+  "messer-core[evals]",
+  "messer-core[server]",
+  "messer-core[voice]",
+  "messer-core[voice-livekit]",
+]
+
+[dependency-groups]
+dev = [
+  "lancedb>=0.25.3",
+  "pyngrok>=7.2.3",
+  "pytest>=8.3.4",
+  "pytest-asyncio>=0.25.2",
+  "pytest-cov>=7.0.0",
+  "yappi>=1.7.6",
+]
+
+[project.scripts]
+messer-codegen = "messer.codegen.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["python/messer"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/**/.*",
+  "/**/__pycache__",
+  "*.lock",
+  "*.md",
+  "/*.py",
+  "/.git",
+  "/.github",
+  "/cli",
+  "/tui",
+  "/dist",
+  "/docs",
+  "/examples",
+  "/python/tests",
+  "/sandbox",
+  "/scripts",
+  "/benchmarks",
+  "/rust",
+]
+
+
+[tool.hatch.envs.default]
+path = "python"
+
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = [
+  "UP", # pyupgrade
+  # "D", # pydocstyle
+  "I",      # isort
+  "B",      # bugbear rules
+  "F401",   # unused imports
+  "E722",   # bare except statements
+  "ARG",    # unused arguments
+  "T201",   # print statements
+  "T203",   # print statements
+  "TC004",  # Prevents misuse of TYPE_CHECKING
+  "TID251", # Enforces import conventions
+]
+ignore = [
+  "B006", # mutable defaults
+  "B008", # function calls in argument defaults
+]
+unfixable = [
+  "T201", # print statements
+  "T203", # print statements
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "integration: marks tests that need real services (LLM keys, Messer platform/KB, network); default run uses '-m not integration'",
+]
+addopts = [
+  "-v",
+  "--tb=short",
+  "--strict-markers",
+  "--color=yes",
+  "-W ignore::DeprecationWarning",
+  "--cov=messer",
+  "--cov-report=term-missing",
+  "-m",
+  "not integration",
+]
+testpaths = ["python/tests"]
+
+[tool.coverage.run]
+omit = [
+  "*/messer/tools/*",
+  # TODO: add evals coverage once the evals test suite is built out
+  "*/messer/evals/*",
+  # __main__.py files are CLI entry points, not unit-testable
+  "*/__main__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  # __main__ blocks are CLI entry points, not unit-testable
+  "if __name__ == .__main__.:",
+]
+

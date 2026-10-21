@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-api"
+version = "1.0.0"
+description = "Messer control plane: platform REST API and orchestration."
+requires-python = ">=3.12"
+dependencies = [
+  "messer-common",
+  "messer-core[server,evals,documents,codegen]",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.34",
+  "python-multipart>=0.0.20",
+  "email-validator>=2.2",
+  "stripe>=11.4",
+  "pyotp>=2.9",
+  "croniter>=6.0",
+  "python-slugify>=8.0",
+  "sse-starlette>=2.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/messer_api"]

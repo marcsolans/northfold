@@ -1,0 +1,157 @@
+
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer vs LangGraph — Wide Parallel Fan-out[0m
+  Topology: root → [N async branches] → sink
+  Widths: [4, 8, 16, 32, 64]  |  200 iters  |  200 burst
+  [2mLangSmith: mock tracer (no network)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mVerifying correctness (N=4, trivial)...[0m
+  N=4: Messer=84  LangGraph=84  ✓ match
+
+  [2mVerifying async work (N=4, async_work=True)...[0m
+  N=4: Messer=84  LangGraph=84  ✓ match
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario A — Trivial branches (async, no sleep)  ← pure scheduling overhead[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency p50  (×200 sequential runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4        453.3 µs         1.19 ms         2.27 ms
+       8        607.7 µs         1.44 ms         2.98 ms
+      16         1.00 ms         2.02 ms         4.60 ms
+      32         1.67 ms         3.53 ms         7.77 ms
+      64         3.11 ms         6.43 ms         13.3 ms
+
+  [1mLatency p95  (×200 sequential runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4        707.0 µs         1.61 ms         3.44 ms
+       8        924.7 µs         2.06 ms         3.97 ms
+      16         1.36 ms         2.59 ms         5.84 ms
+      32         2.11 ms         4.28 ms         15.8 ms
+      64         3.60 ms         7.31 ms         16.3 ms
+
+  [1mLatency p99  (×200 sequential runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4        881.5 µs         1.70 ms         4.28 ms
+       8         2.63 ms         2.19 ms         5.35 ms
+      16         3.10 ms         2.63 ms         38.4 ms
+      32         3.58 ms         4.63 ms         60.2 ms
+      64         4.19 ms         91.9 ms        101.5 ms
+
+  [1mOverhead per extra branch  (slope of p50 latency vs N)[0m
+  [2mEstimated by linear regression over the N values above[0m
+  Messer          +44.4 µs / branch
+  LG (bare)       +88.5 µs / branch
+  LG+Smith        +184.8 µs / branch
+
+  [1mBurst p50  (200 concurrent runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         51.3 ms        133.0 ms        288.0 ms
+       8         77.7 ms        194.2 ms        426.7 ms
+      16        138.4 ms        357.9 ms        682.1 ms
+      32        261.5 ms        631.4 ms       1187.3 ms
+      64        499.4 ms       1297.7 ms       2515.2 ms
+
+  [1mBurst p95  (200 concurrent runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         70.2 ms        154.5 ms        322.9 ms
+       8        103.6 ms        214.6 ms        456.9 ms
+      16        141.9 ms        379.5 ms        713.9 ms
+      32        263.6 ms        653.1 ms       1218.9 ms
+      64        504.6 ms       1322.0 ms       2551.1 ms
+
+  [1mBurst p99  (200 concurrent runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         70.7 ms        171.8 ms        341.5 ms
+       8        103.9 ms        238.9 ms        483.0 ms
+      16        182.5 ms        417.6 ms        753.2 ms
+      32        329.6 ms        717.8 ms       1286.0 ms
+      64        619.9 ms       1443.1 ms       2670.6 ms
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario B — 1 ms async sleep per branch  ← parallelism verification[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency p50  (×200 sequential runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         1.68 ms         2.59 ms         3.82 ms
+       8         1.84 ms         3.07 ms         4.81 ms
+      16         2.03 ms         3.57 ms         6.41 ms
+      32         2.63 ms         5.05 ms         9.10 ms
+      64         4.19 ms         8.44 ms         15.6 ms
+
+  [1mLatency p95  (×200 sequential runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         1.94 ms         3.04 ms         4.71 ms
+       8         2.23 ms         8.43 ms         5.75 ms
+      16         2.36 ms         3.98 ms         32.8 ms
+      32         3.13 ms         5.74 ms         11.3 ms
+      64         4.66 ms         9.33 ms         18.1 ms
+
+  [1mLatency p99  (×200 sequential runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         2.37 ms         3.21 ms         6.02 ms
+       8         3.13 ms         18.3 ms         6.56 ms
+      16         4.14 ms         4.28 ms        101.8 ms
+      32         6.33 ms         5.99 ms         61.0 ms
+      64         5.48 ms         97.4 ms        126.6 ms
+
+  [1mOverhead per extra branch  (slope of p50 latency vs N)[0m
+  [2mEstimated by linear regression over the N values above[0m
+  Messer          +41.7 µs / branch
+  LG (bare)       +96.6 µs / branch
+  LG+Smith        +192.6 µs / branch
+
+  [1mBurst p50  (200 concurrent runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         54.8 ms        142.4 ms        273.6 ms
+       8         92.1 ms        203.5 ms        589.6 ms
+      16        207.8 ms        461.7 ms        779.0 ms
+      32        307.6 ms        717.9 ms       1750.0 ms
+      64        613.6 ms       1435.0 ms       2835.4 ms
+
+  [1mBurst p95  (200 concurrent runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         72.3 ms        162.6 ms        299.2 ms
+       8        121.6 ms        223.0 ms        619.6 ms
+      16        215.7 ms        557.4 ms        807.1 ms
+      32        310.4 ms        740.9 ms       1784.4 ms
+      64        621.1 ms       1459.8 ms       2871.3 ms
+
+  [1mBurst p99  (200 concurrent runs)[0m
+       N          Messer       LG (bare)        LG+Smith
+  ──────  ──────────────  ──────────────  ──────────────
+       4         72.6 ms        180.1 ms        318.1 ms
+       8        122.1 ms        248.1 ms        647.6 ms
+      16        260.7 ms        617.0 ms        849.4 ms
+      32        379.1 ms        811.8 ms       1855.0 ms
+      64        740.8 ms       1584.2 ms       3208.2 ms
+
+  [2mTheoretical serial: N × 1000 µs  |  Theoretical parallel: ~1000 µs flat[0m
+  [2mBoth frameworks use asyncio tasks — expect near-flat latency across widths[0m
+
+[2m────────────────────────────────────────────────────────────────────────────────────────
+  Scenario A: measures pure per-branch scheduling cost (task creation, span
+  lifecycle, param resolution). Both frameworks pay this on every parallel step.
+
+  Scenario B: verifies true concurrency. asyncio.sleep() yields to the event
+  loop so all N branches run concurrently. Latency should be ~1 ms flat.
+  If latency scales with N, the framework is serialising parallel branches.
+
+  Messer uses one asyncio.Task per step. Overhead scales linearly with N.
+  LangGraph uses a Pregel superstep model. Different per-branch cost structure.
+────────────────────────────────────────────────────────────────────────────────────────[0m
+

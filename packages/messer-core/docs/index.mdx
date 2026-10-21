@@ -1,0 +1,81 @@
+---
+title: "Introduction"
+description: "Simple, performant, battle-tested framework for building reliable AI applications"
+---
+
+## What is Messer?
+
+Messer is an open-source Python framework for building reliable AI applications. It gives you two primitives, **Agents** for autonomous reasoning and **Workflows** for explicit pipelines, plus everything you need to take them to production: a stable multi-provider model layer, memory, tracing, and evals.
+
+There's no hidden magic. Under the hood it's async functions, Pydantic validation, and event-driven streaming. If you know `async`/`await`, you already know how Messer works.
+
+## Agents vs Workflows
+
+**[Agents](/agents)** are autonomous execution units that orchestrate LLM calls and tool use. The model decides what to do.
+
+Best for:
+- Open-ended problem solving and multi-step reasoning
+- Dynamic tool selection based on context
+- Multi-turn conversations with memory
+
+**[Workflows](/workflows)** are explicit, step-by-step pipelines. You define the steps, and the framework infers dependencies and runs independent steps concurrently. See the [workflows guide](/workflows) for control flow, branching, and composition.
+
+Best for:
+- Multi-stage data processing
+- Predictable, deterministic execution paths
+- Performance-critical work that benefits from parallelism
+
+Both share the same interface and emit the same event stream, so you can compose them freely. An Agent can be a Workflow step, and a Workflow can be an Agent's tool.
+
+## Why Messer
+
+- **Measured framework overhead.** The [benchmark suite](https://github.com/marcsolans/northfold/tree/main/benchmarks) compares agent-loop overhead with fake LLMs to isolate framework cost. Real application latency also depends on models, tools, speech providers, and network calls.
+
+- **Simple and hackable.** Python source, async functions, and explicit interfaces make the framework inspectable and extensible.
+
+- **One interface.** Agents, Workflows, and Tools share the same calling convention and event stream. Learn it once.
+
+- **Provider-agnostic.** Swap models by changing a string. Built-in `FallbackModel` chains providers for automatic failover.
+
+- **Production-shaped.** Refined in production before open-sourcing. Fast failure, clear errors, stable interfaces.
+
+- **Stable in a chaotic ecosystem.** Providers ship breaking changes monthly. Messer absorbs the churn so your code doesn't have to.
+
+## Key Features
+
+<Columns cols={3}>
+  <Card title="Memory" icon="database" href="/agents/memory">
+    Persistent context with tool-result offloading and compaction for long conversations.
+  </Card>
+  <Card title="Voice Agents" icon="microphone" href="/voice">
+    Streaming speech, interruption handling, browser calls, and telephony with your agent's tools.
+  </Card>
+  <Card title="Model Routing" icon="arrow-progress" href="/models/overview">
+    One interface across every provider, with fallback chains for failover.
+  </Card>
+  <Card title="Tools & MCP" icon="puzzle-piece" href="/agents/tools">
+    A built-in tool library, your own functions, and any MCP server.
+  </Card>
+  <Card title="Structured Output" icon="brackets-curly" href="/agents/structured-output">
+    Get typed Pydantic models back instead of raw text.
+  </Card>
+  <Card title="Human in the Loop" icon="user-check" href="/human-in-the-loop">
+    Pause for approval or input, then resume across process restarts.
+  </Card>
+  <Card title="Skills" icon="book" href="/agents/skills">
+    Reusable tool packages the agent loads on demand.
+  </Card>
+  <Card title="Tracing" icon="wave-pulse" href="/core-concepts/tracing">
+    Every run produces a full span trace, exportable over OTLP.
+  </Card>
+  <Card title="Evals" icon="shield-check" href="/evals">
+    Declarative YAML evaluation suite with built-in validators.
+  </Card>
+  <Card title="Deployment" icon="rocket-launch" href="/deployment">
+    Run the full stack locally with `messer start`, then ship it.
+  </Card>
+</Columns>
+
+<Tip>
+New here? Head to the [Quickstart](/quickstart) to build and run your first agent.
+</Tip>

@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "python/**"
+      - "docs/models/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "scripts/audit_models.py"
+      - "scripts/generate_models.py"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+    inputs:
+      os:
+        description: OS to run on (manual runs only)
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # On manual (workflow_dispatch) runs the `os` input narrows the matrix
+        # to a single OS — useful for iterating on Windows-only failures without
+        # burning the other matrix cells. On PR events `github.event.inputs.os`
+        # is empty, so the full matrix runs.
+        os: ${{ (github.event.inputs.os == '' || github.event.inputs.os == 'all') && fromJSON('["ubuntu-latest", "macos-latest", "windows-latest"]') || fromJSON(format('["{0}"]', github.event.inputs.os)) }}
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Install dev deps + the `all` optional-dependency group so the entire
+      # import surface (server, codegen, documents, evals) is exercised on
+      # every platform. This is what catches Unix-only imports like `fcntl`
+      # leaking into modules that get loaded at startup on Windows.
+      - name: Install dependencies
+        run: uv sync --dev --extra all
+
+      - name: Smoke import (catches platform-specific import errors)
+        run: uv run python -c "import messer; from messer.state.tracing.providers import JsonlTracingProvider, InMemoryTracingProvider, PlatformTracingProvider, SqliteTracingProvider; print('ok')"
+
+      - name: Audit models.yaml (offline)
+        run: uv run python scripts/audit_models.py --offline
+
+      - name: Run tests
+        run: uv run pytest

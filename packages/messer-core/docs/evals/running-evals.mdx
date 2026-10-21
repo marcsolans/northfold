@@ -1,0 +1,478 @@
+---
+title: "Running Evals"
+description: "CLI usage, file discovery, and CI/CD integration"
+---
+
+Messer provides a command-line interface for discovering and running evals. This guide covers all CLI options and integration patterns.
+
+## Basic Usage
+
+Run evals from the command line:
+
+```bash
+# Run all evals in a directory
+python -m messer.evals.cli path/to/evals/
+
+# Run a specific eval file
+python -m messer.evals.cli path/to/eval_search.yaml
+
+# Run a single eval by name (pytest-style)
+python -m messer.evals.cli path/to/eval_search.yaml::my_eval_name
+
+# Run with a specific runnable
+python -m messer.evals.cli --runnable agent.py::my_agent path/to/evals/
+```
+
+## CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `path` | Path to eval file or directory (positional) |
+| `--runnable` | Fully qualified name of the runnable (`file.py::name`) |
+| `--log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `-s`, `--no-capture` | Disable stdout/stderr capture (show output live) |
+| `-t`, `--tags` | Filter evals by tags (comma-separated) |
+| `-f`, `--format` | Output format: `pretty` (default) or `json` (streams JSONL events) |
+| `-j`, `--jobs` | Run up to N evals concurrently (default 1) |
+| `-o`, `--output` | Write the full results document as JSON to a file (`-` for stdout) |
+| `-V`, `--version` | Show version information |
+
+### Runnable Specification
+
+The runnable can be specified in two ways:
+
+**1. Via CLI flag:**
+```bash
+python -m messer.evals.cli --runnable agents/search.py::search_agent evals/
+```
+
+**2. Per-eval in YAML:**
+```yaml
+- name: test_search
+  runnable: agents/search.py::search_agent
+  params:
+    prompt: "Find products"
+  output:
+    not_null!: true
+```
+
+Per-eval runnable overrides the CLI flag.
+
+### Tag Filtering
+
+Filter evals by tags using `-t` or `--tags`:
+
+```bash
+# Run only evals with 'smoke' tag
+python -m messer.evals.cli -t smoke evals/
+
+# Run evals matching ANY of the specified tags
+python -m messer.evals.cli -t smoke,fast evals/
+
+# Combine with other options
+python -m messer.evals.cli --tags regression -s evals/
+```
+
+Evals matching **any** of the specified tags will run.
+
+### Output Capture
+
+By default, stdout/stderr from your agent is captured and only shown on failure. Use `-s` to see output live:
+
+```bash
+# Captured (default) - cleaner output
+python -m messer.evals.cli evals/
+
+# Live output - useful for debugging
+python -m messer.evals.cli -s evals/
+```
+
+### Streaming JSON Output
+
+Use `--format json` to stream structured events instead of the rich terminal report. One JSON object is written per line (JSONL) to stdout, and each `result` event is emitted **as the eval completes** — human-readable output goes to stderr, so stdout stays parseable:
+
+```bash
+python -m messer.evals.cli evals/ --format json
+```
+
+```json
+{"event": "start", "total": 2, "evals": [{"name": "greeting_test", "path": "evals/eval_basic.yaml"}, ...]}
+{"event": "result", "name": "greeting_test", "passed": true, "duration": 1.2, "output": ..., "validators": [...]}
+{"event": "result", "name": "search_test", "passed": false, "duration": 3.4, ...}
+{"event": "summary", "total": 2, "passed": 1, "failed": 1, "total_duration": 4.6}
+```
+
+#### Event Reference
+
+Every line is a JSON object with an `event` field: `start` (once, before any eval runs), `result` (once per eval), `summary` (once, at the end).
+
+**`start`**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total` | int | Number of evals that will run |
+| `evals` | list | `{name, path}` for each eval, in file order |
+
+**`result`** — one per eval. With `--jobs 1` results arrive in file order; with `--jobs > 1` they arrive in **completion order**, so use `name` to correlate.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Eval name |
+| `path` | string | Eval file the eval was loaded from |
+| `description` | string \| null | Eval description |
+| `tags` | list | Eval tags |
+| `passed` | bool | Overall verdict (no error and all validators passed) |
+| `duration` | float | Wall-clock seconds for this eval |
+| `error` | object \| null | `{type, message, traceback}` when the run itself failed |
+| `params` | object | Input params the runnable was called with |
+| `output` | any | Final runnable output (messages serialize to `{role, content}`) |
+| `usage` | object | Token counts keyed by `provider/model:metric` |
+| `validators` | list | Per-validator verdicts (see below) |
+| `captured_stdout` | string | Stdout captured during the eval (empty with `-s`) |
+| `captured_stderr` | string | Stderr captured during the eval (empty with `-s`) |
+
+Each entry in `validators`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `target` | string | Span/property path the validator ran against (e.g. `agent.output`) |
+| `name` | string | Validator name (e.g. `contains!`, `prompt!`) |
+| `value` | any | Expected value from the eval YAML |
+| `passed` | bool | Whether the check passed |
+| `evaluated` | bool | `false` when the validator was invalid and never executed |
+| `error` | string \| null | Failure reason |
+| `actual_value` | any | Resolved value (populated for LLM validators) |
+
+**`summary`**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total` / `passed` / `failed` | int | Eval counts |
+| `total_duration` | float | Sum of eval durations in seconds |
+
+The document written by `-o/--output` has the same shape: the `summary` fields at the top level plus a `results` list, where each entry matches the `result` event (minus the `event` key).
+
+### Parallel Execution
+
+Use `-j`/`--jobs` to run evals concurrently. Results are reported in **completion order**, which pairs naturally with `--format json` for streaming consumers:
+
+```bash
+# Run up to 4 evals at a time, streaming results as they finish
+python -m messer.evals.cli evals/ --format json -j 4
+```
+
+Per-eval stdout/stderr capture works in parallel mode — output is attributed to the eval that produced it.
+
+### Saving Results
+
+Use `-o`/`--output` to write the full results document as JSON after the run:
+
+```bash
+# Write to a file (works with both formats)
+python -m messer.evals.cli evals/ -o results.json
+
+# Print the document to stdout (pretty format only; report goes to stderr)
+python -m messer.evals.cli evals/ -o -
+```
+
+## File Discovery
+
+### Naming Patterns
+
+Messer discovers eval files matching these patterns:
+
+- `eval*.yaml` - e.g., `eval_search.yaml`, `evals.yaml`
+- `*eval.yaml` - e.g., `search_eval.yaml`, `my_eval.yaml`
+
+### Directory Structure
+
+```
+project/
+├── agents/
+│   ├── search.py
+│   └── support.py
+└── evals/
+    ├── eval_search.yaml
+    ├── eval_support.yaml
+    └── regression/
+        ├── eval_smoke.yaml
+        └── eval_full.yaml
+```
+
+Run all evals:
+```bash
+python -m messer.evals.cli evals/
+```
+
+Run specific subset:
+```bash
+python -m messer.evals.cli evals/regression/
+```
+
+### Configuration File
+
+Create an `evalconf.yaml` in your project root for shared configuration:
+
+```yaml
+# evalconf.yaml
+runnable: agents/main.py::agent
+log_level: INFO
+```
+
+Messer walks up the directory tree looking for `evalconf.yaml`.
+
+## Output Format
+
+### Successful Run
+
+```
+========================= messer evals =========================
+collected 5 evals
+
+eval_search.yaml
+  basic_search .......................................... PASSED (0.45s)
+    tags: search, smoke
+    ├── output
+    │   ├── not_null! ✓
+    │   └── contains! ✓
+    └── elapsed
+        └── lt! ✓
+
+  advanced_search ....................................... PASSED (0.82s)
+    tags: search, regression
+    ├── output
+    │   ├── prompt! ✓
+    │   └── min_length! ✓
+    └── seq!
+        ├── llm ✓
+        ├── search_products ✓
+        └── llm ✓
+
+========================= 5 passed in 2.34s =========================
+```
+
+### Failed Run
+
+```
+========================= messer evals =========================
+collected 3 evals
+
+eval_validation.yaml
+  input_validation ...................................... FAILED (0.23s)
+    tags: validation
+    ├── output
+    │   ├── not_null! ✓
+    │   └── contains! ✗
+
+========================= FAILURES =========================
+
+eval_validation.yaml::input_validation
+-----------------------------------------
+Captured stdout:
+  Processing input...
+  
+Captured stderr:
+  Warning: deprecated function used
+
+Failed validators:
+  - output -> contains!
+    Expected: "validated"
+    Actual: "The input was processed successfully"
+    Error: Value does not contain expected substring
+
+========================= 1 failed, 2 passed in 1.56s =========================
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | All evals passed |
+| 1 | One or more evals failed |
+
+Configuration and setup errors also exit with code `1`; the CLI does not use a distinct setup-error code.
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/evals.yaml
+name: Run Evals
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -e ".[evals]"
+      
+      - name: Run evals
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python -m messer.evals.cli --runnable agent.py::agent evals/ -j 4 -o results.json
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: results.json
+```
+
+### GitLab CI
+
+```yaml
+# .gitlab-ci.yml
+evals:
+  stage: test
+  image: python:3.11
+  script:
+    - pip install -e ".[evals]"
+    - python -m messer.evals.cli --runnable agent.py::agent evals/
+  variables:
+    OPENAI_API_KEY: $OPENAI_API_KEY
+```
+
+### Pre-commit Hook
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+echo "Running evals..."
+python -m messer.evals.cli evals/smoke/
+
+if [ $? -ne 0 ]; then
+    echo "Evals failed. Commit aborted."
+    exit 1
+fi
+```
+
+## Debugging
+
+### Verbose Output
+
+```bash
+# Show debug logging
+python -m messer.evals.cli --log-level DEBUG evals/
+
+# Show live output
+python -m messer.evals.cli -s evals/
+```
+
+### Run Single Eval
+
+Test a specific eval during development:
+
+```bash
+# Run one file
+python -m messer.evals.cli evals/eval_search.yaml
+
+# Run a specific eval by name (pytest-style syntax)
+python -m messer.evals.cli evals/eval_search.yaml::basic_search
+```
+
+### Environment Variables
+
+Set environment variables for testing:
+
+```bash
+# Via shell
+export API_KEY="test-key"
+python -m messer.evals.cli evals/
+
+# Or in eval file
+- name: test_with_key
+  runnable: agent.py::agent
+  env:
+    API_KEY: "test-key"
+  params:
+    prompt: "Fetch data"
+  output:
+    not_null!: true
+```
+
+## Best Practices
+
+<Accordion title="Organize evals by speed">
+Separate fast smoke tests from slow regression tests:
+
+```
+evals/
+├── smoke/           # Fast tests, run on every commit
+│   └── eval_basic.yaml
+└── regression/      # Comprehensive tests, run nightly
+    └── eval_full.yaml
+```
+
+```bash
+# Quick check
+python -m messer.evals.cli evals/smoke/
+
+# Full suite
+python -m messer.evals.cli evals/
+```
+</Accordion>
+
+<Accordion title="Use meaningful exit codes">
+Check exit codes in scripts:
+
+```bash
+python -m messer.evals.cli evals/
+status=$?
+
+if [ $status -eq 0 ]; then
+    echo "All evals passed!"
+elif [ $status -eq 1 ]; then
+    echo "Some evals failed"
+    exit 1
+else
+    echo "Configuration error"
+    exit 2
+fi
+```
+</Accordion>
+
+<Accordion title="Set timeouts">
+Set a runnable timeout in seconds to bound the agent turn:
+
+```python agent.py
+from messer import Agent
+
+agent = Agent(name="assistant", model="openai/gpt-4.1-mini", timeout=60)
+```
+
+The eval YAML's `timeout` field is currently accepted but not enforced by the runner. Do not rely on it to stop a hung evaluation. A runnable timeout bounds the run; external judge calls and the overall CLI job need their own process or CI deadline.
+</Accordion>
+
+<Accordion title="Use tags for filtering">
+Organize evals with tags:
+
+```yaml
+- name: smoke_test
+  runnable: agent.py::agent
+  tags:
+    - smoke
+    - quick
+  params:
+    prompt: "Hi"
+  output:
+    not_null!: true
+```
+</Accordion>

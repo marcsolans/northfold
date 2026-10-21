@@ -1,0 +1,59 @@
+
+[1m================================================================================================[0m
+[1m  Messer delegation vs Google ADK transfer benchmark[0m
+  100 iters | 40 burst | 100 mem | 200 throughput ops
+[1m================================================================================================[0m
+  Messer: OK  |  ADK: OK
+    Messer delegation latency... p50=343.0 us
+    Messer delegation memory... 62 KB peak
+    Messer delegation burst (40 concurrent)... p50=331.9 us
+    Messer delegation throughput conc=1... 2028/s
+    Messer delegation throughput conc=10... 2113/s
+    Messer delegation throughput conc=50... 2147/s
+    ADK transfer latency... p50=2.52 ms
+    ADK transfer memory... 5582 KB peak
+    ADK transfer burst (40 concurrent)... p50=84.51 ms
+    ADK transfer throughput conc=1... 331/s
+    ADK transfer throughput conc=10... 437/s
+    ADK transfer throughput conc=50... 220/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Delegation / transfer[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency  (x100 sequential runs)[0m
+                 Messer delegation        ADK transfer
+  ------------  ------------------  ------------------
+          mean            367.5 us             2.94 ms
+           p50            343.0 us             2.52 ms
+           p95            562.5 us             3.47 ms
+           p99            692.1 us            24.05 ms
+
+  [1mMemory  (x100 runs)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer delegation               62.0 KB         635  B
+  ADK transfer                  5581.6 KB       57156  B
+
+  [1mBurst  (40 concurrent)[0m
+                 Messer delegation        ADK transfer
+  ------------  ------------------  ------------------
+           p50            331.9 us            84.51 ms
+           p75            391.3 us           108.71 ms
+           p95            711.8 us           109.38 ms
+           p99            21.54 ms           109.68 ms
+           max            21.54 ms           109.68 ms
+
+  [1mThroughput  (200 loops)[0m
+                 Messer delegation        ADK transfer
+  ------------  ------------------  ------------------
+             1              2028/s               331/s
+            10              2113/s               437/s
+            50              2147/s               220/s
+
+[2m------------------------------------------------------------------------------------------------
+  Google ADK has a true sub-agent transfer primitive via transfer_to_agent.
+  Messer column is the closest agent-composition equivalent: supervisor -> worker tool -> final.
+  This is not a workflow/DAG benchmark; ADK does not expose a comparable workflow engine.
+------------------------------------------------------------------------------------------------[0m
+

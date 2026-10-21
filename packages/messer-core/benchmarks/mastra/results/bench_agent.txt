@@ -1,0 +1,128 @@
+
+════════════════════════════════════════════════════════════════════════════
+  Messer vs Mastra — agent loop benchmark (cross-language)
+  100 iters · burst {1: 20, 2: 10, 3: 15} · 100 mem · 200 throughput
+  Messer: CPython 3.11/asyncio, built-in tracing (always on).
+  Mastra: Node/V8 subprocess, AI SDK MockLanguageModelV4, bare + observability (export mocked).
+  Same scenarios, same fake-LLM-by-message-inspection, same procedure per side.
+  Cross-runtime comparison — see README.md for what is and isn't comparable.
+════════════════════════════════════════════════════════════════════════════
+
+  running Mastra side: --expose-gc bench_agent.mjs…
+  Mastra side: node v22.18.0 · @mastra/core 1.57.0 · @mastra/observability 1.16.5 · ai 7.0.56
+
+────────────────────────────────────────────────────────────────────────────
+  Scenario 1: Single tool call  (LLM → add → LLM → answer)
+────────────────────────────────────────────────────────────────────────────
+
+  Latency  (×100 sequential runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+          mean      267.8 µs      188.7 µs       2.47 ms       4.28 ms
+           p50      265.3 µs      156.1 µs       2.33 ms       4.20 ms
+           p95      387.5 µs      302.0 µs       3.44 ms       6.08 ms
+           p99      506.1 µs      989.0 µs       4.55 ms       8.80 ms
+
+  Memory per run  (×100 runs) — different instruments, do not ratio across runtimes
+  framework                        per run  method                  
+  ────────────────────────  ──────────────  ────────────────────────
+  Messer                             492 B  tracemalloc peak/N      
+  AI SDK                         165,692 B  V8 heap growth/N (≈)    
+  Mastra                         294,137 B  V8 heap growth/N (≈)    
+  Mastra+obs                     351,993 B  V8 heap growth/N (≈)    
+
+  Burst p50/p95  (20 concurrent runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+           p50      244.1 µs       2.75 ms      24.57 ms      57.02 ms
+           p75      301.4 µs       2.82 ms      31.00 ms      66.62 ms
+           p95      405.5 µs       3.06 ms      34.16 ms      76.33 ms
+           p99      405.5 µs       3.06 ms      34.16 ms      76.33 ms
+           max      405.5 µs       3.06 ms      34.16 ms      76.33 ms
+
+  Throughput  (200 runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+             1        3896/s        6414/s         509/s         259/s
+            10        3982/s        7996/s         555/s         278/s
+            50        3933/s        8677/s         560/s         278/s
+
+────────────────────────────────────────────────────────────────────────────
+  Scenario 2: Multi-step  (LLM → add → LLM → mul → LLM → sub → LLM → answer)
+────────────────────────────────────────────────────────────────────────────
+
+  Latency  (×100 sequential runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+          mean      289.6 µs      412.6 µs       4.08 ms       7.19 ms
+           p50      296.3 µs      340.6 µs       3.99 ms       6.92 ms
+           p95      412.8 µs      638.5 µs       5.52 ms       9.52 ms
+           p99      669.3 µs       1.44 ms       7.30 ms      12.20 ms
+
+  Memory per run  (×100 runs) — different instruments, do not ratio across runtimes
+  framework                        per run  method                  
+  ────────────────────────  ──────────────  ────────────────────────
+  Messer                             897 B  tracemalloc peak/N      
+  AI SDK                         173,953 B  V8 heap growth/N (≈)    
+  Mastra                         421,182 B  V8 heap growth/N (≈)    
+  Mastra+obs                     477,366 B  V8 heap growth/N (≈)    
+
+  Burst p50/p95  (10 concurrent runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+           p50      502.4 µs       2.79 ms      36.46 ms      61.93 ms
+           p75      506.9 µs       2.82 ms      38.54 ms      65.70 ms
+           p95      723.2 µs       3.14 ms      41.01 ms      71.36 ms
+           p99      723.2 µs       3.14 ms      41.01 ms      71.36 ms
+           max      723.2 µs       3.14 ms      41.01 ms      71.36 ms
+
+  Throughput  (200 runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+             1        1902/s        2891/s         268/s         156/s
+            10        1916/s        3215/s         288/s         159/s
+            50        1900/s        3359/s         308/s         168/s
+
+────────────────────────────────────────────────────────────────────────────
+  Scenario 3: Parallel tools  (LLM → [add, mul, neg] → LLM → answer)
+────────────────────────────────────────────────────────────────────────────
+
+  Latency  (×100 sequential runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+          mean      284.2 µs      253.2 µs       2.63 ms       4.51 ms
+           p50      285.9 µs      219.8 µs       2.55 ms       4.33 ms
+           p95      406.7 µs      334.9 µs       3.74 ms       6.23 ms
+           p99      648.7 µs       1.33 ms       4.25 ms       7.90 ms
+
+  Memory per run  (×100 runs) — different instruments, do not ratio across runtimes
+  framework                        per run  method                  
+  ────────────────────────  ──────────────  ────────────────────────
+  Messer                             777 B  tracemalloc peak/N      
+  AI SDK                         165,226 B  V8 heap growth/N (≈)    
+  Mastra                         347,644 B  V8 heap growth/N (≈)    
+  Mastra+obs                     387,434 B  V8 heap growth/N (≈)    
+
+  Burst p50/p95  (15 concurrent runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+           p50       3.87 ms       2.86 ms      29.20 ms      50.67 ms
+           p75       4.13 ms       2.90 ms      34.05 ms      59.25 ms
+           p95       4.42 ms       3.16 ms      37.47 ms      65.96 ms
+           p99       4.42 ms       3.16 ms      37.47 ms      65.96 ms
+           max       4.42 ms       3.16 ms      37.47 ms      65.96 ms
+
+  Throughput  (200 runs)
+                      Messer        AI SDK        Mastra    Mastra+obs
+  ────────────  ────────────  ────────────  ────────────  ────────────
+             1        1582/s        4594/s         408/s         234/s
+            10        2094/s        5497/s         418/s         233/s
+            50        2480/s        5354/s         415/s         247/s
+
+────────────────────────────────────────────────────────────────────────────
+  All measurements reuse 1 pre-built agent (creation excluded).
+  LLMs faked via message inspection on both sides — no network, no API keys.
+  Each framework runs in its native runtime; numbers include runtime differences.
+  Memory uses per-runtime instruments (tracemalloc vs V8 heap) — not cross-comparable.
+────────────────────────────────────────────────────────────────────────────
+

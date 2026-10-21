@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-common"
+version = "1.0.0"
+description = "Shared platform kernel for Messer services: settings, database models, crypto, pricing, adapters."
+requires-python = ">=3.12"
+dependencies = [
+  "pydantic>=2.10",
+  "pydantic-settings>=2.7",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "psycopg[binary]>=3.2.3",
+  "pgvector>=0.3.6",
+  "alembic>=1.14",
+  "cryptography>=44",
+  "argon2-cffi>=23.1",
+  "pyjwt>=2.10",
+  "structlog>=25.1",
+  "redis>=5.2",
+  "arq>=0.26",
+  "httpx>=0.28",
+  "pyyaml>=6.0.2",
+  "jinja2>=3.1.5",
+  "sentry-sdk>=2.20",
+  "uuid7>=0.1.0",
+  "aiosmtplib>=3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/messer_common"]

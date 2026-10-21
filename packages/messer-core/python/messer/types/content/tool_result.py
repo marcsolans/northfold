@@ -1,0 +1,62 @@
+from typing import Any, Literal
+
+# `override` was introduced in Python 3.12; use `typing_extensions` for compatibility with older versions
+try:
+    from typing import override
+except ImportError:
+    from typing_extensions import override
+
+from .base import BaseContent
+from .file import FileContent
+from .text import TextContent
+
+
+class ToolResultContent(BaseContent):
+    """Tool result content type for chat messages."""
+    type: Literal["tool_result"] = "tool_result"
+    id: str
+    content: list[TextContent | FileContent]
+    pinned: bool = False
+    """When True, memory compaction must never drop or truncate this result (nor orphan its
+    paired tool_use). Used to keep durable context — e.g. loaded skill documentation — alive
+    for as long as the conversation lives. Internal hint only: never serialized to providers."""
+    offload_handle: str | None = None
+    """Set when the original result was offloaded to an OffloadStore and replaced with a
+    placeholder + handle (see ``messer.core.tool_result_offload``). Compaction treats these
+    results as already compacted. Internal hint only: never serialized to providers."""
+
+    @override
+    def to_openai_responses_input(self, **kwargs: Any) -> dict[str, Any]:
+        """See base class."""
+        return {
+            "type": "function_call_output",
+            "call_id": self.id,
+            "output": [item.to_openai_responses_input(role="tool") for item in self.content]
+        }
+
+    @override
+    def to_openai_chat_completions_input(self, **kwargs: Any) -> dict[str, Any]:
+        """See base class."""
+        # ! For file contents that are not convertible to text, e.g. images:
+        # ! Openai directly ignores contents with type 'image_url'
+        # ! Gemini raises 400 error
+        return {
+            "role": "tool",
+            "tool_call_id": self.id,
+            "content": [item.to_openai_chat_completions_input() for item in self.content],
+        }
+
+    @override
+    def to_anthropic_input(self, **kwargs: Any) -> dict[str, Any]:
+        """See base class."""
+        nested: list[dict[str, Any]] = []
+        for item in self.content:
+            block = item.to_anthropic_input()
+            if block is None or (block.get("type") == "text" and not block.get("text")):
+                continue
+            nested.append(block)
+        return {
+            "type": "tool_result",
+            "tool_use_id": self.id,
+            "content": nested,
+        }

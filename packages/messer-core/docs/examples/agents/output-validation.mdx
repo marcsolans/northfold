@@ -1,0 +1,119 @@
+---
+title: "Output Validation"
+description: "Validate agent responses using content checks, format validation, and semantic evaluation"
+---
+
+Output validation ensures your agent produces correct, well-formatted responses. You can validate content structure, exclude unwanted text, match patterns with regex, and use LLM-powered semantic evaluation.
+
+## Example
+
+This example demonstrates how to validate agent outputs using multiple validators including content checks, format validation, timing, and usage metrics.
+
+### Eval Configuration
+
+```yaml evals.yaml
+- name: eval_creative_writer_response
+  description: Validate creative writing agent provides well-structured stories
+  runnable: agent.py::agent
+  params:
+    prompt: "Write a story about a robot learning to paint"
+  output:
+    contains_all!: ["Title", "Story", "Lesson"]
+    not_contains!: ["error", "failed"]
+    pattern!: "^Title: .+"
+  elapsed:
+    lt!: 15000
+  llm:
+    usage:
+      output_text_tokens:
+        lte!: 500
+```
+
+<Note>
+In this example, we use `output_text_tokens` instead of `output_tokens` because the agent uses OpenAI (`openai/gpt-5.2`). For Anthropic models, use `output_tokens` instead. See [Validating Token Usage](/evals/writing-evals#validating-token-usage) for more details.
+</Note>
+
+### Agent Implementation
+
+```python agent.py
+from messer import Agent
+
+agent = Agent(
+    name="creative_writer",
+    model="openai/gpt-5.2",
+    system_prompt="""You are a creative writing assistant.
+For any story request, always provide:
+1. A compelling title
+2. A complete short story (2 sentences)
+3. A moral or lesson
+
+Format your response as:
+Title: [story title]
+Story: [complete narrative]
+Lesson: [moral or takeaway]"""
+)
+```
+
+### Running Evaluations
+
+```bash
+python -m messer.evals.cli evals.yaml
+```
+
+## How It Works
+
+1. **Output Validation**: Multiple validators check the agent's response for required content (`contains_all!`), excluded content (`not_contains!`), and format (`pattern!`).
+
+2. **Timing Validation**: The `elapsed` validator ensures the agent responds within the specified time limit.
+
+3. **Usage Validation**: Span-level validators track resource consumption, such as token usage for LLM calls.
+
+4. **Combined Validators**: All validators must pass for the eval to succeed.
+
+## Evaluation Results
+
+### Successful Validation
+
+When all validators pass:
+
+```
+──────────────────── Messer Evals ────────────────────
+collected 1 evals from 1 file
+
+ PASSED  evals.yaml::eval_creative_writer_response [0.52s]
+└── creative_writer
+    ├── ✓ output.contains_all! (["Title", "Story", "Lesson"])
+    ├── ✓ output.not_contains! (["error", "failed"])
+    ├── ✓ output.pattern! ("^Title: .+")
+    ├── ✓ elapsed.lt! (15000)
+    └── ✓ llm.usage.output_text_tokens.lte! (500)
+
+============================= 1 passed in 0.52s ==============================
+```
+
+### Failed Validation
+
+When any validator fails:
+
+```
+──────────────────── Messer Evals ────────────────────
+collected 1 evals from 1 file
+
+ FAILED  evals.yaml::eval_creative_writer_response [6.14s]
+└── creative_writer
+    ├── ✗ output.contains_all! (["Title", "Story", "Lesson"])
+    ├── ✓ output.not_contains! (["error", "failed"])
+    ├── ✗ output.pattern! ("^Title: .+")
+    ├── ✓ elapsed.lt! (15000)
+    └── ✓ llm.usage.output_text_tokens.lte! (500)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 1 failed in 6.14s !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+## Key Features
+
+- **Content Validation**: Verify required keywords (`contains_all!`) and exclude unwanted content (`not_contains!`)
+- **Format Validation**: Ensure responses follow expected structure with `pattern!` regex validation
+- **Time Validation**: Monitor execution time with `elapsed` validators (`lt!`, `lte!`, etc.)
+- **Usage Validation**: Track resource consumption with span-level `usage` validators (e.g., `llm.usage.output_text_tokens` for OpenAI or `llm.usage.output_tokens` for Anthropic)
+- **Combined Validators**: Use multiple validators together - all must pass for the eval to succeed

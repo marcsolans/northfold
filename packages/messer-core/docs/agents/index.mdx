@@ -1,0 +1,450 @@
+---
+title: "Overview"
+description: "Master proven strategies for designing advanced, specialized AI agents using an architecture that work together seamlessly to tackle complex challenges"
+---
+
+## What are Agents?
+
+Agents are autonomous execution units that **orchestrate LLM interactions with tool calling**. 
+
+Without tools, an agent functions as a basic LLM. The simplest agent requires just a **name** and **model**:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-5"
+)  # That's it! You've created your first agent!
+```
+
+<Tip>
+For a full step-by-step guide, check the [quickstart section](/quickstart) or see practical examples in the [examples section](/examples).
+</Tip>
+
+## Reading guide
+
+The sidebar follows a **basics → platform → production** path. You can jump anywhere, but this order matches how most agents are built:
+
+1. **[Tools](/agents/tools)** — give the agent capabilities (the core primitive)
+2. **[Structured output](/agents/structured-output)** — constrain what comes back
+3. **[Memory](/agents/memory)** → **[Memory compaction](/agents/memory-compaction)** — multi-turn context, then keeping oversized tool results and history within the window
+4. **[Skills](/agents/skills)** — domain packages (knowledge + tools) once the agent loop makes sense
+5. **[Dynamic agents](/agents/dynamic)** — runtime prompts and tool sets
+6. **[Background tasks](/agents/background-tasks)** · **[Commands](/agents/commands)** — utilities (async tools, slash shortcuts)
+
+After **[Workflows](/workflows)**, see **[Human in the loop](/human-in-the-loop)** for approvals, `suspend()`, and durable resume (agents, workflow steps, and tools).
+
+For live spoken conversations, continue to **[Voice agents](/voice)** for speech providers, browser and phone transports, interruptions, and usage tracking.
+
+This page covers running agents, models, and I/O. The sections below are the reference for that; the linked pages go deeper on each topic.
+
+## Model Providers
+
+You can specify any model using the "provider/model" format. See all supported models in the [Model Reference](/models/overview).
+
+Some models require specific parameters (like `max_tokens` for Claude). Pass it as a top-level field:
+
+```python highlight={4}
+agent = Agent(
+    name="claude_agent",
+    model="anthropic/claude-sonnet-4-6",
+    max_tokens=1024
+)
+```
+
+**Note:** Make sure to define all required environment variables—such as the API key model that you need—in your `.env` file.
+
+```bash
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_claude_api_key
+```
+
+### Fallback Models
+
+Use `FallbackModel` when you want an agent to try another model if the primary provider fails, including authentication errors, rate limits, timeouts, and server errors.
+
+```python
+from messer import Agent, FallbackModel
+
+agent = Agent(
+    name="support_agent",
+    model=FallbackModel(
+        "anthropic/claude-sonnet-4-6",
+        "openai/gpt-5.5",
+        "google/gemini-2.5-pro",
+    ),
+    max_tokens=1024,  # Required for Anthropic models
+)
+```
+
+Models are tried in order. By default, each model gets up to two retries for transient errors. Authentication errors trigger fallback immediately, as do rate limits when another model is available. If every model fails, Messer raises `FallbackExhausted` with the per-model errors.
+
+For per-model settings, use `ModelEntry`:
+
+```python
+from messer import Agent, FallbackModel, ModelEntry
+
+agent = Agent(
+    name="support_agent",
+    model=FallbackModel(
+        ModelEntry(
+            "anthropic/claude-sonnet-4-6",
+            max_retries=3,
+            retry_delay=0.5,
+            provider_params={"thinking": {"type": "adaptive"}},
+        ),
+        ModelEntry(
+            "openai/gpt-5.5",
+            max_retries=1,
+            provider_params={"reasoning": {"effort": "low"}},
+        ),
+    ),
+    max_tokens=1024,
+)
+```
+
+Fallback only switches models before the first streamed chunk is emitted. If a stream fails after output has started, Messer raises the error instead of silently switching models and risking duplicated or inconsistent output.
+
+The agent's `api_key` and `base_url` apply only to models from the primary provider. When the chain switches providers, Messer resolves that provider's own credentials and endpoint from its environment variables or the platform proxy. Use `ModelEntry(api_key=..., base_url=...)` to override these for an individual model, including when multiple providers share a gateway.
+
+The agent's `model_params` (or per-request `provider_params`) also apply only to models from the primary provider. Other providers use their defaults unless their `ModelEntry` sets `provider_params`. An entry's dict **replaces**, rather than merges with, the shared params; use `{}` to clear them explicitly. An omitted value or `None` inherits shared params only for the primary provider. Messer does not translate provider-specific options such as OpenAI's `reasoning` into Anthropic's `thinking`. This scoping also applies to providers that share an API format, such as OpenAI and xAI; set entry-level params explicitly to reuse compatible options. Shared `max_tokens`, `temperature`, tools, and structured output configuration still apply across the chain.
+
+### Thinking and reasoning
+
+Some models support extended thinking before responding. Check per-model capabilities on the [Model Reference](/models/overview) pages.
+
+Configure at construction time via `model_params` (per-request overrides use `provider_params` — see [Overriding Model Configuration](#overriding-model-configuration) below):
+
+```python
+# Anthropic — max_tokens required; budget_tokens must be < max_tokens
+agent = Agent(
+    name="reasoning_agent",
+    model="anthropic/claude-sonnet-4-6",
+    max_tokens=20000,
+    model_params={"thinking": {"type": "enabled", "budget_tokens": 10000}},
+)
+
+# OpenAI
+agent = Agent(
+    name="reasoning_agent",
+    model="openai/gpt-5",
+    model_params={"reasoning": {"effort": "high", "summary": "auto"}},
+)
+```
+
+Define tools as Python functions - the framework handles schema generation, parameter validation, and execution orchestration.
+
+## Running Agents
+
+Execute agents by calling them with a `prompt` parameter and using `.collect()` to get the result:
+
+```python
+response = await agent(
+    prompt="What is the capital of Germany?"
+).collect()
+```
+
+### Streaming Events
+
+For real-time processing, you can stream events as they happen:
+
+```python
+async for event in agent(prompt="Hello"):
+    print(event)
+```
+
+### Iteration Budget
+
+`max_iter` (default `10`) bounds the LLM → tool rounds in one turn. `on_max_iter` decides what happens when the budget is spent and the model still wants tools:
+
+| `on_max_iter` | Extra LLM call | Output |
+|---|---|---|
+| `"final_answer"` (default) | One, with **no tools**, preceded by a notice telling the model its budget is gone | The model's text |
+| `"stop"` | None | A fixed assistant reply (`stop_reason="max_iter"`) |
+| `"error"` | None | Raises `messer.errors.MaxIterExceeded` — for one-shot runs; memory is left ending in an unanswered tool batch |
+
+The notice matters: silently handed an empty tool list, models narrate the step they were about to take ("I'll update the file now") as if it had happened.
+
+For anything custom, pass a callable (sync or async). It receives a `MaxIterContext(max_iter, memory, agent_path)` and returns a message: `role="user"` is used as the notice for a final tool-less call, `role="assistant"` is the reply and ends the turn, `None` makes the tool-less call with no notice, and raising fails the run.
+
+```python
+def out_of_budget(ctx):
+    if ctx.agent_path != "assistant":  # sub-agents: stop cheaply, let the parent decide
+        return {"role": "assistant", "content": f"[Stopped after {ctx.max_iter} steps.]"}
+    return {"role": "user", "content": "Budget spent. Report what is done and what is not; claim nothing else."}
+
+agent = Agent(name="assistant", model="openai/gpt-5", tools=[search, write_report], max_iter=16, on_max_iter=out_of_budget)
+```
+
+Every mode records `metadata["max_iter_reached"] = {"max_iter", "behavior"}` on the agent span. Injected messages are persisted in memory tagged `metadata={"source": "runtime", "kind": "max_iter_notice" | "max_iter_stop"}`, so `Message.is_runtime()` lets you hide them when rendering a human transcript.
+
+### Timeout
+
+`max_iter` bounds steps; `timeout` bounds time. It is the wall-clock budget, in seconds, for one turn — every LLM call and tool call included. Default `None` (no limit).
+
+```python
+agent = Agent(name="assistant", model="openai/gpt-5", tools=[search, write_report], timeout=120)
+
+result = await agent(prompt="Research and write the report").collect()
+if result.status.code == "timeout":
+    print(result.error["message"])  # "assistant timed out after 120s"
+    partial = result.output         # whatever the turn produced before the deadline
+```
+
+When the deadline passes, the in-flight LLM or tool call is cancelled and the turn ends with `status.code == "timeout"` and an `error` of type `RunTimeout`. Memory stays consistent: an interrupted tool call gets a synthetic result, so the next turn runs normally.
+
+`timeout` is available on every runnable, not just agents:
+
+- **Sub-agents and tools.** A child's own `timeout` fails only that call. The parent agent receives it as an error tool result and can recover. A `timeout` on the parent bounds the whole turn, children included.
+- **Workflow steps.** A step that times out blocks its dependents, including transitive dependents. Unrelated branches may finish before the workflow reports the step failure. An agent inside a workflow can still recover from its own tools' timeouts; the workflow uses that agent's final result. See [Errors & failure](/workflows/errors-and-failure#timeouts).
+- **Hooks.** `pre_hook`, the handler, and `post_hook` share one deadline. A slow hook times out the call; the budget is not restarted between stages. If the handler finished before a post-hook timed out, its output is retained.
+- **What doesn't count.** The clock starts after input validation and the approval gate, so time a run spends paused waiting for approval does not use up the budget. Children detached with `background_mode` use `background_timeout` instead (see [Background Tasks](/agents/background-tasks#timeouts)).
+- **Sync handlers.** A sync tool running inline on the event loop can't be interrupted. Make it async, or set `offload_blocking=True`.
+
+A `TimeoutError` raised inside a handler, such as a slow HTTP call, is still reported as a regular `error`. Only the runnable's own deadline produces `timeout`.
+
+**Performance.** An unset timeout has negligible overhead: the per-call check remains, but the stream relay and timers are bypassed. Enabling a timeout adds timer and relay work per streamed event. The `benchmarks/timeout/bench_streaming.py` benchmark measures this cost separately from network and LLM latency.
+
+### Approval-Required Tools
+
+Any runnable — Tool, Agent, or Workflow step — can pause for human approval before it runs. Mark it with `requires_approval`, listen for `ApprovalEvent`, and resume by calling the runnable again with `resume`:
+
+```python
+from messer import Agent, Tool
+from messer.types.events import ApprovalEvent
+
+
+refund = Tool(
+    handler=lambda amount: f"refunded ${amount}",
+    requires_approval=lambda amount: amount > 100,
+    approval_prompt=lambda amount: f"Approve refunding ${amount}?",
+)
+
+agent = Agent(name="support_agent", model="openai/gpt-5", tools=[refund])
+
+approval_id = None
+async for event in agent(prompt="Refund $250"):
+    if isinstance(event, ApprovalEvent):
+        approval_id = event.approval_id
+
+result = await agent(
+    prompt="Refund $250",
+    resume={approval_id: True},
+).collect()
+```
+
+The full reference — durable cross-process resume, audit fields, redaction, parallel gates, `pending_approvals()`, status reasons, usage counters, plus `suspend()` for asking the user mid-run — lives on the dedicated [Human in the Loop](/human-in-the-loop) section.
+
+## Input
+
+Agents communicate through `Message` objects - Messer's data structure that standardizes both input and output.
+
+```python highlight={4}
+from messer.types.message import Message
+
+response = await agent(
+    prompt=Message.validate("What is the capital of Germany?")
+).collect()
+```
+
+Agents accept multiple input formats, automatically converting them to `Message` objects:
+
+```python highlight={3, 9, 14}
+from messer.types.file import File
+
+# String
+response = await agent(
+    prompt="What's the weather?"
+).collect()
+
+# File - Messer type
+response = await agent(
+    prompt=File.validate("image.png")
+).collect()
+
+# List
+response = await agent(
+    prompt=["Describe this image", File.validate("image.png")]
+).collect()
+```
+
+### Passing Input Parameters
+
+You can pass custom input parameters when calling an agent. Access these values anywhere in your agent (tools, system prompts, hooks) using `get_run_context().current_span().input`:
+
+```python
+from messer import Agent, Tool
+from messer.state import get_run_context
+
+def get_user_info():
+    span = get_run_context().current_span()
+    user_id = span.input.get("user_id")
+    role = span.input.get("role")
+    return f"User {user_id} with role {role}"
+
+agent = Agent(
+    name="user_agent",
+    model="openai/gpt-4o-mini",
+    tools=[Tool(handler=get_user_info)]
+)
+
+# Pass custom inputs
+response = await agent(
+    prompt="Who am I?",
+    user_id="123",
+    role="admin"
+).collect()
+```
+
+The tool can access `user_id` and `role` from the input parameters. Input parameters work with both `.collect()` and streaming.
+
+<Note>
+For more information about accessing input parameters and using the run context, see the [Context & State Management](/core-concepts/context) page.
+</Note>
+
+### Overriding Model Configuration
+
+What if you want to change the model, `max_tokens`, or thinking config for each run? Instead of creating multiple agents, you can pass these as input parameters. This is useful for A/B testing different models, adjusting token limits per request, or dynamically selecting models based on task complexity.
+
+```python
+# Agent with default values
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",  # Default model
+    max_tokens=1024  # Default max_tokens
+)
+
+# Override model: was "openai/gpt-4o-mini", now "anthropic/claude-sonnet-4-6"
+response = await agent(
+    prompt="What is the capital of Germany?",
+    model="anthropic/claude-sonnet-4-6"
+).collect()
+
+# Override max_tokens: was 1024, now 2048
+async for event in agent(
+    prompt="What is the capital of Germany?",
+    max_tokens=2048
+):
+    print(event)
+
+# Override thinking via provider_params at call time (provider-specific format).
+# At construction time, use model_params instead — same keys, same shape.
+# For OpenAI: pass "reasoning" key
+response = await agent(
+    prompt="Solve this complex problem",
+    model="openai/gpt-5.5",
+    provider_params={"reasoning": {"effort": "high", "summary": "auto"}}
+).collect()
+
+# For Anthropic: pass "thinking" key
+response = await agent(
+    prompt="Solve this complex problem",
+    model="anthropic/claude-sonnet-4-6",
+    provider_params={"thinking": {"type": "enabled", "budget_tokens": 10000}}
+).collect()
+```
+
+<Warning>
+The parameter names `model`, `max_tokens`, and `provider_params` are reserved and will affect model configuration when passed as input. These parameters will not be available as regular input to your agent. If you need to pass custom data without changing the actual model configuration, use different parameter names (e.g., `data_model` instead of `model` if you want to pass a data model name).
+</Warning>
+
+## Output
+
+Calling `.collect()` returns an `OutputEvent` containing the agent's response. Access the `Message` via the `.output` property:
+
+<Note>
+Learn more about events in [Events & Streaming](/core-concepts/events).
+</Note>
+
+```python
+result = await agent(prompt="What's 2+2?").collect()
+
+# result is an OutputEvent
+print(result.output)
+# Message(role=assistant, content=[TextContent(type='text', text='2 + 2 = 4.')])
+
+# You can access content directly
+print(result.output.content[0].text)
+# "2 + 2 = 4."
+
+# However, the best way to get text is using collect_text()
+print(result.output.collect_text())
+# "2 + 2 = 4."
+```
+
+<Warning>
+Response content can contain thinking, text, tool, and other blocks in a provider-dependent order. `content[0]` is not guaranteed to be text, and reasoning need not occupy a fixed position. Use `collect_text()` to extract the text response.
+</Warning>
+
+## Messages
+
+Messages are the structured data format that agents use to communicate. They contain a role and content, with automatic handling of different content types and provider compatibility.
+
+```python
+from messer.types.message import Message
+```
+
+Messages contain a **role** and **content**:
+
+**Role Types:**
+- **user** - Messages from the user
+- **assistant** - Messages from the AI agent
+- **system** - System instructions and context
+- **tool** - Tool execution results
+
+**Content Types:**
+- **TextContent** - Plain text messages
+- **FileContent** - Files like PDFs, images, documents
+- **ToolUseContent** - Function calls to tools
+- **ToolResultContent** - Results from tool executions
+
+Messages can contain different types of content - text, files, tool calls, and tool results. The framework automatically handles complex content structures:
+
+```python
+from messer.types.content import FileContent, TextContent
+from messer.types.file import File
+
+# Message with text and file
+mixed_message = Message(
+    role="user",
+    content=[
+        TextContent(text="Analyze this document:"),
+        FileContent(file=File.validate("report.pdf"))
+    ]
+)
+```
+
+The same message above can be created easily using `Message.validate()`:
+
+```python
+from messer.types.file import File
+
+message = Message.validate([
+    "Summarize this document:",
+    File.validate("quarterly_report.pdf")
+])
+```
+
+## Files
+
+Agents can process files directly through the message content system. The framework automatically handles file reading, content extraction, and formatting for the AI model.
+
+```python
+from messer.types.file import File
+```
+
+The framework supports common document and media formats:
+
+- **Text files** (.txt, .md) - Direct content inclusion
+- **PDFs** (.pdf) - Text extraction with structure preservation  
+- **Images** (.png, .jpg, .gif) - Visual analysis through vision-capable models
+- **Spreadsheets** (.xlsx, .csv) - Structured data representation
+- **Documents** (.docx) - Text and formatting extraction
+
+
+Files are automatically converted to Messer `File` objects using `File.validate()`:
+
+```python
+file = File.validate("quarterly_report.pdf")
+```

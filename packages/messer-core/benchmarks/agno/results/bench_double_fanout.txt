@@ -1,0 +1,200 @@
+
+[1m════════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer Workflow vs Agno Workflow — double fan-out benchmark[0m
+  widths=[4, 8, 16, 32] · 100 iters · 100 burst
+  Agno found — telemetry=False
+[1m════════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2m[N=4 per phase][0m
+    Messer trivial... p50=776.8 µs
+    Messer async work... p50=3.16 ms
+    Messer memory... 68.4 KB peak
+    Messer burst (100 concurrent, async work)... p50=48.6 ms
+    Agno trivial... p50=389.9 µs
+    Agno async work... p50=2.93 ms
+    Agno memory... 96.6 KB peak
+    Agno burst (100 concurrent, async work)... p50=28.0 ms
+
+  [2m[N=8 per phase][0m
+    Messer trivial... p50=1.59 ms
+    Messer async work... p50=3.52 ms
+    Messer memory... 95.7 KB peak
+    Messer burst (100 concurrent, async work)... p50=85.9 ms
+    Agno trivial... p50=769.5 µs
+    Agno async work... p50=2.88 ms
+    Agno memory... 104.7 KB peak
+    Agno burst (100 concurrent, async work)... p50=43.4 ms
+
+  [2m[N=16 per phase][0m
+    Messer trivial... p50=1.72 ms
+    Messer async work... p50=3.86 ms
+    Messer memory... 159.2 KB peak
+    Messer burst (100 concurrent, async work)... p50=160.9 ms
+    Agno trivial... p50=795.7 µs
+    Agno async work... p50=3.01 ms
+    Agno memory... 124.9 KB peak
+    Agno burst (100 concurrent, async work)... p50=76.5 ms
+
+  [2m[N=32 per phase][0m
+    Messer trivial... p50=3.10 ms
+    Messer async work... p50=4.72 ms
+    Messer memory... 287.9 KB peak
+    Messer burst (100 concurrent, async work)... p50=361.7 ms
+    Agno trivial... p50=1.32 ms
+    Agno async work... p50=3.49 ms
+    Agno memory... 159.2 KB peak
+    Agno burst (100 concurrent, async work)... p50=141.5 ms
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Width N=4 per phase[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mTrivial branches  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean        906.4 µs        403.0 µs
+           p50        776.8 µs        389.9 µs
+           p95        986.3 µs        521.5 µs
+           p99         11.6 ms        750.5 µs
+
+  [1mAsync work branches (1 ms sleep per branch)  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         3.27 ms         2.94 ms
+           p50         3.16 ms         2.93 ms
+           p95         3.46 ms         3.31 ms
+           p99         14.3 ms         3.77 ms
+
+  [1mBurst  (100 concurrent, async work)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50         48.6 ms         28.0 ms
+           p75         49.0 ms         28.3 ms
+           p95         60.6 ms         39.4 ms
+           p99         60.9 ms         39.7 ms
+           max         60.9 ms         39.7 ms
+
+  [2mwall: Messer: 60.9 ms | Agno: 39.7 ms[0m
+
+  [1mMemory  (trivial, ×100)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                      68.4 KB         701  B
+  Agno                        96.6 KB         989  B
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Width N=8 per phase[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mTrivial branches  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         1.88 ms         2.91 ms
+           p50         1.59 ms        769.5 µs
+           p95         3.29 ms         17.0 ms
+           p99         12.4 ms         34.8 ms
+
+  [1mAsync work branches (1 ms sleep per branch)  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         3.66 ms         2.97 ms
+           p50         3.52 ms         2.88 ms
+           p95         4.00 ms         3.35 ms
+           p99         14.4 ms         6.75 ms
+
+  [1mBurst  (100 concurrent, async work)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50         85.9 ms         43.4 ms
+           p75         86.5 ms         43.7 ms
+           p95         97.8 ms         54.4 ms
+           p99         98.0 ms         54.7 ms
+           max         98.0 ms         54.7 ms
+
+  [2mwall: Messer: 98.0 ms | Agno: 54.7 ms[0m
+
+  [1mMemory  (trivial, ×100)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                      95.7 KB         980  B
+  Agno                       104.7 KB        1073  B
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Width N=16 per phase[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mTrivial branches  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         1.85 ms        812.5 µs
+           p50         1.72 ms        795.7 µs
+           p95         2.01 ms        935.6 µs
+           p99         11.9 ms         1.10 ms
+
+  [1mAsync work branches (1 ms sleep per branch)  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         4.01 ms         3.03 ms
+           p50         3.86 ms         3.01 ms
+           p95         4.34 ms         3.30 ms
+           p99         15.2 ms         3.36 ms
+
+  [1mBurst  (100 concurrent, async work)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50        160.9 ms         76.5 ms
+           p75        161.7 ms         76.7 ms
+           p95        172.6 ms         87.9 ms
+           p99        172.9 ms         88.0 ms
+           max        172.9 ms         88.0 ms
+
+  [2mwall: Messer: 172.9 ms | Agno: 88.0 ms[0m
+
+  [1mMemory  (trivial, ×100)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                     159.2 KB        1630  B
+  Agno                       124.9 KB        1278  B
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Width N=32 per phase[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mTrivial branches  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         3.40 ms         1.34 ms
+           p50         3.10 ms         1.32 ms
+           p95         4.16 ms         1.42 ms
+           p99         13.6 ms         1.60 ms
+
+  [1mAsync work branches (1 ms sleep per branch)  (×100)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean         4.92 ms         3.53 ms
+           p50         4.72 ms         3.49 ms
+           p95         5.20 ms         3.83 ms
+           p99         16.7 ms         3.99 ms
+
+  [1mBurst  (100 concurrent, async work)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50        361.7 ms        141.5 ms
+           p75        362.5 ms        141.7 ms
+           p95        363.5 ms        151.6 ms
+           p99        375.1 ms        151.7 ms
+           max        375.1 ms        151.7 ms
+
+  [2mwall: Messer: 375.1 ms | Agno: 151.7 ms[0m
+
+  [1mMemory  (trivial, ×100)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                     287.9 KB        2948  B
+  Agno                       159.2 KB        1631  B
+
+[2m────────────────────────────────────────────────────────────────────────────────────────────
+  Messer: two explicit first-class fan-out phases, one task/span per branch.
+  Agno: two Workflow Parallel phases with telemetry=False.
+────────────────────────────────────────────────────────────────────────────────────────────[0m
+

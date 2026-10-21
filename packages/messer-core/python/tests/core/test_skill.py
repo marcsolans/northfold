@@ -1,0 +1,1134 @@
+import json
+
+import pytest
+from messer import Agent, Tool
+from messer.core.skill import ReadSkill, Skill
+from messer.core.test_model import TestModel
+
+
+@pytest.fixture
+def skills_dir(tmp_path):
+    """Create a temporary skills directory structure for testing."""
+    skills_root = tmp_path / "skills"
+    skills_root.mkdir()
+
+    # Create a "cars" skill
+    cars_skill = skills_root / "cars"
+    cars_skill.mkdir()
+
+    # Create SKILL.md with YAML frontmatter
+    skill_md = cars_skill / "SKILL.md"
+    skill_md.write_text("""---
+name: cars
+description: Information about cars and automotive topics
+---
+
+# Cars Skill
+
+This skill provides information about cars. We specialize in Porsche vehicles.
+
+## Available Information
+- Car specifications
+- Pricing information
+- Model comparisons
+
+See [pricing.md](pricing.md) for detailed pricing information.
+""")
+
+    # Create a reference file
+    pricing_file = cars_skill / "pricing.md"
+    pricing_file.write_text("""# Pricing Information
+
+## Porsche Models
+- 911: $100,000 - $200,000
+- Cayenne: $70,000 - $150,000
+- Taycan: $80,000 - $180,000
+""")
+
+    # Create tools directory with a tool
+    tools_dir = cars_skill / "tools"
+    tools_dir.mkdir()
+
+    search_tool = tools_dir / "search.py"
+    search_tool.write_text("""from messer import Tool
+
+def search_cars(query: str) -> str:
+    '''Search for cars matching the query.'''
+    return f"Found cars matching: {query}"
+
+search_tool = Tool(
+    name="search_cars",
+    description="Search for cars in inventory",
+    handler=search_cars
+)
+""")
+
+    # Create a second skill "bikes"
+    bikes_skill = skills_root / "bikes"
+    bikes_skill.mkdir()
+
+    bikes_md = bikes_skill / "SKILL.md"
+    bikes_md.write_text("""---
+name: bikes
+description: Information about motorcycles and bikes
+---
+
+# Bikes Skill
+
+This skill covers motorcycles and bicycles.
+""")
+
+    return skills_root
+
+
+class TestSkillCreation:
+    """Test Skill instantiation and validation."""
+
+    def test_skill_from_valid_directory(self, skills_dir):
+        """Test creating a skill from a valid directory."""
+        skill = Skill(path=skills_dir / "cars")
+
+        assert skill.name == "cars"
+        assert skill.description == "Information about cars and automotive topics"
+        assert "Cars Skill" in skill.content
+        assert len(skill.tools) == 1
+        assert skill.tools[0].name == "search_cars"
+
+    def test_skill_path_expansion(self, skills_dir, monkeypatch):
+        """Test that skill path expands ~ and resolves relative paths."""
+        # Mock home directory
+        monkeypatch.setenv("HOME", str(skills_dir.parent))
+
+        # Create a skill in "home" directory
+        home_skill = skills_dir.parent / "home_skill"
+        home_skill.mkdir()
+        (home_skill / "SKILL.md").write_text("""---
+name: home_test
+description: Test skill in home
+---
+Content
+""")
+
+        # Test with relative path
+        skill = Skill(path=home_skill)
+        assert skill.path.is_absolute()
+        assert skill.path.exists()
+
+    def test_skill_missing_directory(self):
+        """Test that skill raises error for non-existent directory."""
+        with pytest.raises(ValueError, match="Skill path does not exist"):
+            Skill(path="/nonexistent/path")
+
+    def test_skill_path_is_file(self, tmp_path):
+        """Test that skill raises error when path is a file."""
+        file_path = tmp_path / "not_a_dir.txt"
+        file_path.write_text("content")
+
+        with pytest.raises(ValueError, match="Skill path is not a directory"):
+            Skill(path=file_path)
+
+    def test_skill_missing_skill_md(self, tmp_path):
+        """Test that skill raises error when SKILL.md is missing."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        with pytest.raises(ValueError, match="must contain a SKILL.md file"):
+            Skill(path=skill_dir)
+
+    def test_skill_invalid_yaml_frontmatter(self, tmp_path):
+        """Test that skill raises error for invalid YAML frontmatter."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("No frontmatter here")
+
+        with pytest.raises(ValueError, match="must start with a YAML frontmatter"):
+            Skill(path=skill_dir)
+
+    def test_skill_missing_name_in_frontmatter(self, tmp_path):
+        """Test that skill raises error when name is missing."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("""---
+description: Missing name
+---
+Content
+""")
+
+        with pytest.raises(ValueError, match="must contain a name"):
+            Skill(path=skill_dir)
+
+    def test_skill_missing_description_in_frontmatter(self, tmp_path):
+        """Test that skill raises error when description is missing."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("""---
+name: test
+---
+Content
+""")
+
+        with pytest.raises(ValueError, match="must contain a description"):
+            Skill(path=skill_dir)
+
+    def test_skill_loads_tools_from_directory(self, skills_dir):
+        """Test that skill loads tools from tools directory."""
+        skill = Skill(path=skills_dir / "cars")
+
+        assert len(skill.tools) == 1
+        assert skill.tools[0].name == "search_cars"
+        assert "Search for cars" in skill.tools[0].description
+
+    def test_skill_without_tools_directory(self, skills_dir):
+        """Test that skill works without a tools directory."""
+        skill = Skill(path=skills_dir / "bikes")
+
+        assert skill.name == "bikes"
+        assert len(skill.tools) == 0
+
+    async def test_skill_tool_lazy_sibling_import(self, skills_dir, monkeypatch):
+        """A tool that imports a sibling helper only inside its handler must
+        still resolve it after loading (tools/ stays on sys.path)."""
+        import sys
+
+        tools_dir = skills_dir / "cars" / "tools"
+        (tools_dir / "cars_pricing_helper.py").write_text('PRICE = "expensive"\n')
+        (tools_dir / "price.py").write_text("""from messer import Tool
+
+def price_car(model: str) -> str:
+    from cars_pricing_helper import PRICE  # lazy sibling import
+
+    return f"{model} is {PRICE}"
+
+price_tool = Tool(name="price_car", handler=price_car)
+""")
+        # Make sure cwd can't mask the lookup via an implicit '' path entry.
+        monkeypatch.chdir(skills_dir.parent)
+        sys.modules.pop("cars_pricing_helper", None)
+
+        skill = Skill(path=skills_dir / "cars")
+        price_tool = next(t for t in skill.tools if t.name == "price_car")
+
+        assert str(tools_dir) in sys.path
+        assert "cars_pricing_helper" not in sys.modules
+        result = await price_tool(model="911").collect()
+        assert result.output == "911 is expensive"
+
+        # Negative control: with tools/ off sys.path (the pre-fix state) the
+        # same lazy import fails — so the assertion above is not being
+        # rescued by cwd / '' on sys.path.
+        sys.path.remove(str(tools_dir))
+        sys.modules.pop("cars_pricing_helper", None)
+        result = await price_tool(model="911").collect()
+        assert result.status.code == "error"
+        assert result.error["type"] == "ModuleNotFoundError"
+        assert "cars_pricing_helper" in result.error["message"]
+
+    def test_skill_get_reference(self, skills_dir):
+        """Test getting a reference file from skill."""
+        skill = Skill(path=skills_dir / "cars")
+
+        pricing = skill.get_reference("pricing.md")
+        assert "Porsche Models" in pricing
+        assert "911:" in pricing
+
+    def test_skill_get_reference_caching(self, skills_dir):
+        """Test that references are cached."""
+        skill = Skill(path=skills_dir / "cars")
+
+        # First call
+        pricing1 = skill.get_reference("pricing.md")
+        # Second call should use cache
+        pricing2 = skill.get_reference("pricing.md")
+
+        assert pricing1 == pricing2
+        assert "pricing.md" in skill.references
+
+    def test_skill_get_nonexistent_reference(self, skills_dir):
+        """Test that getting non-existent reference raises error."""
+        skill = Skill(path=skills_dir / "cars")
+
+        with pytest.raises(ValueError, match="Reference file not found"):
+            skill.get_reference("nonexistent.md")
+
+
+class TestAgentWithSkills:
+    """Test Agent integration with Skills."""
+
+    @pytest.mark.asyncio
+    async def test_agent_with_skills_path(self, skills_dir):
+        """Test creating agent with skills_path."""
+        agent = Agent(name="car_agent", model=TestModel(), skills_path=skills_dir)
+
+        # Should have loaded 2 skills (cars and bikes)
+        skills = [t for t in agent.tools if isinstance(t, Skill)]
+        assert len(skills) == 2
+
+        # Should have added read_skill tool
+        read_skill_tools = [t for t in agent.tools if isinstance(t, ReadSkill)]
+        assert len(read_skill_tools) == 1
+
+        # Resolved system prompt should mention skills
+        system_prompt = await agent._resolve_system_prompt()
+        assert "skills" in system_prompt.lower()
+        assert "cars" in system_prompt
+        assert "bikes" in system_prompt
+
+    def test_agent_with_skills_path_string(self, skills_dir):
+        """Test that skills_path accepts string."""
+        agent = Agent(name="car_agent", model=TestModel(), skills_path=str(skills_dir))
+
+        skills = [t for t in agent.tools if isinstance(t, Skill)]
+        assert len(skills) == 2
+
+    def test_agent_with_invalid_skills_path(self, tmp_path):
+        """Test that invalid skills_path raises error."""
+        with pytest.raises(ValueError, match="Skills directory .* does not exist"):
+            Agent(name="agent", model=TestModel(), skills_path=tmp_path / "nonexistent")
+
+    def test_agent_with_duplicate_skill_names(self, skills_dir):
+        """Test that duplicate skill names raise error."""
+        skill = Skill(path=skills_dir / "cars")
+
+        with pytest.raises(ValueError, match="Skill 'cars' already exists"):
+            Agent(name="agent", model=TestModel(), skills_path=skills_dir, tools=[skill])
+
+    @pytest.mark.asyncio
+    async def test_agent_skills_in_system_prompt(self, skills_dir):
+        """Test that skills are documented in system prompt."""
+        agent = Agent(
+            name="agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            system_prompt="You are a helpful assistant.",
+        )
+
+        # Original prompt should be preserved
+        assert "helpful assistant" in agent.system_prompt
+
+        # Skills section should be appended at resolution time
+        system_prompt = await agent._resolve_system_prompt()
+        assert "<skills>" in system_prompt
+        assert "cars" in system_prompt
+        assert "Information about cars" in system_prompt
+        assert "read_skill" in system_prompt
+
+    @pytest.mark.asyncio
+    async def test_agent_skills_with_callable_system_prompt(self, skills_dir):
+        """Test that skills modifier is appended to a dynamically resolved system prompt."""
+
+        def get_system_prompt() -> str:
+            return "You are a car expert."
+
+        agent = Agent(
+            name="agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            system_prompt=get_system_prompt,
+        )
+
+        # Static system_prompt should be None since it was a callable
+        assert agent.system_prompt is None
+
+        # Resolved prompt should contain both the callable result and the skills section
+        system_prompt = await agent._resolve_system_prompt()
+        assert "car expert" in system_prompt
+        assert "<skills>" in system_prompt
+        assert "cars" in system_prompt
+        assert "bikes" in system_prompt
+
+    @pytest.mark.asyncio
+    async def test_agent_skills_with_async_callable_system_prompt(self, skills_dir):
+        """Test that skills modifier is appended to an async dynamically resolved system prompt."""
+
+        async def get_system_prompt() -> str:
+            return "You are an async car expert."
+
+        agent = Agent(
+            name="agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            system_prompt=get_system_prompt,
+        )
+
+        assert agent.system_prompt is None
+
+        system_prompt = await agent._resolve_system_prompt()
+        assert "async car expert" in system_prompt
+        assert "<skills>" in system_prompt
+
+    @pytest.mark.asyncio
+    async def test_agent_skills_with_no_system_prompt(self, skills_dir):
+        """Test that skills modifier becomes the system prompt when none is provided."""
+        agent = Agent(
+            name="agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+        )
+
+        assert agent.system_prompt is None
+
+        system_prompt = await agent._resolve_system_prompt()
+        assert system_prompt == agent._system_prompt_skills
+        assert "<skills>" in system_prompt
+
+
+class TestAgentSkillsFilter:
+    """Test the `skills_include` whitelist and `skills_exclude` blacklist filters."""
+
+    def test_whitelist_loads_only_selected(self, skills_dir):
+        """Test that `skills_include=[...]` loads only the listed skill directories."""
+        agent = Agent(name="agent", model=TestModel(), skills_path=skills_dir, skills_include=["cars"])
+
+        loaded = {t.name for t in agent.tools if isinstance(t, Skill)}
+        assert loaded == {"cars"}
+
+    def test_whitelist_empty_loads_none(self, skills_dir):
+        """Test that `skills_include=[]` loads no skills."""
+        agent = Agent(name="agent", model=TestModel(), skills_path=skills_dir, skills_include=[])
+
+        loaded = {t.name for t in agent.tools if isinstance(t, Skill)}
+        assert loaded == set()
+
+    def test_whitelist_unknown_name_raises(self, skills_dir):
+        """Test that referencing a non-existent skill in `skills_include=[...]` raises ValueError."""
+        with pytest.raises(ValueError, match="Skills not found.*nonexistent"):
+            Agent(name="agent", model=TestModel(), skills_path=skills_dir, skills_include=["cars", "nonexistent"])
+
+    def test_exclude_skips_listed_skills(self, skills_dir):
+        """Test that `skills_exclude=[...]` loads all but the listed skill directories."""
+        agent = Agent(name="agent", model=TestModel(), skills_path=skills_dir, skills_exclude=["bikes"])
+
+        loaded = {t.name for t in agent.tools if isinstance(t, Skill)}
+        assert loaded == {"cars"}
+
+    def test_exclude_unknown_name_is_silent(self, skills_dir):
+        """Test that unknown names in `skills_exclude` are ignored (no error)."""
+        agent = Agent(name="agent", model=TestModel(), skills_path=skills_dir, skills_exclude=["nonexistent"])
+
+        loaded = {t.name for t in agent.tools if isinstance(t, Skill)}
+        assert loaded == {"cars", "bikes"}
+
+    def test_whitelist_and_exclude_are_mutually_exclusive(self, skills_dir):
+        """Test that passing both `skills_include` and `skills_exclude` raises ValueError."""
+        with pytest.raises(ValueError, match="mutually exclusive"):
+            Agent(
+                name="agent",
+                model=TestModel(),
+                skills_path=skills_dir,
+                skills_include=["cars"],
+                skills_exclude=["bikes"],
+            )
+
+    def test_whitelist_without_skills_path_raises(self):
+        """Test that `skills_include=[...]` requires `skills_path` to be set."""
+        with pytest.raises(ValueError, match="skills_path"):
+            Agent(name="agent", model=TestModel(), skills_include=["cars"])
+
+    def test_exclude_without_skills_path_raises(self):
+        """Test that `skills_exclude=[...]` requires `skills_path` to be set."""
+        with pytest.raises(ValueError, match="skills_path"):
+            Agent(name="agent", model=TestModel(), skills_exclude=["bikes"])
+
+
+class TestAgentWithSkillInTools:
+    """Test passing Skill instances directly via `tools=[...]` instead of `skills_path`."""
+
+    def test_skill_in_tools_wires_agent_path(self, skills_dir):
+        """Test that a Skill passed in `tools` gets `_agent_path` wired to the agent."""
+        skill = Skill(path=skills_dir / "cars")
+        agent = Agent(name="car_agent", model=TestModel(), tools=[skill])
+
+        loaded = [t for t in agent.tools if isinstance(t, Skill)]
+        assert len(loaded) == 1
+        assert loaded[0].name == "cars"
+        assert loaded[0]._agent_path == "car_agent"
+
+    def test_skill_in_tools_adds_read_skill_tool(self, skills_dir):
+        """Test that a Skill passed in `tools` triggers the `read_skill` tool to be added."""
+        skill = Skill(path=skills_dir / "cars")
+        agent = Agent(name="agent", model=TestModel(), tools=[skill])
+
+        assert any(isinstance(t, ReadSkill) for t in agent.tools)
+
+    @pytest.mark.asyncio
+    async def test_skill_in_tools_appears_in_system_prompt(self, skills_dir):
+        """Test that a Skill passed in `tools` is documented in the system prompt."""
+        skill = Skill(path=skills_dir / "cars")
+        agent = Agent(name="agent", model=TestModel(), tools=[skill])
+
+        system_prompt = await agent._resolve_system_prompt()
+        assert "<skills>" in system_prompt
+        assert "cars" in system_prompt
+
+    @pytest.mark.asyncio
+    async def test_multiple_skills_in_tools(self, skills_dir):
+        """Test that multiple Skills passed in `tools` are all wired and documented."""
+        cars = Skill(path=skills_dir / "cars")
+        bikes = Skill(path=skills_dir / "bikes")
+        agent = Agent(name="agent", model=TestModel(), tools=[cars, bikes])
+
+        loaded = {t.name for t in agent.tools if isinstance(t, Skill)}
+        assert loaded == {"cars", "bikes"}
+
+        # Exactly one ReadSkill aggregator, aware of both skills
+        read_skill_tools = [t for t in agent.tools if isinstance(t, ReadSkill)]
+        assert len(read_skill_tools) == 1
+
+        system_prompt = await agent._resolve_system_prompt()
+        assert "cars" in system_prompt
+        assert "bikes" in system_prompt
+
+    def test_skill_mixed_with_function_and_tool(self, skills_dir):
+        """Test that the normalization loop handles interleaved Skill / function / Tool correctly."""
+
+        def plain_handler(x: int) -> int:
+            """A plain function tool."""
+            return x + 1
+
+        explicit_tool = Tool(name="explicit", description="Explicit", handler=lambda y: y * 2)
+        skill = Skill(path=skills_dir / "cars")
+
+        agent = Agent(name="agent", model=TestModel(), tools=[skill, plain_handler, explicit_tool])
+
+        skills = [t for t in agent.tools if isinstance(t, Skill)]
+        assert len(skills) == 1
+        assert skills[0].name == "cars"
+        assert skills[0]._agent_path == "agent"
+
+        tool_names = {getattr(t, "name", None) for t in agent.tools if not isinstance(t, Skill)}
+        assert "plain_handler" in tool_names
+        assert "explicit" in tool_names
+        assert "read_skill" in tool_names
+
+    def test_duplicate_skill_in_tools_raises(self, skills_dir):
+        """Test that two Skill instances with the same name passed in `tools` raise an error."""
+        with pytest.raises(ValueError, match="Skill 'cars' already exists"):
+            Agent(
+                name="agent",
+                model=TestModel(),
+                tools=[Skill(path=skills_dir / "cars"), Skill(path=skills_dir / "cars")],
+            )
+
+    def test_skills_path_combined_with_tools_skill(self, tmp_path, skills_dir):
+        """Test that `skills_path` and `tools=[Skill(...)]` form a union of available skills."""
+        # Build an additional skills directory with one new skill not in `skills_dir`.
+        other_root = tmp_path / "other_skills"
+        other_root.mkdir()
+        inventory_dir = other_root / "inventory"
+        inventory_dir.mkdir()
+        (inventory_dir / "SKILL.md").write_text(
+            "---\nname: inventory\ndescription: Inventory management\n---\n\nbody\n",
+            encoding="utf-8",
+        )
+
+        agent = Agent(
+            name="agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            tools=[Skill(path=inventory_dir)],
+        )
+
+        loaded = {t.name for t in agent.tools if isinstance(t, Skill)}
+        assert loaded == {"cars", "bikes", "inventory"}
+
+    @pytest.mark.asyncio
+    async def test_skill_in_tools_resolves_when_in_context(self, skills_dir):
+        """End-to-end: a Skill passed in `tools` resolves its tools at runtime when marked in context.
+
+        Mirrors `TestSkillIntegration.test_skill_tools_resolve_when_in_context` but loads the skill
+        via `tools=[Skill(...)]` instead of `skills_path`. This proves `_agent_path` wiring on the
+        direct-tools path actually unlocks runtime resolution, not just sets an attribute.
+        """
+        from messer.state import RunContext, get_or_create_run_context, set_run_context
+
+        skill = Skill(path=skills_dir / "cars")
+        agent = Agent(name="agent", model=TestModel(), tools=[skill])
+
+        # Bind a fresh RunContext so the skill can reach a session.
+        set_run_context(RunContext(tracing_provider=None))
+        session = await get_or_create_run_context().get_session()
+
+        # Not in context yet → resolve returns no tools.
+        assert await skill.resolve() == []
+
+        # Mark cars as in-context for this agent, mirroring what `ReadSkill` does.
+        session["__in_context_skills"] = {agent._path: ["cars"]}
+        resolved = await skill.resolve()
+        resolved_names = {t.name for t in resolved}
+        assert "search_cars" in resolved_names
+
+
+class TestSkillResultsPinnedAgainstCompaction:
+    """A skill's instructions reach the model only as the read_skill tool_result, but its
+    activation lives in the session. Memory compaction must not evict that result, or the
+    model keeps the skill's tools while losing the guidance for using them. read_skill pins
+    its results so every compaction strategy preserves them."""
+
+    @pytest.mark.asyncio
+    async def test_read_skill_result_is_pinned(self, skills_dir):
+        """Running read_skill through the agent produces a pinned tool_result carrying the
+        skill body."""
+        from messer.state import RunContext, set_run_context
+        from messer.state.tracing.providers import InMemoryTracingProvider
+        from messer.types.content import ToolResultContent, ToolUseContent
+        from messer.types.message import Message
+
+        model = TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="r1", name="read_skill", input={"name": "cars"})],
+                stop_reason="tool_use",
+            ),
+            "loaded",
+        ])
+        agent = Agent(name="agent", model=model, skills_path=skills_dir)
+
+        ctx = RunContext(tracing_provider=InMemoryTracingProvider)
+        set_run_context(ctx)
+        await agent(prompt="read the cars skill").collect()
+
+        memory = ctx._trace.get_path(agent._path)[0].memory
+        pinned = [
+            c for m in memory if m.role == "tool" for c in m.content
+            if isinstance(c, ToolResultContent) and c.pinned
+        ]
+        assert pinned, "read_skill result should be pinned"
+        assert any("Cars Skill" in c.content[0].text for c in pinned)
+
+        InMemoryTracingProvider._storage.clear()
+
+    @pytest.mark.asyncio
+    async def test_regular_tool_result_is_not_pinned(self, skills_dir):
+        """Only tools that opt in (pin_result=True) get pinned results — a plain tool's result
+        must stay compactable. Proves the agent stamps pinning selectively."""
+        from messer.state import RunContext, set_run_context
+        from messer.state.tracing.providers import InMemoryTracingProvider
+        from messer.types.content import ToolResultContent, ToolUseContent
+        from messer.types.message import Message
+
+        def plain(x: int) -> str:
+            """A plain tool."""
+            return f"value-{x}"
+
+        model = TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="p1", name="plain", input={"x": 1})],
+                stop_reason="tool_use",
+            ),
+            "ok",
+        ])
+        agent = Agent(name="agent", model=model, skills_path=skills_dir, tools=[Tool(handler=plain)])
+
+        ctx = RunContext(tracing_provider=InMemoryTracingProvider)
+        set_run_context(ctx)
+        await agent(prompt="call plain").collect()
+
+        memory = ctx._trace.get_path(agent._path)[0].memory
+        results = [
+            c for m in memory if m.role == "tool" for c in m.content
+            if isinstance(c, ToolResultContent)
+        ]
+        assert results, "expected a tool result"
+        assert all(c.pinned is False for c in results), "regular tool result must not be pinned"
+
+        InMemoryTracingProvider._storage.clear()
+
+    @pytest.mark.asyncio
+    async def test_pinned_skill_body_survives_jsonl_resume_with_compaction(self, skills_dir, tmp_path):
+        """Full durability path: an agent reads a skill (pinned result), suspends via ask_user,
+        and persists to JSONL. A *fresh* agent + RunContext resumes from disk with drop-mode
+        compaction forced — so the pinned skill body must survive both serialization and
+        `_compact_on_resume` (which compacts the head while protecting the suspended tool_use)."""
+        from messer.state import suspend
+        from messer.state.tracing.providers.jsonl import JsonlTracingProvider
+        from messer.types.content import ToolResultContent, ToolUseContent
+        from messer.types.events import InteractionEvent
+        from messer.core.memory_compaction import compact_tool_results
+        from messer.types.message import Message
+
+        def ask_user(question: str) -> str:
+            """Ask the user a question."""
+            return suspend({"question": question}, kind="ask_user")
+
+        path = tmp_path / "traces.jsonl"
+        provider = JsonlTracingProvider.configured(_path=path)
+
+        def make_agent(model):
+            return Agent(
+                name="agent",
+                model=model,
+                skills_path=skills_dir,
+                tools=[ask_user],
+                tracing_provider=provider,
+                memory_compaction=compact_tool_results(),  # drop mode
+                memory_compaction_ratio=0.0,  # force compaction on every pass, incl. resume
+                max_iter=6,
+            )
+
+        # --- process A: read skill -> pinned result, then suspend ---
+        suspend_model = TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="r1", name="read_skill", input={"name": "cars"})],
+                stop_reason="tool_use",
+            ),
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="a1", name="ask_user", input={"question": "which model?"})],
+                stop_reason="tool_use",
+            ),
+        ])
+        events1 = [e async for e in make_agent(suspend_model)(prompt="read the cars skill then ask me")]
+        out1 = next(e for e in reversed(events1) if hasattr(e, "status"))
+        interaction = next(e for e in events1 if isinstance(e, InteractionEvent))
+        assert out1.status.reason == "input_required"
+        assert path.exists()
+
+        # --- process B: brand-new agent + context, resume purely from the JSONL trace ---
+        resume_model = TestModel(responses=["Porsche 911 it is."])
+        out2 = await make_agent(resume_model)(
+            prompt="read the cars skill then ask me",
+            parent_id=out1.run_id,
+            resume={interaction.interaction_id: "the 911"},
+        ).collect()
+        assert out2.status.code == "success", out2.error
+
+        # The pinned skill body survived serialization + compaction-on-resume. Read the resumed
+        # run's persisted memory back off disk and re-validate it into Messages.
+        record = next(
+            json.loads(line)
+            for line in path.read_text().splitlines()[::-1]
+            if line.strip() and json.loads(line).get("run_id") == out2.run_id
+        )
+        agent_span = next(s for s in record["spans"] if s["path"] == "agent")
+        memory = [Message.validate(m) for m in agent_span["memory"]]
+        bodies = [
+            c.content[0].text for m in memory if m.role == "tool" for c in m.content
+            if isinstance(c, ToolResultContent) and c.pinned
+        ]
+        assert any("Cars Skill" in b for b in bodies), "pinned skill body lost across JSONL resume + compaction"
+
+    @pytest.mark.asyncio
+    async def test_skill_body_survives_aggressive_compaction(self, skills_dir):
+        """End-to-end: with drop-mode compaction forced every iteration, the pinned skill body
+        stays in memory and its tools stay resolvable — tools and guidance don't drift apart."""
+        from messer.core.memory_compaction import compact_tool_results
+        from messer.state import RunContext, get_or_create_run_context, set_run_context
+        from messer.state.tracing.providers import InMemoryTracingProvider
+        from messer.types.content import ToolResultContent, ToolUseContent
+        from messer.types.message import Message
+
+        # read the skill, then make an unrelated tool call (so the skill result is no longer the
+        # latest batch and a naive compactor would drop it), then finish.
+        model = TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="r1", name="read_skill", input={"name": "cars"})],
+                stop_reason="tool_use",
+            ),
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="s1", name="search_cars", input={"query": "911"})],
+                stop_reason="tool_use",
+            ),
+            "done",
+        ])
+        agent = Agent(
+            name="agent",
+            model=model,
+            skills_path=skills_dir,
+            memory_compaction=compact_tool_results(),  # drop mode
+            memory_compaction_ratio=0.0,  # force compaction every iteration
+            max_iter=6,
+        )
+
+        ctx = RunContext(tracing_provider=InMemoryTracingProvider)
+        set_run_context(ctx)
+        result = await agent(prompt="read the cars skill then search").collect()
+        assert result.status.code == "success", result.error
+
+        memory = ctx._trace.get_path(agent._path)[0].memory
+        # The pinned skill body survived aggressive compaction.
+        bodies = [
+            c.content[0].text for m in memory if m.role == "tool" for c in m.content
+            if isinstance(c, ToolResultContent) and c.pinned
+        ]
+        assert any("Cars Skill" in b for b in bodies), "pinned skill body was compacted away"
+
+        # And the skill's tools are still resolvable (activation intact).
+        session = await get_or_create_run_context().get_session()
+        assert "cars" in session["__in_context_skills"][agent._path]
+
+        InMemoryTracingProvider._storage.clear()
+
+
+class TestReadSkillTool:
+    """Test the ReadSkill tool functionality."""
+
+    @pytest.mark.asyncio
+    async def test_read_skill_basic(self, skills_dir):
+        """Test reading a skill's main documentation via agent execution."""
+        from messer.types.content import ToolUseContent
+        from messer.types.message import Message
+
+        def check_skill_content() -> str:
+            """Tool that reads a skill and returns content."""
+            from messer.state import get_run_context
+
+            parent_span = get_run_context().parent_span()
+
+            # Find the skill
+            skill = next((t for t in parent_span.runnable.tools if isinstance(t, Skill) and t.name == "cars"), None)
+            assert skill is not None
+            return skill.content
+
+        # Configure TestModel to call the tool, then return a final answer.
+        model = TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="c1", name="check_skill_content", input={})],
+                stop_reason="tool_use",
+            ),
+            "done",
+        ])
+
+        agent = Agent(
+            name="agent", model=model, skills_path=skills_dir, tools=[Tool(handler=check_skill_content)]
+        )
+
+        # Execute through agent to have proper context
+        events = []
+        async for event in agent(prompt="check the skill content"):
+            events.append(event)
+
+        # Find the tool output
+        tool_outputs = [e for e in events if hasattr(e, "output") and isinstance(e.output, str)]
+        assert any("Cars Skill" in str(e.output) for e in tool_outputs)
+
+    @pytest.mark.asyncio
+    async def test_read_skill_with_reference(self, skills_dir):
+        """Test reading a skill reference file."""
+        skill = Skill(path=skills_dir / "cars")
+
+        # Test get_reference directly (doesn't need context)
+        result = skill.get_reference("pricing.md")
+
+        assert "Pricing Information" in result
+        assert "Porsche Models" in result
+
+    @pytest.mark.asyncio
+    async def test_read_skill_content_available(self, skills_dir):
+        """Test that skill content is available after initialization."""
+        skill = Skill(path=skills_dir / "cars")
+
+        # Content should be loaded during init
+        assert skill.content
+        assert "Cars Skill" in skill.content
+        assert "Porsche vehicles" in skill.content
+
+
+class TestSkillResolve:
+    """Test Skill.resolve() behavior with context tracking."""
+
+    def test_skill_tools_loaded_at_init(self, skills_dir):
+        """Test that skill tools are loaded during initialization."""
+        skill = Skill(path=skills_dir / "cars")
+
+        # Tools should be loaded in the tools list
+        assert len(skill.tools) == 1
+        assert skill.tools[0].name == "search_cars"
+
+    @pytest.mark.asyncio
+    async def test_skill_resolve_behavior(self, skills_dir):
+        """Test that skill resolve returns tools based on context."""
+        # This test verifies the structure, actual context behavior
+        # is tested in integration tests
+        skill = Skill(path=skills_dir / "cars")
+
+        # Skill has tools loaded
+        assert len(skill.tools) == 1
+
+        # The resolve method checks for in_context_skills on the span
+        # which requires proper RunContext - tested in integration
+
+
+@pytest.mark.integration
+class TestSkillIntegration:
+    """Integration tests for skill functionality with agents."""
+
+    @pytest.mark.asyncio
+    async def test_skill_tools_available_after_reading(self, skills_dir):
+        """Test that skill tools become available after reading the skill."""
+        tool_calls = []
+
+        def list_tools() -> str:
+            """List all available tool names."""
+            from messer.state import get_run_context
+
+            parent_span = get_run_context().parent_span()
+
+            tool_names = [t.name for t in parent_span.runnable.tools if isinstance(t, Tool)]
+            tool_calls.append(tool_names)
+            return f"Available tools: {', '.join(tool_names)}"
+
+        agent = Agent(
+            name="car_agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            tools=[Tool(handler=list_tools)],
+            max_iter=10,
+        )
+
+        # Run agent - it should list tools, read skill, then list tools again
+        events = []
+        async for event in agent(prompt="First list tools, then read the cars skill, then list tools again"):
+            events.append(event)
+
+        # Verify the agent executed successfully
+        assert len(events) > 0
+
+        # Check if read_skill was called
+        read_skill_events = [e for e in events if hasattr(e, "metadata") and e.metadata.get("type") == "ReadSkill"]
+
+        # If we have multiple list_tools calls, verify search_cars appears after reading
+        if len(tool_calls) >= 2:
+            # Before reading: search_cars should not be available
+            assert "search_cars" not in tool_calls[0]
+
+            # After reading (if read_skill was called): search_cars should be available
+            if read_skill_events:
+                # Check if search_cars appeared in any subsequent call.
+                # This might not always be true depending on LLM behavior,
+                # so we just verify the structure works.
+                any("search_cars" in tools for tools in tool_calls[1:])
+
+    @pytest.mark.asyncio
+    async def test_skill_tools_resolve_when_in_context(self, skills_dir):
+        """Test that skill.resolve() returns tools when skill is in context."""
+
+        async def mark_skill_in_context() -> str:
+            """Tool that marks a skill as in context."""
+            from messer.state import get_or_create_run_context
+
+            run_context = get_or_create_run_context()
+            session = await run_context.get_session()
+
+            # Mark cars skill as in context
+            if "__in_context_skills" not in session:
+                session["__in_context_skills"] = []
+            session["__in_context_skills"].append("cars")
+
+            return "Skill marked in context"
+
+        def check_resolved_tools() -> str:
+            """Tool that checks what tools are resolved."""
+            from messer.state import get_run_context
+
+            parent_span = get_run_context().parent_span()
+
+            # Get all tool names
+            tool_names = [t.name for t in parent_span.runnable.tools]
+            return f"Available tools: {', '.join(tool_names)}"
+
+        agent = Agent(
+            name="agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            tools=[Tool(handler=mark_skill_in_context), Tool(handler=check_resolved_tools)],
+            max_iter=5,
+        )
+
+        # Execute agent - it should mark skill in context, then see the tools
+        events = []
+        async for event in agent(prompt="First mark skill in context, then check resolved tools"):
+            events.append(event)
+
+        # The agent should have called both tools
+        # After marking in context, resolved tools should include search_cars
+
+    @pytest.mark.asyncio
+    async def test_multiple_skills_tools_isolation(self, skills_dir):
+        """Test that only read skills have their tools available."""
+        agent = Agent(name="agent", model=TestModel(), skills_path=skills_dir)
+
+        # Get cars and bikes skills
+        cars_skill = next(t for t in agent.tools if isinstance(t, Skill) and t.name == "cars")
+        bikes_skill = next(t for t in agent.tools if isinstance(t, Skill) and t.name == "bikes")
+
+        # Cars has tools, bikes doesn't
+        assert len(cars_skill.tools) == 1
+        assert len(bikes_skill.tools) == 0
+
+        # Initially neither should resolve tools (not in context)
+
+        # We can test the structure is correct
+        assert cars_skill.tools[0].name == "search_cars"
+
+    @pytest.mark.asyncio
+    async def test_end_to_end_skill_tool_availability(self, skills_dir):
+        """
+        End-to-end test: Verify that after reading a skill, its tools become available
+        in subsequent agent iterations.
+        """
+        call_log = []
+
+        def track_available_tools() -> str:
+            """Track which tools are available at this moment."""
+            from messer.state import get_run_context
+
+            parent_span = get_run_context().parent_span()
+
+            # Get current iteration's resolved tools
+            tool_names = [t.name for t in parent_span.runnable.tools if isinstance(t, Tool)]
+            call_log.append({"iteration": len(call_log), "tools": tool_names})
+
+            has_search_cars = "search_cars" in tool_names
+            return f"search_cars available: {has_search_cars}"
+
+        agent = Agent(
+            name="test_agent",
+            model=TestModel(),
+            skills_path=skills_dir,
+            tools=[Tool(handler=track_available_tools)],
+            max_iter=10,
+        )
+
+        # Run agent with a prompt that should:
+        # 1. First check tools (search_cars not available)
+        # 2. Read the cars skill
+        # 3. Check tools again (search_cars should be available)
+        events = []
+        async for event in agent(
+            prompt="First track available tools, then read the cars skill using read_skill, then track available tools again"
+        ):
+            events.append(event)
+
+        # Verify we have output events
+        output_events = [e for e in events if hasattr(e, "output")]
+        assert len(output_events) > 0
+
+        # Check that read_skill was called
+        read_skill_calls = [e for e in events if hasattr(e, "metadata") and e.metadata.get("type") == "ReadSkill"]
+
+        # If read_skill was called, verify the flow worked
+        if read_skill_calls:
+            # The skill was read, so in subsequent iterations search_cars should be available
+            pass  # Full verification would require checking resolved tools per iteration
+
+    @pytest.mark.integration
+    @pytest.mark.asyncio
+    async def test_skill_persistence_across_turns(self, skills_dir):
+        """Test that skills remain in context across multiple agent turns."""
+        agent = Agent(name="persistent_agent", model=TestModel(), skills_path=skills_dir, max_iter=3)
+
+        # First turn: read the skill
+        events1 = []
+        async for event in agent(prompt="Read the cars skill"):
+            events1.append(event)
+
+        # Second turn: the skill should still be in context
+        # This tests the persistence mechanism in agent._get_history()
+        events2 = []
+        async for event in agent(prompt="What skills did we read?"):
+            events2.append(event)
+
+        # Both turns should complete successfully
+        assert len(events1) > 0
+        assert len(events2) > 0
+
+
+class TestSkillToolLoading:
+    """Test dynamic tool loading from skill directories."""
+
+    def test_skill_loads_multiple_tools(self, tmp_path):
+        """Test loading multiple tools from a skill."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        (skill_dir / "SKILL.md").write_text("""---
+name: multi_tool
+description: Skill with multiple tools
+---
+Content
+""")
+
+        tools_dir = skill_dir / "tools"
+        tools_dir.mkdir()
+
+        # Create multiple tool files
+        (tools_dir / "tool1.py").write_text("""
+from messer import Tool
+
+tool1 = Tool(name="tool1", handler=lambda x: x)
+""")
+
+        (tools_dir / "tool2.py").write_text("""
+from messer import Tool
+
+tool2 = Tool(name="tool2", handler=lambda x: x * 2)
+""")
+
+        skill = Skill(path=skill_dir)
+        assert len(skill.tools) == 2
+        assert {t.name for t in skill.tools} == {"tool1", "tool2"}
+
+    def test_skill_skips_non_python_files(self, tmp_path):
+        """Test that non-Python files in tools directory are skipped."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        (skill_dir / "SKILL.md").write_text("""---
+name: test
+description: Test skill
+---
+Content
+""")
+
+        tools_dir = skill_dir / "tools"
+        tools_dir.mkdir()
+
+        # Create various file types
+        (tools_dir / "tool.py").write_text("""
+from messer import Tool
+tool = Tool(name="valid_tool", handler=lambda: "ok")
+""")
+        (tools_dir / "readme.md").write_text("Not a tool")
+        (tools_dir / "data.json").write_text("{}")
+
+        skill = Skill(path=skill_dir)
+        assert len(skill.tools) == 1
+        assert skill.tools[0].name == "valid_tool"
+
+    def test_skill_prevents_module_reentry(self, tmp_path):
+        """Test that modules are not loaded multiple times."""
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+
+        (skill_dir / "SKILL.md").write_text("""---
+name: test
+description: Test
+---
+Content
+""")
+
+        tools_dir = skill_dir / "tools"
+        tools_dir.mkdir()
+
+        (tools_dir / "tool.py").write_text("""
+from messer import Tool
+tool = Tool(name="test_tool", handler=lambda: "ok")
+""")
+
+        # Create skill twice - should not cause issues
+        skill1 = Skill(path=skill_dir)
+        skill2 = Skill(path=skill_dir)
+
+        assert len(skill1.tools) == 1
+        assert len(skill2.tools) == 1

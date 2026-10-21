@@ -1,0 +1,112 @@
+---
+title: "Self-Hosted"
+description: "Run Messer projects on your own infrastructure"
+---
+
+Self-hosting means you run the same three layers a `messer create` project contains — **UI**, **API**, and **workforce** — without `messer start` managing them. You own process lifecycle, port allocation, env wiring, restarts, and log aggregation.
+
+There is no `messer build` or CLI-generated Docker image. You bring your own process manager (systemd, supervisord, Kubernetes, etc.) and production build pipeline.
+
+## Prerequisites
+
+- A project created with [`messer create`](/quickstart#create-a-messer-project)
+- [Bun](https://bun.sh) for `api/` and `ui/`
+- [uv](https://docs.astral.sh/uv/) for workforce Python deps
+- `messer[server]` installed in each workforce member's venv
+
+## What `messer start` does (that you must replicate)
+
+`messer start` is the reference implementation. When self-hosting, reproduce the same wiring:
+
+### 1. Workforce members
+
+For each `workforce/<name>/` with a `messer.yaml`:
+
+```bash
+cd workforce/<name>
+uv sync
+uv run -m messer.server.http --port <port> --import_spec <fqn>
+```
+
+`<fqn>` comes from `messer.yaml` (e.g. `agent.py::agent`). The HTTP server exposes:
+
+```http
+POST http://localhost:<port>/run      # collect (returns final OutputEvent)
+POST http://localhost:<port>/stream   # SSE event stream
+GET  http://localhost:<port>/healthcheck
+```
+
+An Agent also exposes `/voice`, `/voice/ws`, and `/voice/rtc`. Install `messer[server,voice]` for browser voice and WebRTC, or add `voice-livekit` for LiveKit rooms. Voice connections are long-lived: configure WebSocket upgrades, connection timeouts, and the appropriate media networking in your reverse proxy. See [Voice transports](/voice/transports) for carrier routes and ICE/TURN configuration.
+
+### 2. API
+
+```bash
+cd api
+bun install
+PORT=<api_port> bun run dev    # dev; use your production start command in prod
+```
+
+### 3. UI (if present)
+
+```bash
+cd ui
+bun install
+bun run dev --port <ui_port>   # dev; use your production build/serve in prod
+```
+
+### 4. Cross-service env vars
+
+The API and UI need to know where workforce members live. `messer start` injects these — set them yourself when self-hosting:
+
+| Variable | Example | Purpose |
+|----------|---------|---------|
+| `MESSER_START_WORKFORCE` | `a1b2c3d4-...:4455,b5c6d7e8-...:4456` | Manifest `_id` → port map (comma-separated) |
+| `MESSER_START_API_PORT` | `3000` | API port (for services that call back to API) |
+| `MESSER_START_UI_PORT` | `3737` | UI port |
+| `PORT` | per-service | Port each Bun service binds to |
+
+`MESSER_START_WORKFORCE` uses the `_id` from each member's `messer.yaml`, not the directory name.
+
+Also pass through model keys and integration secrets (`OPENAI_API_KEY`, etc.). Locally, `messer start` auto-loads `<project>/.env` and `workforce/<name>/.env` into each process; when self-hosting you must export or inject those variables yourself (e.g. via your process manager or a secrets store). See [Environment variables](/deployment#environment-variables).
+
+<Warning>
+If any of `MESSER_START_*` are missing, platform SDK helpers that resolve service URLs will fail. Mirror what `messer start` sets before debugging routing issues.
+</Warning>
+
+## Production considerations
+
+### Process management
+
+Run each component under a supervisor that restarts on crash:
+
+- One process per workforce member
+- One for API
+- One for UI (if used)
+
+Use health checks against `/healthcheck` on workforce HTTP servers.
+
+### Logging
+
+`messer start` multiplexes stdout/stderr into one terminal with per-service prefixes and `f`/`m` focus controls. Self-hosted, you need your own approach:
+
+- Separate log files or streams per component
+- Structured logging if shipping to Datadog / CloudWatch / etc.
+- Correlate by request ID if the API fans out to multiple workforce members
+
+### Networking
+
+- Put a reverse proxy (nginx, Caddy, etc.) in front of UI and API for TLS
+- Workforce members can stay internal — only the API needs to reach them
+- Lock down ports so workforce HTTP servers aren't exposed publicly
+
+### Builds
+
+The scaffold uses `bun run dev` for API/UI. For production, use whatever production build your scaffolded `api/` and `ui/` packages define (static UI build + API server, etc.). The workforce side stays `uv run -m messer.server.http` with a pinned `uv sync` environment.
+
+### Observability
+
+Platform tracing still works from self-hosted runtimes — configure a [tracing provider](/core-concepts/tracing) to export spans to Messer or your own OTLP endpoint.
+
+## When to self-host
+
+Self-hosting makes sense when you need full control over networking, data residency, or custom orchestration. For most teams, the [Messer Platform](/deployment/platform) is less operational overhead — same project layout, no component wiring to maintain.

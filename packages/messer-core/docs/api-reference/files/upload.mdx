@@ -1,0 +1,12 @@
+---
+title: "Upload file (temporary)"
+openapi: "POST /files"
+---
+
+<Note>
+  **Utility endpoint** — not org-scoped. Upload requires authentication; the response includes a download URL (~24h). Anyone with the URL can download until expiry — treat it as a secret. Not for sensitive or regulated data.
+</Note>
+
+Ephemeral staging only (~24h lifecycle); there is no durable org file record behind this route.
+
+For **durable storage, parsing, embedding, and reuse** across a knowledge base, use [Knowledge Bases → Files](/api-reference/knowledge-bases/files/list) (`POST /orgs/{org_id}/k2/{kb_id}/files`) instead.

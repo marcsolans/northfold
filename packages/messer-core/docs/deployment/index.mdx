@@ -1,0 +1,121 @@
+---
+title: "Overview"
+description: "Run and deploy Messer projects locally or in production"
+---
+
+A Messer project is three layers:
+
+| Layer | Directory | Runtime |
+|-------|-----------|---------|
+| **UI** | `ui/` | React + Vite (Bun) |
+| **API** | `api/` | Elysia (Bun) — routes requests to workforce |
+| **Workforce** | `workforce/<name>/` | Python agents/workflows (`messer.server.http`) |
+
+Each workforce member has its own `messer.yaml` manifest. The API and UI discover workforce services through env vars (`MESSER_START_WORKFORCE`, etc.) that `messer start` wires up automatically.
+
+## Local development
+
+For day-to-day work, use [`messer start`](/quickstart#run-locally). It:
+
+- Detects `ui/`, `api/`, and every `workforce/<name>/` with a valid `messer.yaml`
+- Installs dependencies (`bun install`, `uv sync`)
+- Picks free ports (defaults: UI `3737`, API `3000`, workforce from `4455`)
+- Starts all services and multiplexes logs to one terminal
+- Exposes interactive commands (`o` open UI, `s` status, `r` restart, `f`/`m` log focus/mute, `q` quit)
+
+Override ports or env vars when needed:
+
+```bash
+messer start --ui-port 4000 --api-port 3001 --port my-agent=4500
+messer start --env OPENAI_API_KEY=sk-... --env my-agent:DEBUG=1
+messer start --env-file .env.staging --env-file api:.env.api
+```
+
+## Environment variables
+
+`messer start` composes a separate environment for each service before spawning it. You do not need `--env-file` for the standard project layout — these files are **auto-loaded** when present:
+
+| File | Scope |
+|------|-------|
+| `<project>/.env` | All services (UI, API, every workforce member) |
+| `workforce/<name>/.env` | That workforce member only |
+
+Missing files are skipped silently.
+
+Override or add variables at the CLI:
+
+```bash
+messer start --env DEBUG=1                    # all services
+messer start --env api:LOG_LEVEL=debug      # API only
+messer start --env-file .env.staging        # extra file, all services
+messer start --env-file my-agent:.env.local # extra file, one member
+```
+
+`--env` and `--env-file` accept an optional scope prefix: `ui:`, `api:`, or a workforce member name. Unscoped entries apply globally.
+
+### Precedence (low → high)
+
+Later layers win over earlier ones:
+
+1. Messer built-ins (`MESSER_LOG_FORMAT`, `MESSER_API_KEY`, etc. from your CLI profile)
+2. Inherited shell environment (`PORT` from your shell is ignored so it does not leak into services)
+3. Auto-loaded `<project>/.env`, then auto-loaded `workforce/<name>/.env` (members only)
+4. `--env-file` (in flag order; scoped files apply only to that service)
+5. `--env` (in flag order; scoped entries apply only to that service)
+6. Runtime wiring that always wins (`PORT`, `MESSER_START_*`, `MESSER_WORKFORCE`)
+
+Restart services (`r` in the `messer start` terminal, or quit and re-run) after changing `.env` files — changes are read at startup, not hot-reloaded.
+
+<Note>
+`.env` parsing is intentionally minimal: `KEY=VALUE` lines, optional `export` prefix, optional quotes, `#` comments. No variable expansion, line continuations, or shell escapes. For complex values, set the variable in your shell or use `--env`.
+</Note>
+
+<Tip>
+Vite and Bun may also read `ui/.env` and `api/.env` from those directories at dev time. Project-root `.env` is still the usual place for secrets shared across the stack (model API keys, integration tokens).
+</Tip>
+
+### Syncing with the platform: `messer env pull` / `push`
+
+For projects connected to the [Messer Platform](/deployment/platform), `messer env` keeps the local files above in sync with the project's variables for one environment (the env tracking your current branch, `--rev <branch>`, or `--default`).
+
+The CLI detects your current Git branch automatically. Variable types and secret recovery use the environment tracking that branch, including variables shared across all environments. Use `--rev` or `--default` only when you want to override the current branch.
+
+```bash
+messer env pull                 # platform → <project>/.env (+ MESSER_APP_ID per member)
+messer env push                 # <project>/.env → platform (upsert only)
+messer env push --dry-run       # show the plan, send nothing
+messer env push --secret DB_URL --plain LOG_LEVEL
+```
+
+What lands where:
+
+| Var | Written to | Why |
+|-----|-----------|-----|
+| Your project vars (`OPENAI_API_KEY`, ...) | `<project>/.env` | Loaded into every service by `messer start` |
+| `MESSER_APP_ID` | `workforce/<name>/.env` | Per workforce member; matched via the `_id` in that member's `messer.yaml`. Merged into the file — other lines are untouched |
+| Platform runtime vars (`MESSER_*`, `VITE_MESSER_*`) | `<project>/.env`, **commented out** (`--include-platform-vars` writes them active) | The platform resolves these before every deploy/preview. Active locally, `MESSER_PROJECT_ENV_ID` reroutes service calls to the deployed gateway instead of localhost. **Push never sends `MESSER_*` vars**, whatever the file or flags say |
+
+Secrets vs plain: a `# type: secret` (or `# secret`) comment directly above a var marks it as a secret, `# type: plain` (or `# plain`) as plain. A var without a comment keeps its current type on the platform; a brand-new var is inferred from its name and value (`*_KEY`, `*_TOKEN`, `*_PASSWORD`, `sk-...`, `user:pass@` URLs → secret). `--secret NAME` / `--plain NAME` override everything. The platform fixes a var's type when it is created — pushing an existing var only updates its value — so change types in the platform UI. Push refuses a file that marks a platform secret as plain unless you pass `--plain NAME` explicitly. The push plan always lists every var with its resolved type and where that decision came from.
+
+<Warning>
+Pulled files contain secrets in plaintext — keep `.env` files gitignored (`messer create` does this). `PORT`, `MESSER_PROJECT_SECRET`, and `MESSER_APP_ID` are never pushed as project vars.
+</Warning>
+
+`MESSER_APP_ID` remains active in each member's local `.env`. On POSIX systems, new env files are created with owner-only permissions, and atomic updates preserve existing file permissions. Pull attempts to recover secrets whose values were omitted or returned as placeholders; values that remain unavailable stay commented out so a later push cannot erase them.
+
+## Production
+
+For production you have two paths:
+
+<CardGroup cols={2}>
+  <Card title="Messer Platform" icon="cloud" href="/deployment/platform">
+    Managed hosting — connect your git repo, deploy a branch, platform runs UI, API, and workforce for you
+  </Card>
+  <Card title="Self-hosted" icon="server" href="/deployment/self-hosted">
+    Run UI, API, and workforce on your own infra — you own process lifecycle, ports, env wiring, and logging
+  </Card>
+</CardGroup>
+
+<Tip>
+Validate locally with `messer start` before deploying. The same project layout is what the platform builds from your repo.
+</Tip>

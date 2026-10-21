@@ -1,0 +1,39 @@
+---
+title: "Images"
+description: "AI agents can analyze and understand images by processing visual content alongside text instructions"
+---
+
+Agents automatically handle image files when included in prompts. First validate your image file with Messer's `File` type, then pass it alongside text in a list:
+
+```python
+from messer import Agent
+from messer.types.file import File
+
+agent = Agent(
+    name="VisionAgent",
+    model="anthropic/claude-sonnet-4-6",  # Vision-capable model
+    max_tokens=256,
+    system_prompt="Analyze images and provide detailed descriptions."
+)
+
+# Validate multiple image files and analyze
+image1 = File.validate("path/to/image1.jpg")
+image2 = File.validate("path/to/image2.png")
+image3 = File.validate("path/to/image3.jpeg")
+
+result = await agent(
+    prompt=["Analyze these images and provide a description of each one", image1, image2, image3]
+).collect()
+
+print(result.output.collect_text())
+```
+
+<Warning>
+Use vision-capable models for image processing. Check the [Model Reference](/models/overview) for models with vision support.
+</Warning>
+
+## Key Features
+
+- **Automatic Processing**: Images are automatically converted to the correct format for vision models
+- **Multi-modal**: Combine text and images in the same conversation
+- **File Support**: Works with local files, URLs, and base64 data

@@ -1,0 +1,118 @@
+---
+title: "Overview"
+description: "Complete guides and building patterns for Messer AI agents"
+---
+
+import { ExampleCard, ExampleGrid } from '/snippets/ExampleCard.jsx';
+
+Learn to build powerful AI agents through comprehensive guides and focused examples that demonstrate real-world applications and core patterns.
+
+## Guides
+
+Guides for connecting agents to services and building spoken conversations. Start with the local examples, then add the authentication, persistence, and deployment behavior your application needs.
+
+<Columns cols={3}>
+  <Card
+    title="Voice Agent"
+    icon="microphone"
+    href="/voice/quickstart"
+  >
+    Start with a browser conversation, then add greetings, tools, thinking sounds, fillers, and phone calls one lesson at a time
+  </Card>
+  <Card
+    title="Mail Assistant"
+    icon="envelopes"
+    href="/examples/guides/mail-assistant"
+  >
+    AI-powered Gmail integration that triages emails and autonomously drafts intelligent responses
+  </Card>
+  <Card
+    title="Slack Bot"
+    icon="slack"
+    href="/examples/guides/slack-bot"
+  >
+    Build a Slack bot that responds in real time via webhooks, with an AI agent and threaded conversations
+  </Card>
+  <Card
+    title="WhatsApp Assistant"
+    icon="whatsapp"
+    href="/examples/guides/whatsapp-assistant"
+  >
+    Build a text WhatsApp assistant with webhooks and persistence, then extend it to media
+  </Card>
+</Columns>
+
+## Agents
+
+Quick-start examples showcasing Messer's agent patterns. Learn specific techniques like tool integration, streaming responses, state management, and multi-agent orchestration through bite-sized implementations.
+
+<Tabs>
+  <Tab title="Calling Agents">
+    <ExampleGrid>
+      <ExampleCard title="Images" href="/examples/agents/images" />
+      <ExampleCard title="Word" href="/examples/agents/docx" />
+      <ExampleCard title="PDF" href="/examples/agents/pdf" />
+      <ExampleCard title="CSV" href="/examples/agents/csv" />
+      <ExampleCard title="Email" href="/examples/agents/emls" />
+      <ExampleCard title="Audio" href="/examples/agents/audio" />
+    </ExampleGrid>
+  </Tab>
+
+  <Tab title="Tools">
+    <ExampleGrid>
+      <ExampleCard title="Web Search" href="/examples/agents/search" />
+      <ExampleCard title="Approval-Required Tools" href="/examples/agents/approval-required-tools" />
+      <ExampleCard title="Text-to-Speech" href="/examples/agents/tts" />
+      <ExampleCard title="Image Generation" href="/examples/agents/image-generation" />
+    </ExampleGrid>
+  </Tab>
+
+  <Tab title="Knowledge Bases">
+    <ExampleGrid>
+      <ExampleCard title="SQL Queries & Data Management" href="/examples/agents/sql-queries" />
+      <ExampleCard title="Semantic Search with Embeddings" href="/examples/agents/semantic-search" />
+    </ExampleGrid>
+  </Tab>
+
+  <Tab title="Dynamic Agents">
+    <ExampleGrid>
+      <ExampleCard title="Custom Functions in System Prompts" href="/examples/agents/custom-functions-system-prompts" />
+      <ExampleCard title="Adaptive System Prompts" href="/examples/agents/adaptive-system-prompts" />
+      <ExampleCard title="Content-Aware Tools" href="/examples/agents/content-aware-tools" />
+    </ExampleGrid>
+  </Tab>
+
+  <Tab title="Evals">
+    <ExampleGrid>
+      <ExampleCard title="Input Validation" href="/examples/agents/input-validation" />
+      <ExampleCard title="Output Validation" href="/examples/agents/output-validation" />
+      <ExampleCard title="Tool Usage Validation" href="/examples/agents/execution-behavior" />
+      <ExampleCard title="Multi-turn Conversation Testing" href="/examples/agents/multi-turn-conversation" />
+    </ExampleGrid>
+  </Tab>
+</Tabs>
+
+## Workflows
+
+Step-by-step workflow examples that chain multiple operations together. Perfect for complex business processes that require explicit control flow and data transformation between steps.
+
+<Tabs>
+  <Tab title="Control Flow">
+    <ExampleGrid>
+      <ExampleCard title="Sequential Steps" href="/examples/workflows/sequential-steps" />
+      <ExampleCard title="Parallel Fan-Out" href="/examples/workflows/parallel-fan-out" />
+    </ExampleGrid>
+  </Tab>
+
+  <Tab title="Branching">
+    <ExampleGrid>
+      <ExampleCard title="Conditional Routing" href="/examples/workflows/conditional-routing" />
+    </ExampleGrid>
+  </Tab>
+
+  <Tab title="Composition">
+    <ExampleGrid>
+      <ExampleCard title="Workflow Composition" href="/examples/workflows/workflow-composition" />
+    </ExampleGrid>
+  </Tab>
+</Tabs>

@@ -1,0 +1,255 @@
+import argparse
+import json
+import re
+
+import libcst as cst
+
+from ..cli_utils import arg_input, parse_json_arg
+from ..cst_utils import (
+    StepCallRewriter,
+    collect_assignments,
+    collect_chained_step_names,
+    collect_step_names,
+    has_import,
+    insert_imports,
+    require_step,
+    resolve_entry_point_type,
+    resolve_runnable_name,
+)
+
+
+def key_to_accessor(key: str, subscript_subkeys: bool = True) -> str:
+    """Convert a dot-notation key path to Python accessor syntax.
+
+    The first segment is an attribute on the step ``Span`` (e.g. ``.output``).
+    Numeric segments are always subscripts (list/tuple indexing).
+
+    The access style for string sub-keys depends on the source step's output
+    type, controlled by ``subscript_subkeys``:
+
+    - ``True`` (dicts): ``output.cleaned`` → ``.output["cleaned"]``.
+      Custom function / tool steps return dicts; attribute access would raise
+      ``AttributeError``.
+    - ``False`` (objects): ``output.content`` → ``.output.content``.
+      Agent steps expose a ``Message`` / Pydantic model on ``Span.output``,
+      which has no mapping access; subscripting would raise ``TypeError``.
+
+    Examples (dict mode):
+        "output"                              → ".output"
+        "output.cleaned"                      → '.output["cleaned"]'
+        "output.0.something.something_else.0" → '.output[0]["something"]["something_else"][0]'
+    Examples (object mode):
+        "output.content"                      → ".output.content"
+        "output.0.text"                       → ".output[0].text"
+    """
+    parts = key.split(".")
+    result = ""
+    for i, part in enumerate(parts):
+        if part.isdigit():
+            result += f"[{part}]"
+        elif i == 0:
+            result += f".{part}"
+        elif subscript_subkeys:
+            result += f'["{part}"]'
+        else:
+            result += f".{part}"
+    return result
+
+
+def accessor_to_key(accessor: str) -> str:
+    """Convert Python accessor syntax back to dot-notation key path.
+
+    Examples:
+        ".output"                                    → "output"
+        ".output.cleaned"                            → "output.cleaned"
+        ".output[0].something.something_else[0]"     → "output.0.something.something_else.0"
+        '["cleaned"]'                                → "cleaned"
+        '.output["cleaned"]'                         → "output.cleaned"
+    """
+    # Normalize bracket access: ["key"] → .key, [0] → .0
+    s = re.sub(r'\["([^"]+)"\]', r".\1", accessor)
+    s = re.sub(r"\[(\d+)\]", r".\1", s)
+    # Strip leading dot
+    return s.lstrip(".")
+
+
+def register(subparsers: argparse._SubParsersAction) -> None:
+    sp = subparsers.add_parser(
+        "set-param",
+        help="Set a parameter on a workflow step (static value or mapped from another step's output).",
+    )
+    sp.add_argument(
+        "--target",
+        required=True,
+        help="Target step name.",
+    )
+    sp.add_argument(
+        "--name",
+        required=True,
+        help="Parameter name to set on the target step.",
+    )
+    sp.add_argument(
+        "--type",
+        required=True,
+        choices=["map", "value"],
+        dest="param_type",
+        help="Parameter type: 'map' to wire from another step's output, 'value' for a static value.",
+    )
+    sp.add_argument(
+        "--source",
+        default=None,
+        help="Source step name (required for type=map).",
+    )
+    sp.add_argument(
+        "--key",
+        default=None,
+        help=(
+            "Dot-notation path into the source step's output (optional, for type=map). "
+            'E.g. "output.cleaned", "output.0.items", "output.result.name".'
+        ),
+    )
+    sp.add_argument(
+        "--value",
+        default=None,
+        type=arg_input,
+        help=(
+            "Static value as a JSON literal (required for type=value). "
+            "Strings must include the JSON quotes, e.g. --value '\"is:unread\"'. "
+            "Use 'null' to remove the param. "
+            "Use '@path' to read from file or '-' to read from stdin."
+        ),
+    )
+
+
+def run(entry_point: str, args: argparse.Namespace, *, tree: cst.Module | None = None) -> cst.CSTTransformer:
+    ep_type = resolve_entry_point_type(tree, entry_point) if tree else None
+
+    if ep_type != "Workflow":
+        raise ValueError("set-param requires a Workflow entry point.")
+
+    assignments = collect_assignments(tree)
+    step_names = collect_step_names(tree, entry_point, assignments)
+    chained_step_names = collect_chained_step_names(tree, entry_point, assignments)
+
+    require_step(args.target, step_names, chained_step_names, kind="Target", operation="set-param")
+
+    param_type = args.param_type
+
+    if param_type == "map":
+        if not args.source:
+            raise ValueError("--source is required for type=map.")
+        # Sources only need to exist in the graph (chained steps are fine) —
+        # they are referenced by runtime name inside step_span().
+        source = require_step(
+            args.source, {**step_names, **chained_step_names}, kind="Source", operation="set-param",
+        )
+        return ParamSetter(
+            entry_point=entry_point,
+            target=args.target,
+            param_name=args.name,
+            param_type="map",
+            source=source,
+            key=args.key,
+            assignments=assignments,
+            step_names=step_names,
+        )
+
+    if param_type == "value":
+        if args.value is None:
+            raise ValueError("--value is required for type=value.")
+        value = parse_json_arg(
+            args.value, "--value",
+            hint="String values must include the JSON quotes, e.g. --value '\"is:unread label:inbox\"'.",
+        )
+        return ParamSetter(
+            entry_point=entry_point,
+            target=args.target,
+            param_name=args.name,
+            param_type="value",
+            value=value,
+            assignments=assignments,
+            step_names=step_names,
+        )
+
+    raise ValueError(f"Unknown param type: {param_type}")
+
+
+class ParamSetter(StepCallRewriter):
+    """Set a parameter on a workflow step's .step() call."""
+
+    def __init__(
+        self,
+        entry_point: str,
+        target: str,
+        param_name: str,
+        param_type: str,
+        source: str | None = None,
+        key: str | None = None,
+        value: object = None,
+        assignments: dict[str, cst.Call] | None = None,
+        step_names: dict[str, str] | None = None,
+    ):
+        self.entry_point = entry_point
+        self.target = target
+        self.param_name = param_name
+        self.param_type = param_type
+        self.source = source
+        self.key = key
+        self.value = value
+        self.assignments = assignments or {}
+        self.step_names = step_names or {}
+        self.needs_reorder = param_type == "map"
+        # Set to True by StepCallRewriter once the target .step() call was
+        # found — an unchanged file is then an idempotent save (param already
+        # set to this value).
+        self.matched = False
+
+    def _source_uses_attribute_access(self) -> bool:
+        """Whether the source step's output is accessed via attributes (not subscript).
+
+        Agent steps expose a ``Message`` / Pydantic ``output_model`` instance on
+        ``Span.output`` — attribute access. Custom function and tool steps return
+        dicts — subscript access. Bare functions (not assigned to a constructor
+        call) and unknown sources default to dict access.
+        """
+        for call in self.assignments.values():
+            if resolve_runnable_name(call) == self.source and isinstance(call.func, cst.Name):
+                return call.func.value == "Agent"
+        return False
+
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
+        if self.param_type == "map" and not has_import(original_node, "messer.state", "get_run_context"):
+            body = list(updated_node.body)
+            insert_imports(body, [cst.parse_statement("from messer.state import get_run_context\n")])
+            return updated_node.with_changes(body=body)
+        return updated_node
+
+    def _build_step_call_code(self, existing_call: cst.Call) -> str:
+        first_arg = existing_call.args[0]
+        step_ref = cst.parse_module("").code_for_node(first_arg.value)
+
+        parts = [step_ref]
+
+        # Keep existing kwargs except the one we're setting.
+        for arg in existing_call.args[1:]:
+            if isinstance(arg.keyword, cst.Name) and arg.keyword.value == self.param_name:
+                continue
+            if isinstance(arg.keyword, cst.Name):
+                value_code = cst.parse_module("").code_for_node(arg.value).strip()
+                parts.append(f"{arg.keyword.value}={value_code}")
+            else:
+                value_code = cst.parse_module("").code_for_node(arg.value).strip()
+                parts.append(value_code)
+
+        # Add the new param (unless value type with None = remove).
+        if self.param_type == "map":
+            base = f'get_run_context().step_span("{self.source}")'
+            if self.key:
+                accessor = key_to_accessor(self.key, subscript_subkeys=not self._source_uses_attribute_access())
+                parts.append(f"{self.param_name}=lambda: {base}{accessor}")
+            else:
+                parts.append(f"{self.param_name}=lambda: {base}.output")
+        elif self.param_type == "value" and self.value is not None:
+            parts.append(f"{self.param_name}={json.dumps(self.value)}")
+
+        return f"{self.entry_point}.step({', '.join(parts)})"

@@ -1,0 +1,189 @@
+---
+title: "Dynamic Agents"
+description: "Learn how to create agents with dynamic system prompts that update automatically using real time data"
+---
+
+## Dynamic System Prompts
+
+Agents support dynamic system prompts through callable functions that are executed each time the agent runs, providing fresh context.
+
+### Using Callable Functions
+
+The preferred way to create dynamic system prompts is to pass a callable directly to `system_prompt`. This gives you full control over the system prompt construction and access to all runtime inputs:
+
+```python
+from datetime import datetime
+from messer import Agent
+from messer.state import get_run_context
+
+def get_system_prompt() -> str:
+    run_context = get_run_context()
+    current_span = run_context.current_span()
+    
+    now = datetime.now()
+    date_str = now.strftime("%A, %B %d, %Y")
+    time_str = now.strftime("%H:%M")
+
+    system_prompt = f"You're a helpful assistant. Current date: {date_str}. Current time: {time_str}."
+
+    # Access runtime inputs
+    instructions = current_span.input.get("instructions", None)
+    if instructions:
+        system_prompt += f"\n\n## Instructions\n{instructions}"
+
+    user = current_span.input.get("user", None)
+    if isinstance(user, dict):
+        system_prompt += "\n\n## About the User\n"
+        for k, v in user.items():
+            if isinstance(v, list):
+                system_prompt += f"\n- {k}:"
+                for item in v:
+                    system_prompt += f"\n  - {item}"
+            else:
+                system_prompt += f"\n- {k}: {v}"
+
+    return system_prompt
+
+agent = Agent(
+    name="dynamic_agent",
+    model="openai/gpt-4o-mini",
+    system_prompt=get_system_prompt,  # Pass the function directly
+)
+```
+
+Then call the agent with runtime data:
+
+```python
+response = await agent(
+    prompt="Who am I?",
+    instructions="Be concise and friendly.",
+    user={
+        "name": "Alice",
+        "role": "Developer",
+        "memories": [
+            "Prefers Python over JavaScript",
+            "Working on a new project",
+        ],
+    },
+).collect()
+```
+
+### Using Template Syntax
+
+<Warning>
+Template syntax will be deprecated in a future release. We recommend using callable functions instead.
+</Warning>
+
+For simpler cases, you can use `{module::function}` syntax to embed dynamic values:
+
+```python
+agent = Agent(
+    name="dynamic_agent",
+    model="openai/gpt-4o-mini",
+    system_prompt="""You are a time-aware assistant.
+    Current time: {datetime::datetime.now}."""
+)
+```
+
+The previous example used a built-in function (datetime). You can also create your own custom functions:
+
+```python title="my_functions.py"
+def get_server_status():
+    """Get server status."""
+    status = check_server()  # Calls external function
+    return f"Server: {status}"
+
+agent = Agent(
+    name="custom_agent", 
+    model="openai/gpt-4o-mini",
+    system_prompt="""You are a helpful assistant.
+    Status: {my_functions::get_server_status}."""
+)
+```
+
+You can also pass dynamic parameters to these functions using `RunContext` data that you previously set in the context.
+
+```python title="my_functions.py"
+from messer import Agent, Tool
+from messer.state import get_run_context
+
+def get_user_language():
+    span = get_run_context().current_span()
+    return span.input["language"]
+
+def set_user_language(l):
+    span = get_run_context().current_span()
+    span.input["language"] = "catalan"
+
+agent = Agent(
+    name="multilang_agent",
+    model="openai/gpt-4o-mini",
+    pre_hook=set_user_language,
+    system_prompt="Answer in {my_functions::get_user_language}."
+)
+
+await agent(prompt="Which is the capital of Germany?").collect()
+```
+
+The response will be in Catalan.
+
+**Benefits:**
+
+- Real-time context: System prompts reflect current state
+- Dynamic behavior: Agent adapts to changing conditions
+- Automatic execution: Functions run on each conversation
+- Performance: Template resolution is fast and cached
+- Sync/Async: Handles both sync and async functions automatically
+
+
+## Dynamic Tools
+Messer provides the `ToolSet` class for dynamic tool resolution. ToolSets resolve tools at runtime before each LLM call, enabling dynamic tool availability based on execution context. Use ToolSets instead of static tool lists when:
+
+- **Context-dependent availability**: Tools should only appear under certain conditions (user permissions, environment state, iteration count)
+- **Lazy loading**: Defer tool initialization until actually needed
+- **Dynamic configuration**: Tools need runtime parameters or state that isn't known at agent creation
+- **Conditional behavior**: Tool availability changes during execution
+- **Token efficiency**: Reduce token consumption by exposing only relevant tools instead of all available tools
+- **Improved clarity**: When many tools exist but only a few are available per context, the agent sees fewer options and is less likely to get confused
+
+Implement the `resolve()` method to return a list of tools. Access runtime data through `get_run_context()` to inspect the current execution state.
+
+### Example: Role-based tool access
+
+This example shows accessing input parameters to conditionally provide tools. The role can be set via prehook or when calling the agent:
+
+```python
+from messer import Agent, Tool
+from messer.core.tool_set import ToolSet
+from messer.state import get_run_context
+
+class RoleBasedToolSet(ToolSet):
+    async def resolve(self) -> list[Tool]:
+        span = get_run_context().current_span()
+        role = span.input.get("role", "user")
+        
+        if role == "admin":
+            return [
+                Tool(handler=view_profile),
+                Tool(handler=delete_user),
+                Tool(handler=modify_permissions)
+            ]
+        else:
+            return [Tool(handler=view_profile)]
+
+
+admin_agent = Agent(
+    name="admin_agent",
+    model="openai/gpt-4o-mini",
+    tools=[RoleBasedToolSet()]
+)
+
+# Role can be set via prehook or as a parameter
+await admin_agent(prompt="Delete user 123", role="admin").collect()
+```
+
+The `resolve()` method is called before each LLM call. It reads the `role` from the input parameters and returns different tools:
+- `role == "admin"`: returns `view_profile`, `delete_user`, `modify_permissions`
+- Otherwise: returns only `view_profile`
+
+The agent only sees the tools returned by `resolve()`, preventing unauthorized actions when the role is not "admin".

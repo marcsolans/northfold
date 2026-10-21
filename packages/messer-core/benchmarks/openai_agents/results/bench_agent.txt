@@ -1,0 +1,219 @@
+
+[1m================================================================================================[0m
+[1m  Messer vs OpenAI Agents SDK - agent loop benchmark[0m
+  100 iters | burst {1: 50, 2: 30, 3: 40} | 100 mem | 200 throughput ops
+  Messer: TestModel offline | OpenAI Agents: custom Model offline
+  OpenAI Agents SDK found - will measure tracing disabled + local tracing processor
+[1m================================================================================================[0m
+
+  [2mSpot-checking correctness (Scenario 1)...[0m
+  Messer: OK  |  OAI: OK
+
+  [2m[Scenario 1][0m
+    Messer latency... p50=286.5 us
+    Messer memory... 42 KB peak
+    Messer burst (50 concurrent)... p50=234.6 us
+    Messer burst memory (50 concurrent)... 771 KB peak
+    Messer throughput conc=1... 2929/s
+    Messer throughput conc=10... 2955/s
+    Messer throughput conc=50... 2716/s
+    OAI (bare) latency... p50=1.59 ms
+    OAI (bare) memory... 88 KB peak
+    OAI (bare) burst (50 concurrent)... p50=29.84 ms
+    OAI (bare) burst memory (50 concurrent)... 1949 KB peak
+    OAI (bare) throughput conc=1... 592/s
+    OAI (bare) throughput conc=10... 1176/s
+    OAI (bare) throughput conc=50... 1334/s
+    OAI + tracing latency... p50=1.71 ms
+    OAI + tracing memory... 116 KB peak
+    OAI + tracing burst (50 concurrent)... p50=26.75 ms
+    OAI + tracing burst memory (50 concurrent)... 2086 KB peak
+    OAI + tracing throughput conc=1... 537/s
+    OAI + tracing throughput conc=10... 440/s
+    OAI + tracing throughput conc=50... 1340/s
+
+  [2m[Scenario 2][0m
+    Messer latency... p50=277.6 us
+    Messer memory... 70 KB peak
+    Messer burst (30 concurrent)... p50=516.2 us
+    Messer burst memory (30 concurrent)... 1122 KB peak
+    Messer throughput conc=1... 1662/s
+    Messer throughput conc=10... 1670/s
+    Messer throughput conc=50... 1660/s
+    OAI (bare) latency... p50=3.46 ms
+    OAI (bare) memory... 105 KB peak
+    OAI (bare) burst (30 concurrent)... p50=53.49 ms
+    OAI (bare) burst memory (30 concurrent)... 1504 KB peak
+    OAI (bare) throughput conc=1... 270/s
+    OAI (bare) throughput conc=10... 542/s
+    OAI (bare) throughput conc=50... 719/s
+    OAI + tracing latency... p50=3.83 ms
+    OAI + tracing memory... 126 KB peak
+    OAI + tracing burst (30 concurrent)... p50=53.53 ms
+    OAI + tracing burst memory (30 concurrent)... 1672 KB peak
+    OAI + tracing throughput conc=1... 252/s
+    OAI + tracing throughput conc=10... 575/s
+    OAI + tracing throughput conc=50... 686/s
+
+  [2m[Scenario 3][0m
+    Messer latency... p50=288.1 us
+    Messer memory... 60 KB peak
+    Messer burst (40 concurrent)... p50=9.14 ms
+    Messer burst memory (40 concurrent)... 1292 KB peak
+    Messer throughput conc=1... 1795/s
+    Messer throughput conc=10... 2078/s
+    Messer throughput conc=50... 2141/s
+    OAI (bare) latency... p50=1.93 ms
+    OAI (bare) memory... 105 KB peak
+    OAI (bare) burst (40 concurrent)... p50=29.58 ms
+    OAI (bare) burst memory (40 concurrent)... 2269 KB peak
+    OAI (bare) throughput conc=1... 488/s
+    OAI (bare) throughput conc=10... 904/s
+    OAI (bare) throughput conc=50... 1008/s
+    OAI + tracing latency... p50=2.04 ms
+    OAI + tracing memory... 127 KB peak
+    OAI + tracing burst (40 concurrent)... p50=32.69 ms
+    OAI + tracing burst memory (40 concurrent)... 2381 KB peak
+    OAI + tracing throughput conc=1... 429/s
+    OAI + tracing throughput conc=10... 865/s
+    OAI + tracing throughput conc=50... 997/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Scenario 1: Single tool  (LLM -> add -> LLM -> answer)[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency  (x100 sequential runs)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+          mean          435.8 us           1.68 ms           1.97 ms
+           p50          286.5 us           1.59 ms           1.71 ms
+           p95          446.4 us           2.20 ms           2.39 ms
+           p99          16.08 ms           2.46 ms          18.30 ms
+
+  [1mMemory  (x100 runs)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer                          42.3 KB         433  B
+  OAI (bare)                      87.6 KB         897  B
+  OAI + tracing                  116.5 KB        1193  B
+
+  [1mBurst  (50 concurrent)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+           p50          234.6 us          29.84 ms          26.75 ms
+           p75          240.2 us          47.77 ms          43.30 ms
+           p95          444.6 us          48.05 ms          43.52 ms
+           p99          16.45 ms          48.25 ms          43.83 ms
+           max          16.45 ms          48.25 ms          43.83 ms
+
+  [2mwall: Messer: 16.5 ms | OAI (bare): 48.3 ms | OAI + tracing: 43.8 ms[0m
+
+  [1mBurst memory  (50 concurrent)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer                         770.7 KB       15785  B
+  OAI (bare)                    1948.8 KB       39912  B
+  OAI + tracing                 2086.4 KB       42729  B
+
+  [1mThroughput  (200 loops)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+             1            2929/s             592/s             537/s
+            10            2955/s            1176/s             440/s
+            50            2716/s            1334/s            1340/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Scenario 2: Multi-step  (LLM -> add -> LLM -> mul -> LLM -> sub -> LLM -> answer)[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency  (x100 sequential runs)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+          mean          433.5 us           3.62 ms           4.09 ms
+           p50          277.6 us           3.46 ms           3.83 ms
+           p95          381.8 us           4.35 ms           5.20 ms
+           p99          15.77 ms           5.26 ms          19.54 ms
+
+  [1mMemory  (x100 runs)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer                          69.9 KB         716  B
+  OAI (bare)                     104.6 KB        1071  B
+  OAI + tracing                  126.3 KB        1294  B
+
+  [1mBurst  (30 concurrent)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+           p50          516.2 us          53.49 ms          53.53 ms
+           p75          530.4 us          53.77 ms          53.56 ms
+           p95          868.0 us          54.06 ms          53.65 ms
+           p99          17.23 ms          54.29 ms          53.91 ms
+           max          17.23 ms          54.29 ms          53.91 ms
+
+  [2mwall: Messer: 17.2 ms | OAI (bare): 54.3 ms | OAI + tracing: 53.9 ms[0m
+
+  [1mBurst memory  (30 concurrent)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer                        1122.3 KB       38307  B
+  OAI (bare)                    1504.4 KB       51350  B
+  OAI + tracing                 1672.0 KB       57072  B
+
+  [1mThroughput  (200 loops)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+             1            1662/s             270/s             252/s
+            10            1670/s             542/s             575/s
+            50            1660/s             719/s             686/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Scenario 3: Parallel tools  (LLM -> [add, mul, neg] concurrent -> LLM -> answer)[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency  (x100 sequential runs)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+          mean          462.6 us           2.05 ms           2.33 ms
+           p50          288.1 us           1.93 ms           2.04 ms
+           p95          495.5 us           2.56 ms           2.93 ms
+           p99          16.75 ms           3.27 ms          18.18 ms
+
+  [1mMemory  (x100 runs)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer                          60.5 KB         619  B
+  OAI (bare)                     104.6 KB        1071  B
+  OAI + tracing                  126.6 KB        1296  B
+
+  [1mBurst  (40 concurrent)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+           p50           9.14 ms          29.58 ms          32.69 ms
+           p75          25.79 ms          45.50 ms          48.36 ms
+           p95          25.93 ms          45.52 ms          48.46 ms
+           p99          26.08 ms          45.68 ms          48.73 ms
+           max          26.08 ms          45.68 ms          48.73 ms
+
+  [2mwall: Messer: 26.1 ms | OAI (bare): 45.7 ms | OAI + tracing: 48.7 ms[0m
+
+  [1mBurst memory  (40 concurrent)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer                        1291.8 KB       33070  B
+  OAI (bare)                    2268.6 KB       58076  B
+  OAI + tracing                 2380.9 KB       60951  B
+
+  [1mThroughput  (200 loops)[0m
+                          Messer        OAI (bare)     OAI + tracing
+  ------------  ----------------  ----------------  ----------------
+             1            1795/s             488/s             429/s
+            10            2078/s             904/s             865/s
+            50            2141/s            1008/s             997/s
+
+[2m------------------------------------------------------------------------------------------------
+  Messer: TestModel, built-in InMemory tracing always on.
+  OAI (bare): custom offline Model with RunConfig(tracing_disabled=True).
+  OAI + tracing: same custom Model with local in-memory tracing processor, no export.
+  Dependency note: OpenAI Agents SDK 0.14.6 requires openai>=2.26; use uv --with flags above.
+------------------------------------------------------------------------------------------------[0m
+

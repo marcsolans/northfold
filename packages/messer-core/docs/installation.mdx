@@ -1,0 +1,145 @@
+---
+title: "Installation"
+description: "Step-by-step instructions for setting up Messer CLI and Python package"
+---
+
+## Installation methods
+
+The **Messer CLI** provides a command-line interface for managing Messer projects, including initialization, building, deploying, and other project management tasks.
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    Use `curl` to download and execute the installation script:
+
+    ```bash
+    curl -LsSf https://messer.local/install.sh | sh
+    ```
+
+    If your system doesn't have `curl`, you can use `wget`:
+
+    ```bash
+    wget -qO- https://messer.local/install.sh | sh
+    ```
+  </Tab>
+  <Tab title="Windows">
+    Use PowerShell to download and execute the installation script:
+
+    ```powershell
+    powershell -ExecutionPolicy ByPass -c "irm https://messer.local/install.ps1 | iex"
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+The installation script may be inspected before use:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    curl -LsSf https://messer.local/install.sh | less
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```powershell
+    irm https://messer.local/install.ps1 | less
+    ```
+  </Tab>
+</Tabs>
+
+Alternatively, the installer or binaries can be downloaded directly from [GitHub](https://github.com/marcsolans/northfold/releases).
+</Tip>
+
+## Upgrading
+
+To upgrade the CLI to the latest version, you can either run:
+
+```bash
+messer upgrade
+```
+
+Or re-run the installation script:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    curl -LsSf https://messer.local/install.sh | sh
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```powershell
+    powershell -ExecutionPolicy ByPass -c "irm https://messer.local/install.ps1 | iex"
+    ```
+  </Tab>
+</Tabs>
+
+## Uninstallation
+
+To remove the CLI, delete the binary and the `~/.messer` data directory:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    rm ~/.local/bin/messer
+    rm -rf ~/.messer
+    ```
+  </Tab>
+  <Tab title="Windows">
+    ```powershell
+    Remove-Item "$env:USERPROFILE\.local\bin\messer.exe"
+    Remove-Item -Recurse -Force "$env:USERPROFILE\.messer"
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Python Package
+
+If you want to use Messer directly in your Python projects or integrate it into an existing codebase, you can install the Python package directly.
+
+<Info>
+Before adding the package, ensure you have `python>=3.11` installed.
+</Info>
+
+Using `pip`:
+
+```bash
+pip install messer
+```
+
+Or with `uv`:
+
+```bash
+uv add messer
+```
+
+Alternatively, if you want the latest changes and want to experiment with beta features, you can clone the repository and install from source:
+
+```bash
+git clone https://github.com/marcsolans/northfold.git
+cd messer
+pip install -e .
+```
+
+### Optional dependencies
+
+Install the extras used by your application:
+
+- `messer[server]`: HTTP server and WebSocket endpoints.
+- `messer[voice]`: WebRTC, audio resampling, and local voice turn detection. Combine with `server` for the [voice playground](/voice/quickstart).
+- `messer[voice-livekit]`: LiveKit media transport; combine with `server,voice` for live calls with local detection.
+- `messer[documents]`: PDF, Word, and Excel parsing.
+- `messer[evals]`: Rich CLI output for evaluations.
+- `messer[codegen]`: Code generation and formatting tools.
+- `messer[all]`: All of the above.
+
+```bash
+pip install "messer[server,voice]"
+uv add "messer[documents,evals]"
+```
+
+CSV and plain text do not require document parser extras. External integration examples may need their own SDKs in addition to Messer.
+
+<Tip>
+**Next Steps:** You're ready to create your first Messer project! Continue to the [quickstart guide](./quickstart) to build your first AI agent.
+</Tip>

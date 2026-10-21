@@ -1,0 +1,3402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Voice playground · Messer AI</title>
+<style>
+  :root {
+    --bg: #f4f4f5;
+    --surface: #ffffff;
+    --text: #09090b;
+    --text-muted: #71717a;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --primary: #000000;
+    --primary-fg: #ffffff;
+    --success: #15803d;
+    --success-soft: #dcfce7;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+    --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html {
+    height: 100%;
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100%;
+    max-height: 100dvh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell {
+    max-width: 1160px;
+    margin: 0 auto;
+    height: 100%;
+    max-height: 100dvh;
+    min-height: 0;
+    padding: 1.5rem 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow: hidden;
+  }
+  .layout {
+    flex: 1;
+    display: flex;
+    gap: 1rem;
+    min-height: 0;
+  }
+  .panel {
+    flex: 0 0 250px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  /* Wider than the left panel: this one lays fields out two per row. */
+  .panel--session { flex-basis: 330px; }
+  .panel-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--border);
+  }
+  /* Standalone: Target is the panel header — no Agent title, no leading rule. */
+  .panel-section.panel-section--top {
+    padding-top: 0;
+    border-top: none;
+  }
+  .panel-title[hidden] {
+    display: none !important;
+  }
+  .panel-section-title {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .panel-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: end;
+  }
+  .panel-grid .field-wide { grid-column: 1 / -1; }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .field[hidden] { display: none !important; }
+  .field-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .panel-section[hidden] { display: none !important; }
+  .target-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .target-fields[hidden] { display: none !important; }
+  .launcher-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .launcher-state {
+    font-size: 0.65625rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+    min-width: 0;
+    word-break: break-word;
+  }
+  .panel select {
+    width: 100%;
+    min-width: 0;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.65rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .panel select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0,0,0,.07);
+  }
+  .panel select:disabled {
+    color: var(--text-muted);
+    background: var(--bg);
+    border-color: var(--border);
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+  .panel input[type="range"] {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .panel input[type="text"],
+  .panel input[type="password"],
+  .panel input[type="number"] {
+    width: 100%;
+    min-width: 0;
+    font: inherit;
+    font-size: 0.8125rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.65rem;
+    outline: none;
+  }
+  .panel input[type="text"]:focus,
+  .panel input[type="password"]:focus,
+  .panel input[type="number"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0,0,0,.07);
+  }
+  .panel input[type="text"]:disabled,
+  .panel input[type="password"]:disabled,
+  .panel input[type="number"]:disabled {
+    color: var(--text-muted);
+    background: var(--bg);
+    border-color: var(--border);
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+  /* Read-only view of the agent's declared voice_config (from /voice/meta).
+     Key above value — the panel is 220px, too narrow for two columns once
+     keys like outbound_greeting.after_user_silence_secs show up. Nested
+     blocks are flattened to dotted keys so a greeting.delay_ms is one entry. */
+  .declared-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+  }
+  .declared-list[hidden] { display: none !important; }
+  .declared-list dt {
+    color: var(--text-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.625rem;
+    overflow-wrap: anywhere;
+  }
+  .declared-list dd {
+    margin: 0 0 0 0.5rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .declared-list dd.declared-empty { color: var(--text-muted); font-style: italic; }
+  /* Greeting sections: the one the simulated direction will not use is dimmed
+     (still editable — its values are sent, the server just picks the other). */
+  .panel-section.direction-idle { opacity: 0.55; }
+  .panel-section.direction-idle:hover,
+  .panel-section.direction-idle:focus-within { opacity: 1; }
+  .direction-tag {
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 0.35rem;
+  }
+  .panel-note {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin-top: auto;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .shell { max-height: none; height: auto; }
+    .layout { flex-direction: column; overflow: visible; }
+    .panel { flex: none; width: auto; overflow: visible; }
+    .card { order: -1; min-height: 60dvh; }
+    .panel-note { margin-top: 0; }
+  }
+  /* The session panel's natural height overflows a laptop screen, and a
+     settings panel you have to scroll hides the knob you are mid-experiment
+     with. Given enough width to double it and still leave the transcript a
+     usable column, lay the sections out as a 2-track grid instead. */
+  @media (min-width: 1240px) {
+    .shell { max-width: 1560px; }
+    /* Two selects and, standalone, the target fields — it does not need 250px,
+       and the width is worth more to the transcript here. */
+    .panel { flex-basis: 220px; }
+    .panel--session { flex-basis: 600px; }
+    /* Explicit 2-track grid, not CSS columns: pairing is by section (pipeline
+       next to turn taking, inbound next to outbound greeting, filler next to
+       user idle, ambience next to advanced) so the tops line up instead of
+       packing by height and leaving a ragged right edge. */
+    .panel-sections {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: 1rem;
+      row-gap: 0.85rem;
+      align-items: start;
+    }
+    .panel-sections > .panel-section { margin: 0; }
+    /* Dev-only identity field: one full-width row under the pairs, not a
+       leftover half-cell. */
+    #call-context-section { grid-column: 1 / -1; }
+  }
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    letter-spacing: -0.03em;
+  }
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    object-fit: contain;
+    display: block;
+  }
+  .brand .logo { font-weight: 700; color: var(--primary); }
+  .brand .sep {
+    color: #a1a1aa;
+    font-weight: 300;
+    margin-left: 0.55rem;
+    margin-right: 0.2rem;
+  }
+  .brand .title { font-weight: 500; color: var(--text-muted); font-size: 0.9375rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+  }
+  .card.card--inactive {
+    opacity: 0.88;
+  }
+
+  .conn-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+  .conn-strip[hidden] {
+    display: none !important;
+  }
+  .conn-version {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: -0.02em;
+  }
+  .conn-version[hidden] {
+    display: none !important;
+  }
+  .conn-agent {
+    text-align: left;
+    width: 100%;
+    min-width: 0;
+  }
+  .conn-agent[hidden] {
+    display: none !important;
+  }
+  .conn-runnable-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  .conn-runnable-spec {
+    display: block;
+    font-size: 0.65625rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .conn-runnable-spec[hidden] {
+    display: none !important;
+  }
+  .foot-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 0.35rem;
+    flex-shrink: 0;
+    background: #a1a1aa;
+  }
+  .foot-status[data-state="connecting"] .foot-status-dot {
+    animation: pulse-dot 1.2s ease-in-out infinite;
+    background: #71717a;
+  }
+  .foot-status[data-state="live"] .foot-status-dot {
+    background: var(--success);
+    box-shadow: 0 0 0 3px var(--success-soft);
+  }
+  .foot-status[data-state="error"] .foot-status-dot {
+    background: var(--danger);
+  }
+  .foot-status[data-state="ended"] .foot-status-dot {
+    background: #a1a1aa;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .mic-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+  .mic-row .field { flex: 1; min-width: 0; }
+  .mic-viz {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    height: 28px;
+    flex: 0 0 40px;
+    padding-bottom: 5px;
+  }
+  .mic-bar {
+    width: 4px;
+    min-height: 4px;
+    border-radius: 2px;
+    background: var(--border-strong);
+    transform-origin: bottom;
+    transition: height 0.05s ease, background 0.15s;
+  }
+  .mic-viz.active .mic-bar {
+    background: var(--success);
+  }
+
+  .transcript-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #transcript {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    scroll-behavior: smooth;
+  }
+  #voice-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    text-align: center;
+    pointer-events: none;
+  }
+  #voice-empty[hidden] { display: none !important; }
+  .empty-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .empty-sub {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    max-width: 280px;
+    line-height: 1.4;
+  }
+  .msg.status {
+    margin: 0.35rem auto 0.65rem;
+    max-width: 90%;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-style: italic;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--border);
+  }
+
+  .msg { margin-bottom: 0.65rem; max-width: 90%; }
+  .msg.user {
+    margin-left: auto;
+    padding: 0.55rem 0.8rem;
+    border-radius: 12px 12px 4px 12px;
+    background: var(--primary);
+    color: var(--primary-fg);
+    font-size: 0.875rem;
+  }
+  .msg.assistant {
+    padding: 0.55rem 0.8rem;
+    border-radius: 12px 12px 12px 4px;
+    background: #f4f4f5;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.875rem;
+  }
+  /* Spoken latency-masking phrase — said aloud, but not part of the reply. */
+  .msg.assistant.filler {
+    opacity: 0.65;
+    font-style: italic;
+  }
+  /* Agent-speaks-first opener: any assistant text before the first user
+     commit. Tagged so barge-in tests can see at a glance whether the line
+     that got truncated was the greeting or a reply. */
+  .msg.assistant.greeting {
+    border-color: var(--primary);
+    box-shadow: inset 2px 0 0 var(--primary);
+  }
+  .msg.assistant.greeting::before {
+    content: "opener";
+    display: block;
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 0.2rem;
+  }
+  .field-inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .field-inline input[type="checkbox"] {
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  .msg.partial {
+    margin-left: auto;
+    text-align: right;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.8125rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 12px 12px 4px 12px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px dashed var(--border);
+    max-width: 90%;
+  }
+  .msg.system {
+    display: none;
+  }
+  .msg.error {
+    color: var(--danger);
+    font-size: 0.8125rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--danger-bg);
+    border-radius: var(--radius-sm);
+    border: 1px solid #fecaca;
+    max-width: 100%;
+  }
+
+  .foot {
+    padding: 0.65rem 1rem 0.75rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    background: #fafafa;
+  }
+  .foot-row--top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+  }
+  .foot-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-width: 0;
+    flex: 1;
+  }
+  .foot-status-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .foot-status-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  .foot-status-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+  .foot-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+  .foot-warn {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin: 0;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--border);
+  }
+  button {
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+  }
+  button:hover:not(:disabled) {
+    background: #fafafa;
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-session {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  .btn-session:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  .btn-session[data-mode="stop"] {
+    background: var(--danger);
+  }
+  .btn-session[data-mode="stop"]:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+  .btn-session[data-mode="start"] {
+    background: var(--primary);
+  }
+  .btn-session[data-mode="start"]:hover:not(:disabled) {
+    /* Re-declare: the generic button:hover rule out-specifies the base
+       .btn-session[data-mode="start"] and would repaint this #fafafa. */
+    background: var(--primary);
+    opacity: 0.9;
+  }
+  .btn-session-icon--stop {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    background: var(--primary-fg);
+  }
+  .btn-session-icon--start {
+    width: 0;
+    height: 0;
+    margin-left: 2px;
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent var(--primary-fg);
+  }
+  button.primary {
+    background: var(--primary);
+    color: var(--primary-fg);
+    border-color: var(--primary);
+  }
+  button.primary:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+  #btn-reconnect { display: none; }
+  #btn-reconnect.visible { display: inline-block; }
+
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <img class="brand-mark" src="https://content.messer.local/assets/messer_favicon.png" alt="" width="28" height="28" decoding="async" />
+      <div>
+        <span class="logo">Voice playground</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Agent configuration">
+      <h2 id="agent-panel-title" class="panel-title">Agent</h2>
+      <section id="target-section" class="panel-section" aria-label="Agent target" hidden>
+        <h3 id="target-heading" class="panel-section-title">Target</h3>
+        <label class="field">
+          <span class="field-label">Run against</span>
+          <select id="target-mode" aria-label="Agent target" title="Where the agent runs. Local = a messer.server process on this machine; Platform = a workforce deployed on the Messer platform.">
+            <option value="local">Local server</option>
+            <option value="platform">Platform</option>
+          </select>
+        </label>
+        <div id="target-local" class="target-fields">
+          <div id="launcher-box" class="target-fields" hidden>
+            <label class="field">
+              <span class="field-label">Agent</span>
+              <input type="text" id="launcher-spec" placeholder="path/to/agent.py::agent" title="Spawned automatically on Start: runs `uv run python -m messer.server --import_spec …` from the file's directory (relative paths resolve against the launcher's cwd).">
+            </label>
+            <label class="field">
+              <span class="field-label">Port</span>
+              <input type="text" id="launcher-port" placeholder="auto" inputmode="numeric" title="Port for the spawned server. Leave empty to pick a free one automatically.">
+            </label>
+            <div class="launcher-row">
+              <button type="button" id="btn-launcher" hidden>Stop server</button>
+              <span id="launcher-state" class="launcher-state"></span>
+            </div>
+          </div>
+          <label class="field" id="local-url-field">
+            <span class="field-label">Server URL</span>
+            <input type="text" id="local-url" placeholder="http://localhost:4444" title="A messer.server you started yourself.">
+          </label>
+        </div>
+        <div id="target-platform" class="target-fields" hidden>
+          <label class="field">
+            <span class="field-label">API base</span>
+            <input type="text" id="pf-api" placeholder="https://api.dev.messer.local">
+          </label>
+          <label class="field">
+            <span class="field-label">Org ID</span>
+            <input type="text" id="pf-org">
+          </label>
+          <label class="field">
+            <span class="field-label">Project ID</span>
+            <input type="text" id="pf-project">
+          </label>
+          <label class="field">
+            <span class="field-label">Workforce</span>
+            <input type="text" id="pf-workforce" placeholder="app id · uid · slug">
+          </label>
+          <label class="field">
+            <span class="field-label">Branch (rev)</span>
+            <input type="text" id="pf-rev" placeholder="main">
+          </label>
+          <label class="field">
+            <span class="field-label">Token</span>
+            <input type="password" id="pf-token" placeholder="API key or OAuth token" autocomplete="off" title="Stored in this browser's localStorage — use a revocable dev key.">
+          </label>
+          <label class="field">
+            <span class="field-label">Endpoint</span>
+            <select id="pf-endpoint" title="Deployed dials the running deployment for the branch. Preview runs the branch worktree instead — edit the agent, call it immediately (first connect after a source change pays a uv sync; needs messer >= 2.3.2 on the branch for WebRTC).">
+              <option value="deployed">Deployed</option>
+              <option value="preview">Preview (branch worktree)</option>
+            </select>
+          </label>
+        </div>
+      </section>
+      <section id="agent-section" class="panel-section panel-section--top" aria-label="Agent">
+        <div id="conn-strip" class="conn-strip" hidden>
+          <span id="conn-version" class="conn-version" hidden></span>
+          <div id="conn-agent" class="conn-agent" hidden>
+            <div id="conn-runnable-title" class="conn-runnable-title"></div>
+            <span id="conn-runnable-spec" class="conn-runnable-spec" hidden></span>
+          </div>
+        </div>
+        <dl id="conn-declared" class="declared-list" hidden aria-label="Agent voice_config"></dl>
+      </section>
+      <p class="panel-note">The agent's own <code>voice_config</code> is listed above. Every knob on the right that says “Server default” defers to it; set one to override it for the next Start only.</p>
+    </aside>
+
+    <main id="card" class="card">
+      <div class="transcript-wrap">
+        <div id="voice-empty">
+          <p class="empty-title">Listening</p>
+          <p class="empty-sub">Speak normally. Transcripts, tool calls, and replies show up here.</p>
+        </div>
+        <div id="transcript" role="log" aria-live="polite" aria-relevant="additions"></div>
+      </div>
+      <div class="foot">
+        <div class="foot-row foot-row--top">
+          <div id="foot-status" class="foot-status" data-state="ended">
+            <span class="foot-status-dot" aria-hidden="true"></span>
+            <div class="foot-status-lines">
+              <span id="foot-status-title" class="foot-status-title">Ready</span>
+              <span id="foot-status-detail" class="foot-status-detail">Connecting…</span>
+            </div>
+          </div>
+          <div class="foot-actions">
+            <button type="button" id="btn-reconnect" class="primary">Reload page</button>
+            <button type="button" id="btn-session" class="btn-session" data-mode="start" aria-label="Start session" title="Start a new voice session">
+              <span class="btn-session-icon btn-session-icon--start" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+        <p class="foot-warn">Audio is captured in your browser (microphone) and streamed to this server. Use a private session and only on sites you trust; anyone with access to this page may be able to use the same agent.</p>
+      </div>
+    </main>
+
+    <aside class="panel panel--session" aria-label="Voice session configuration">
+      <h2 class="panel-title">Voice session</h2>
+      <div class="mic-row">
+        <label class="field">
+          <span class="field-label">Microphone</span>
+          <select id="mic-select" aria-label="Microphone"><option value="">Loading devices…</option></select>
+        </label>
+        <div id="mic-viz" class="mic-viz" aria-hidden="true">
+          <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+        </div>
+        <label class="field">
+          <span class="field-label">Transport</span>
+          <select id="transport-select" aria-label="Transport" title="How audio moves — applied on the next Start. WebRTC uses Opus tracks (server needs messer[voice]). LiveKit joins an SFU room: local target mints via the playground launcher, platform target mints via the monolith (project must be flagged, or use the preview endpoint); the agent needs messer[voice-livekit]. Noise suppression runs in the browser's own pipeline on WebRTC/LiveKit, so the RNNoise option applies to WebSocket only.">
+            <option value="ws">WebSocket (PCM)</option>
+            <option value="webrtc">WebRTC (Opus)</option>
+            <option value="livekit">LiveKit (SFU)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Simulate</span>
+          <select id="direction-select" aria-label="Call direction" title="Which side placed the call — applied on the next Start. Inbound: you dialled in, the agent answers with its greeting. Outbound: the agent called you, so it uses outbound_greeting (falling back to greeting when the agent declares none, staying silent when it declares ''). Only the opener changes; the rest of the session is identical.">
+            <option value="inbound">Inbound call</option>
+            <option value="outbound">Outbound call</option>
+          </select>
+        </label>
+      </div>
+      <div class="panel-sections">
+        <section class="panel-section" aria-label="Pipeline">
+          <h3 class="panel-section-title">Pipeline</h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">Noise suppression</span>
+              <select id="ns-select" aria-label="Noise suppression" title="Mic noise suppression — applied on the next Start. Echo cancellation stays on in every mode.">
+                <option value="browser">Browser</option>
+                <option value="rnnoise">RNNoise</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Speech-to-text</span>
+              <select id="stt-select" aria-label="STT provider" title="Speech-to-text provider — applied on the next Start. Deepgram needs DEEPGRAM_API_KEY; OpenAI needs OPENAI_API_KEY on the server.">
+                <option value="">Server default</option>
+                <option value="elevenlabs">ElevenLabs Scribe</option>
+                <option value="openai">OpenAI Transcribe</option>
+                <option value="deepgram-flux">Deepgram Flux</option>
+                <option value="deepgram-nova">Deepgram Nova-3</option>
+              </select>
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Turn detection</span>
+              <select id="td-select" aria-label="Turn detector" title="Turn detector — how the agent decides you finished speaking. Applied on the next Start.">
+                <option value="">Server default</option>
+                <option value="heuristic">Heuristic</option>
+                <option value="provider">Provider VAD</option>
+                <option value="local">Smart Turn + Namo</option>
+                <option value="lexical">Namo text</option>
+                <option value="raw">Raw (no filters)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">TTS provider</span>
+              <select id="tts-select" aria-label="TTS provider" title="Text-to-speech provider — applied on the next Start. OpenAI needs OPENAI_API_KEY; Deepgram needs DEEPGRAM_API_KEY, Munsit needs MUNSIT_API_KEY, Fish Audio needs FISH_API_KEY on the server.">
+                <option value="">Server default</option>
+                <option value="elevenlabs">ElevenLabs</option>
+                <option value="deepgram">Deepgram Aura</option>
+                <option value="openai">OpenAI</option>
+                <option value="fishaudio">Fish Audio</option>
+                <option value="munsit">Munsit (Arabic)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">TTS model</span>
+              <select id="tts-model-select" aria-label="TTS model" title="Text-to-speech model — options follow the selected provider. Applied on the next Start.">
+                <option value="">Server default</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Language</span>
+              <input type="text" id="language-input" aria-label="Language" placeholder="auto" data-vc="language"
+                     title="ISO code passed to STT and TTS (en, es, ar…). Empty = server default; the agent's default is provider auto-detect.">
+            </label>
+            <label class="field">
+              <span class="field-label">Voice ID</span>
+              <input type="text" id="voice-input" aria-label="TTS voice id" placeholder="Server default" data-vc="voice"
+                     title="Provider voice id for TTS (OpenAI: coral, alloy, marin, cedar…). For Deepgram, enter a full Aura voice model id and leave TTS model at Server default. Applied on the next Start.">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" aria-label="Turn taking">
+          <h3 class="panel-section-title">Turn taking</h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">VAD endpointing</span>
+              <select id="vad-select" aria-label="VAD endpointing" title="Local Silero VAD fast path that commits the STT on silence — applied on the next Start. Auto = on when the turn detector has an audio EOU model. Always off for Flux/Munsit (they own end-of-turn).">
+                <option value="">Server default (auto)</option>
+                <option value="on">On</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Turn timeout (s)</span>
+              <input type="number" id="turn-timeout" min="1" max="600" step="1" aria-label="Turn timeout" placeholder="Server default" data-vc="turn_timeout_secs"
+                     title="Wall-clock budget for one agent turn (LLM + tools). Past it the turn is cancelled and the fallback line is spoken.">
+            </label>
+            <label class="field">
+              <span class="field-label">Timeout apology</span>
+              <select id="turn-fallback-select" aria-label="Turn timeout fallback" title="What the agent says when a turn times out. Off = cancel silently; Custom = the line on the right.">
+                <option value="">Server default</option>
+                <option value="off">Off (silent)</option>
+                <option value="custom">Custom line</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Apology text</span>
+              <input type="text" id="turn-fallback-text" aria-label="Turn timeout fallback text" placeholder="Server default" data-vc="turn_timeout_fallback"
+                     title="Spoken when a turn times out. Only used when the apology is set to Custom.">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" id="greeting-section" aria-label="Greeting (inbound)">
+          <h3 class="panel-section-title">Greeting <span class="direction-tag" id="greeting-tag"></span></h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">Enabled</span>
+              <select id="greeting-select" aria-label="Greeting" title="Agent speaks first, before you say anything. 'Server default' uses whatever the agent's voice_config sets; 'Off' silences the opener for this call only. Applied on the next Start. On an outbound call this block is the fallback when no outbound greeting is declared.">
+                <option value="">Server default</option>
+                <option value="off">Off</option>
+                <option value="on">On</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Interruptible</span>
+              <select id="greeting-interruptible" aria-label="Greeting interruptible" title="No = talking over the opener will not cut it off; your commit still opens a turn, and its reply queues behind the opener. Yes = barge-in truncates it like any reply.">
+                <option value="">Server default</option>
+                <option value="no">No (hold)</option>
+                <option value="yes">Yes (barge-in)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Delay (ms)</span>
+              <input type="number" id="greeting-delay" min="0" max="10000" step="100" aria-label="Greeting delay" placeholder="0" data-vc="greeting.delay_ms"
+                     title="Silence held before the opener speaks. Mimics a carrier connecting the media stream before the callee has the handset up.">
+            </label>
+            <label class="field">
+              <span class="field-label">Wait for them (s)</span>
+              <input type="number" id="greeting-wait" min="0" max="30" step="0.5" aria-label="Greeting after user silence" placeholder="off" data-vc="greeting.after_user_silence_secs"
+                     title="Let the other side speak first: hold the opener this long after the delay, and skip it if they say anything (their words open turn one). Speak it anyway when the line stays silent — hesitant callee, voicemail beep. Empty = speak the opener right after the delay.">
+            </label>
+            <label class="field">
+              <span class="field-label">Text</span>
+              <input type="text" id="greeting-text" aria-label="Greeting text" placeholder="Server default" data-vc="greeting.text"
+                     title="Exact words to say — straight to TTS, no LLM turn (~300ms to first audio). Wins over Instructions when both are set.">
+            </label>
+            <label class="field">
+              <span class="field-label">Generator model</span>
+              <input type="text" id="greeting-model" aria-label="Greeting generator model" placeholder="Session LLM" data-vc="greeting.model"
+                     title="provider/model used to write the opener from Instructions. Empty = the session's own LLM. Unused when Text is set.">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Instructions</span>
+              <input type="text" id="greeting-instructions" aria-label="Greeting instructions" placeholder="e.g. greet them by name and say why you are calling" data-vc="greeting.instructions"
+                     title="Brief for an LLM-authored opener, written against the agent's own system prompt (~1.5s to first audio). Ignored when Text is set.">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" id="outbound-section" aria-label="Greeting (outbound)">
+          <h3 class="panel-section-title">Outbound greeting <span class="direction-tag" id="outbound-tag"></span></h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">Enabled</span>
+              <select id="outbound-select" aria-label="Outbound greeting" title="Opener for calls the agent placed — only used when Simulate is set to Outbound. 'Server default' = the agent's outbound_greeting, or its greeting when none is declared. 'Off' = say nothing and wait for the callee's hello. 'On' = the fields below, deep-merged over that default.">
+                <option value="">Server default</option>
+                <option value="off">Off (wait for hello)</option>
+                <option value="on">On</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Interruptible</span>
+              <select id="outbound-interruptible" aria-label="Outbound greeting interruptible" title="No = talking over the opener will not cut it off. Yes = barge-in truncates it like any reply.">
+                <option value="">Server default</option>
+                <option value="no">No (hold)</option>
+                <option value="yes">Yes (barge-in)</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Delay (ms)</span>
+              <input type="number" id="outbound-delay" min="0" max="10000" step="100" aria-label="Outbound greeting delay" placeholder="0" data-vc="outbound_greeting.delay_ms"
+                     title="Silence held before the opener speaks — the beat between the carrier answering and the callee having the handset up.">
+            </label>
+            <label class="field">
+              <span class="field-label">Wait for them (s)</span>
+              <input type="number" id="outbound-wait" min="0" max="30" step="0.5" aria-label="Outbound greeting after user silence" placeholder="off" data-vc="outbound_greeting.after_user_silence_secs"
+                     title="The normal outbound pickup: hold the opener and let the callee's 'hello?' open turn one; speak the opener only if they stay silent this long (voicemail, hesitation).">
+            </label>
+            <label class="field">
+              <span class="field-label">Text</span>
+              <input type="text" id="outbound-text" aria-label="Outbound greeting text" placeholder="Server default" data-vc="outbound_greeting.text"
+                     title="Exact words to say — straight to TTS. Wins over Instructions when both are set.">
+            </label>
+            <label class="field">
+              <span class="field-label">Generator model</span>
+              <input type="text" id="outbound-model" aria-label="Outbound greeting generator model" placeholder="Session LLM" data-vc="outbound_greeting.model"
+                     title="provider/model used to write the opener from Instructions. Empty = the session's own LLM.">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Instructions</span>
+              <input type="text" id="outbound-instructions" aria-label="Outbound greeting instructions" placeholder="e.g. say who you are and why you are calling, then ask if now is a good time" data-vc="outbound_greeting.instructions"
+                     title="Brief for an LLM-authored opener. Ignored when Text is set.">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" aria-label="Filler speech">
+          <h3 class="panel-section-title">Filler speech</h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">Enabled</span>
+              <select id="filler-select" aria-label="Tool-call filler" title="Spoken 'one sec, let me check that…' while a tool runs, generated by an LLM in the caller's language. 'Server default' uses whatever the agent's voice_config sets. Applied on the next Start.">
+                <option value="">Server default</option>
+                <option value="off">Off</option>
+                <option value="on">On</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Delay (s)</span>
+              <input type="number" id="filler-delay" min="0" max="10" step="0.1" aria-label="Filler grace delay" placeholder="1.0" data-vc="filler.delay_secs"
+                     title="Grace period before the filler speaks — tools that finish sooner stay silent. Only used when filler speech is On.">
+            </label>
+            <label class="field">
+              <span class="field-label">Repeat (s)</span>
+              <input type="number" id="filler-repeat" min="0" max="60" step="0.5" aria-label="Filler repeat interval" placeholder="off" data-vc="filler.repeat_secs"
+                     title="If the agent is still working this long after the previous filler with nothing spoken, say a short follow-up ('still on it…'). Empty or 0 = one filler max. Only used when filler speech is On.">
+            </label>
+            <label class="field">
+              <span class="field-label">Max per turn</span>
+              <input type="number" id="filler-max" min="1" max="10" step="1" aria-label="Max fillers per turn" placeholder="3" data-vc="filler.max_per_turn"
+                     title="Hard cap on fillers per turn when repeating. Only used when filler speech is On.">
+            </label>
+            <label class="field">
+              <span class="field-label">Gen. timeout (s)</span>
+              <input type="number" id="filler-timeout" min="0.5" max="30" step="0.5" aria-label="Filler generation timeout" placeholder="5.0" data-vc="filler.timeout_secs"
+                     title="Deadline for the filler LLM after the grace delay; past it the filler is skipped silently. Only used when filler speech is On.">
+            </label>
+            <label class="field">
+              <span class="field-label">Generator model</span>
+              <input type="text" id="filler-model" aria-label="Filler generator model" placeholder="Session LLM" data-vc="filler.model"
+                     title="provider/model that writes the filler phrase — something fast and cheap is best. Empty = the session's own LLM. Only used when filler speech is On.">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Generator prompt</span>
+              <input type="text" id="filler-prompt" aria-label="Filler generator prompt" placeholder="Built-in generator prompt" data-vc="filler.system_prompt"
+                     title="System prompt for the filler-generating LLM. Empty keeps the server's prompt (or the built-in one). Only used when filler speech is On.">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" aria-label="User idle">
+          <h3 class="panel-section-title">User idle</h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">Enabled</span>
+              <select id="idle-select" aria-label="User idle re-engagement" title="What happens when you stop talking after the agent finishes: a spoken check-in ('still there?') after a silence, and optionally a hang-up. 'Server default' uses the agent's voice_config; 'Off' waits forever for this call. Applied on the next Start.">
+                <option value="">Server default</option>
+                <option value="off">Off (wait forever)</option>
+                <option value="on">On</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Silence (s)</span>
+              <input type="number" id="idle-timeout" min="1" max="120" step="0.5" aria-label="User idle timeout" placeholder="8" data-vc="user_idle.timeout_secs"
+                     title="Seconds of your silence — counted from when the agent's last audio drained — before it speaks a prompt. Re-arms after each prompt.">
+            </label>
+            <label class="field">
+              <span class="field-label">Max prompts</span>
+              <input type="number" id="idle-max" min="0" max="10" step="1" aria-label="User idle max prompts" placeholder="2" data-vc="user_idle.max_count"
+                     title="Prompts per call, then silence. 0 = never prompt, only hang up (needs Hang up after).">
+            </label>
+            <label class="field">
+              <span class="field-label">Hang up after (s)</span>
+              <input type="number" id="idle-hangup" min="1" max="600" step="1" aria-label="User idle hang-up" placeholder="never" data-vc="user_idle.hangup_after_secs"
+                     title="Seconds since your last word (or since the call started) after which the session ends. The agent's own prompts do not reset it. Empty = never hang up on silence.">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Text (| separates rotating lines)</span>
+              <input type="text" id="idle-text" aria-label="User idle text" placeholder="Server default" data-vc="user_idle.text"
+                     title="Static line(s) to say. Separate several with | to rotate through them in order. Wins over Instructions when set.">
+            </label>
+            <label class="field">
+              <span class="field-label">Instructions</span>
+              <input type="text" id="idle-instructions" aria-label="User idle instructions" placeholder="e.g. ask if they are still there" data-vc="user_idle.instructions"
+                     title="Brief for an LLM-authored check-in, in the agent's own voice and language. Ignored when Text is set.">
+            </label>
+            <label class="field">
+              <span class="field-label">Generator model</span>
+              <input type="text" id="idle-model" aria-label="User idle generator model" placeholder="Session LLM" data-vc="user_idle.model"
+                     title="provider/model that writes the check-in from Instructions. Empty = the session's own LLM.">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" aria-label="Ambience">
+          <h3 class="panel-section-title">Ambience</h3>
+          <div class="panel-grid">
+            <label class="field">
+              <span class="field-label">Track</span>
+              <select id="ambient-select" aria-label="Ambience track" title="Background sound looped locally in your browser. 'Server default' plays whatever the agent's voice_config sets (possibly nothing); presets override it. Applies immediately.">
+                <option value="">Server default</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Volume</span>
+              <input type="range" id="ambient-volume" min="0" max="100" step="1" aria-label="Ambience volume"
+                     title="Local to your browser; overrides the server's configured volume.">
+            </label>
+            <label class="field field-inline field-wide">
+              <input type="checkbox" id="thinking-sound" aria-label="Thinking sound">
+              <span class="field-label">Thinking sound while tools run</span>
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" aria-label="Advanced">
+          <h3 class="panel-section-title">Advanced</h3>
+          <div class="panel-grid">
+            <label class="field field-wide">
+              <span class="field-label">STT model</span>
+              <input type="text" id="stt-model-input" aria-label="STT model" placeholder="Server default" data-vc="stt_model"
+                     title="Provider model id (scribe_v2_realtime, nova-3, flux-general-en…). Must match the selected STT provider — a foreign id falls back to the provider's default.">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">STT extra (JSON)</span>
+              <input type="text" id="stt-extra-input" aria-label="STT extra" placeholder='{"vad_silence_threshold_secs": 0.8}'
+                     title="Tuning knobs merged over the server's stt_extra — allow-listed server-side (VAD thresholds, endpointing, keyterms…); hosts and callbacks are dropped.">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">TTS extra (JSON)</span>
+              <input type="text" id="tts-extra-input" aria-label="TTS extra" placeholder='{"speed": 1.1, "stability": 0.5}'
+                     title="Tuning knobs merged over the server's tts_extra — allow-listed server-side (speed, stability, dialect, auto_mode…).">
+            </label>
+          </div>
+        </section>
+        <section class="panel-section" aria-label="Call context" id="call-context-section" hidden>
+          <h3 class="panel-section-title">Call context</h3>
+          <div class="panel-grid">
+            <label class="field field-wide">
+              <span class="field-label">Identity (JSON)</span>
+              <input type="text" id="call-context" aria-label="Call context" placeholder='{"rep_id": "42", "task": "reminder"}'
+                     title="Per-call identity a callable system_prompt reads off the session. On telephony this is set by the webhook, never by the caller — the server only accepts it here because MESSER_VOICE_ALLOW_CLIENT_CALL_CONTEXT is set.">
+            </label>
+          </div>
+          <p class="panel-note">Dev only — <code>MESSER_VOICE_ALLOW_CLIENT_CALL_CONTEXT</code> is set, so this server takes caller identity from the browser.</p>
+        </section>
+      </div>
+      <p class="panel-note">Echo cancellation stays on in every mode. Settings apply on the next Start.</p>
+    </aside>
+  </div>
+
+</div>
+<script type="application/json" id="messer-voice-runnable-meta">__MESSER_VOICE_RUNNABLE_META_JSON__</script>
+<script>
+const SAMPLE_RATE = 16000;
+// Flux wants ~80ms frames; Nova/Scribe are fine at the same cadence.
+const CHUNK_MS = 80;
+
+// Embedded vs standalone: messer.server injects the runnable meta into the
+// script tag below when it serves this page. If the placeholder is intact
+// (served by the playground launcher, or opened from the filesystem), the
+// JSON parse fails and the page runs standalone — a Target section appears
+// and every server URL routes through the selected target instead of this
+// page's own origin.
+let META = null;
+try {
+  META = JSON.parse(document.getElementById('messer-voice-runnable-meta').textContent);
+} catch (_) {}
+const EMBEDDED = META !== null;
+
+const cardEl = document.getElementById('card');
+const footStatus = document.getElementById('foot-status');
+const footStatusTitle = document.getElementById('foot-status-title');
+const footStatusDetail = document.getElementById('foot-status-detail');
+const transcriptEl = document.getElementById('transcript');
+const voiceEmpty = document.getElementById('voice-empty');
+const btnSession = document.getElementById('btn-session');
+const btnReconnect = document.getElementById('btn-reconnect');
+const micSelect = document.getElementById('mic-select');
+const tdSelect = document.getElementById('td-select');
+const nsSelect = document.getElementById('ns-select');
+const micViz = document.getElementById('mic-viz');
+
+const TD_STORAGE_KEY = 'messer-voice-turn-detector';
+// Default '' = server default: Smart Turn + Namo (+ Silero VAD endpointing) on
+// a voice install, lexical without the extra. Pinning 'local' here would skip
+// that server-side degradation (an explicit degraded 'local' is holdless).
+tdSelect.value = localStorage.getItem(TD_STORAGE_KEY) || '';
+if (![...tdSelect.options].some((o) => o.value === tdSelect.value)) tdSelect.value = '';
+tdSelect.onchange = () => {
+  // Applied on the next Start (no reload) — modes are fixed per WebSocket hello.
+  localStorage.setItem(TD_STORAGE_KEY, tdSelect.value);
+};
+
+// --- Voice-config overrides -------------------------------------------------
+// Every control below maps onto a VoiceConfig key the server lets a client
+// set (CLIENT_SETTABLE_VOICE_FIELDS). They are sent in the session hello and
+// applied on the next Start; '' / empty always means "defer to the server's
+// voice_config", never "clear it" — the one exception is the explicit 'off'
+// option on nested blocks, which sends '' so the server drops its default.
+
+/** Restore an input/select from localStorage under `key` and save it on every change (`onChange` runs after each save). */
+function persist(el, key, onChange) {
+  el.value = localStorage.getItem(key) || '';
+  if (el.tagName === 'SELECT' && ![...el.options].some((o) => o.value === el.value)) el.value = '';
+  el.addEventListener('change', () => {
+    localStorage.setItem(key, el.value);
+    if (onChange) onChange();
+  });
+}
+function numOrNull(el, { min = -Infinity, integer = false } = {}) {
+  const raw = el.value.trim();
+  if (!raw) return null;
+  const n = integer ? parseInt(raw, 10) : parseFloat(raw);
+  return Number.isFinite(n) && n >= min ? n : null;
+}
+function jsonObjectOrNull(el) {
+  const raw = el.value.trim();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+/** Red border + hint on a JSON field that will not be sent. */
+function markJson(el, okTitle) {
+  const bad = el.value.trim() && !jsonObjectOrNull(el);
+  el.style.borderColor = bad ? 'var(--danger)' : '';
+  el.title = bad ? 'Not a JSON object — this will not be sent.' : okTitle;
+}
+
+// Pipeline: language + TTS voice id (plain VoiceConfig scalars).
+const languageInput = document.getElementById('language-input');
+const voiceInput = document.getElementById('voice-input');
+persist(languageInput, 'messer-voice-language');
+persist(voiceInput, 'messer-voice-voice-id');
+
+// Turn taking: vad_endpointing / turn_timeout_secs / turn_timeout_fallback.
+const vadSelect = document.getElementById('vad-select');
+const turnTimeoutInput = document.getElementById('turn-timeout');
+const turnFallbackSelect = document.getElementById('turn-fallback-select');
+const turnFallbackText = document.getElementById('turn-fallback-text');
+persist(vadSelect, 'messer-voice-vad-endpointing');
+persist(turnTimeoutInput, 'messer-voice-turn-timeout');
+persist(turnFallbackSelect, 'messer-voice-turn-fallback-mode', syncTurnInputs);
+persist(turnFallbackText, 'messer-voice-turn-fallback-text');
+function syncTurnInputs() {
+  turnFallbackText.disabled = turnFallbackSelect.value !== 'custom';
+}
+syncTurnInputs();
+
+// Tool-call filler override.
+const fillerSelect = document.getElementById('filler-select');
+const fillerPrompt = document.getElementById('filler-prompt');
+const fillerDelay = document.getElementById('filler-delay');
+const fillerRepeat = document.getElementById('filler-repeat');
+const fillerMax = document.getElementById('filler-max');
+const fillerTimeout = document.getElementById('filler-timeout');
+const fillerModel = document.getElementById('filler-model');
+const FILLER_INPUTS = [fillerPrompt, fillerDelay, fillerRepeat, fillerMax, fillerTimeout, fillerModel];
+persist(fillerSelect, 'messer-voice-filler-mode', syncFillerInputs);
+persist(fillerPrompt, 'messer-voice-filler-prompt');
+persist(fillerDelay, 'messer-voice-filler-delay');
+persist(fillerRepeat, 'messer-voice-filler-repeat');
+persist(fillerMax, 'messer-voice-filler-max');
+persist(fillerTimeout, 'messer-voice-filler-timeout');
+persist(fillerModel, 'messer-voice-filler-model');
+function syncFillerInputs() {
+  const on = fillerSelect.value === 'on';
+  for (const el of FILLER_INPUTS) el.disabled = !on;
+}
+syncFillerInputs();
+
+// Greeting overrides — one block per call direction. `greeting` is the
+// inbound opener (and the outbound fallback); `outbound_greeting` is the
+// opener for calls the agent placed. Which one the server uses is decided by
+// the Simulate control, sent as `direction` on the hello.
+function greetingBlock(prefix, storagePrefix, defaultInstructions) {
+  const b = {
+    select: document.getElementById(`${prefix}-select`),
+    text: document.getElementById(`${prefix}-text`),
+    instructions: document.getElementById(`${prefix}-instructions`),
+    interruptible: document.getElementById(`${prefix}-interruptible`),
+    delay: document.getElementById(`${prefix}-delay`),
+    wait: document.getElementById(`${prefix}-wait`),
+    model: document.getElementById(`${prefix}-model`),
+  };
+  b.inputs = [b.text, b.instructions, b.interruptible, b.delay, b.wait, b.model];
+  const sync = () => {
+    const on = b.select.value === 'on';
+    for (const el of b.inputs) el.disabled = !on;
+    // text wins over instructions server-side — say so rather than letting a
+    // filled-in brief look like it is being used.
+    b.instructions.placeholder = (on && b.text.value.trim()) ? 'Ignored — Text takes precedence' : defaultInstructions;
+    b.model.placeholder = (on && b.text.value.trim()) ? 'Unused — Text needs no LLM' : 'Session LLM';
+  };
+  persist(b.select, `${storagePrefix}-mode`, sync);
+  persist(b.text, `${storagePrefix}-text`, sync);
+  persist(b.instructions, `${storagePrefix}-instructions`);
+  persist(b.interruptible, `${storagePrefix}-interruptible`);
+  persist(b.delay, `${storagePrefix}-delay`);
+  persist(b.wait, `${storagePrefix}-wait`);
+  persist(b.model, `${storagePrefix}-model`);
+  b.text.addEventListener('input', sync);
+  sync();
+  /** Hello value for this block: '' (off), a sparse patch (on), or undefined (server default). */
+  b.payload = () => {
+    if (b.select.value === 'off') return ''; // the only spelling that subtracts a nested default
+    if (b.select.value !== 'on') return undefined;
+    // Deep-merged over the server's block, so empty fields keep its values. A
+    // server with nothing declared needs text or instructions here, otherwise
+    // the patch fails validation and the server keeps its default.
+    const g = {};
+    if (b.text.value.trim()) g.text = b.text.value.trim();
+    if (b.instructions.value.trim()) g.instructions = b.instructions.value.trim();
+    if (b.interruptible.value) g.interruptible = b.interruptible.value === 'yes';
+    const delay = numOrNull(b.delay, { min: 0, integer: true });
+    if (delay !== null) g.delay_ms = delay;
+    const wait = numOrNull(b.wait, { min: 0 });
+    if (wait !== null && wait > 0) g.after_user_silence_secs = wait;
+    if (b.model.value.trim().includes('/')) g.model = b.model.value.trim();
+    return g;
+  };
+  return b;
+}
+const greeting = greetingBlock('greeting', 'messer-voice-greeting', 'e.g. greet them by name and say why you are calling');
+const outbound = greetingBlock('outbound', 'messer-voice-outbound-greeting', 'e.g. say who you are and why you are calling, then ask if now is a good time');
+
+// Simulated call direction. The session itself never knows who placed the
+// call; the host does, and in the playground that host is this page.
+const directionSelect = document.getElementById('direction-select');
+persist(directionSelect, 'messer-voice-direction', syncDirection);
+if (!directionSelect.value) directionSelect.value = 'inbound';
+function syncDirection() {
+  const out = directionSelect.value === 'outbound';
+  document.getElementById('greeting-section').classList.toggle('direction-idle', out);
+  document.getElementById('outbound-section').classList.toggle('direction-idle', !out);
+  // Say which block the next Start will actually speak. Outbound falls back
+  // to the inbound block unless outbound_greeting is declared somewhere.
+  const outboundDeclared = outbound.select.value !== '' || (declaredVoiceConfig && 'outbound_greeting' in declaredVoiceConfig);
+  document.getElementById('greeting-tag').textContent = out
+    ? (outboundDeclared ? '— not used on outbound' : '— used: no outbound greeting declared')
+    : '— used on this call';
+  document.getElementById('outbound-tag').textContent = out
+    ? (outboundDeclared ? '— used on this call' : '— nothing declared, inbound block applies')
+    : '— not used on inbound';
+}
+outbound.select.addEventListener('change', syncDirection);
+
+// User idle re-engagement (`user_idle`). Same lifecycle as filler/greeting:
+// 'off' sends '' so the server drops its default for this call.
+const idleSelect = document.getElementById('idle-select');
+const idleTimeout = document.getElementById('idle-timeout');
+const idleMax = document.getElementById('idle-max');
+const idleHangup = document.getElementById('idle-hangup');
+const idleText = document.getElementById('idle-text');
+const idleInstructions = document.getElementById('idle-instructions');
+const idleModel = document.getElementById('idle-model');
+const IDLE_INPUTS = [idleTimeout, idleMax, idleHangup, idleText, idleInstructions, idleModel];
+persist(idleSelect, 'messer-voice-idle-mode', syncIdleInputs);
+persist(idleTimeout, 'messer-voice-idle-timeout');
+persist(idleMax, 'messer-voice-idle-max');
+persist(idleHangup, 'messer-voice-idle-hangup');
+persist(idleText, 'messer-voice-idle-text', syncIdleInputs);
+persist(idleInstructions, 'messer-voice-idle-instructions');
+persist(idleModel, 'messer-voice-idle-model');
+function syncIdleInputs() {
+  const on = idleSelect.value === 'on';
+  for (const el of IDLE_INPUTS) el.disabled = !on;
+  idleInstructions.placeholder = (on && idleText.value.trim()) ? 'Ignored — Text takes precedence' : 'e.g. ask if they are still there';
+}
+idleText.addEventListener('input', syncIdleInputs);
+syncIdleInputs();
+function userIdlePayload() {
+  if (idleSelect.value === 'off') return '';
+  if (idleSelect.value !== 'on') return undefined;
+  const u = {};
+  const timeout = numOrNull(idleTimeout, { min: 0 });
+  if (timeout !== null && timeout > 0) u.timeout_secs = timeout;
+  const maxCount = numOrNull(idleMax, { min: 0, integer: true });
+  if (maxCount !== null) u.max_count = maxCount;
+  const hangup = numOrNull(idleHangup, { min: 0 });
+  if (hangup !== null && hangup > 0) u.hangup_after_secs = hangup;
+  const lines = idleText.value.split('|').map((s) => s.trim()).filter(Boolean);
+  if (lines.length === 1) u.text = lines[0];
+  else if (lines.length > 1) u.text = lines;
+  if (idleInstructions.value.trim()) u.instructions = idleInstructions.value.trim();
+  if (idleModel.value.trim().includes('/')) u.model = idleModel.value.trim();
+  return u;
+}
+
+// Advanced: stt_model + allow-listed stt_extra / tts_extra tuning.
+const sttModelInput = document.getElementById('stt-model-input');
+const sttExtraInput = document.getElementById('stt-extra-input');
+const ttsExtraInput = document.getElementById('tts-extra-input');
+persist(sttModelInput, 'messer-voice-stt-model');
+persist(sttExtraInput, 'messer-voice-stt-extra');
+persist(ttsExtraInput, 'messer-voice-tts-extra');
+const STT_EXTRA_TITLE = sttExtraInput.title;
+const TTS_EXTRA_TITLE = ttsExtraInput.title;
+sttExtraInput.addEventListener('input', () => markJson(sttExtraInput, STT_EXTRA_TITLE));
+ttsExtraInput.addEventListener('input', () => markJson(ttsExtraInput, TTS_EXTRA_TITLE));
+markJson(sttExtraInput, STT_EXTRA_TITLE);
+markJson(ttsExtraInput, TTS_EXTRA_TITLE);
+
+// The agent's declared voice_config (from meta) — drives placeholders and the
+// read-only list in the Agent panel. null until a server answers.
+let declaredVoiceConfig = null;
+/** Flatten {greeting: {text: 'x'}} → [['greeting.text', 'x'], …] for display and placeholders. */
+function flattenDeclared(obj, prefix = '') {
+  const out = [];
+  for (const [k, v] of Object.entries(obj || {})) {
+    const key = prefix ? `${prefix}.${k}` : k;
+    if (v && typeof v === 'object' && !Array.isArray(v)) out.push(...flattenDeclared(v, key));
+    else out.push([key, v]);
+  }
+  return out;
+}
+function declaredLabel(v) {
+  if (v === null || v === undefined) return 'none';
+  if (v === '') return '"" (off)';
+  if (Array.isArray(v)) return v.map(String).join(' | ');
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  return String(v);
+}
+function applyDeclaredVoiceConfig(vc) {
+  declaredVoiceConfig = vc && typeof vc === 'object' ? { ...vc } : null;
+  // A bare string is the agent's shorthand for {text: …}; '' declares silence.
+  for (const k of ['greeting', 'outbound_greeting']) {
+    if (declaredVoiceConfig && typeof declaredVoiceConfig[k] === 'string') {
+      declaredVoiceConfig[k] = declaredVoiceConfig[k].trim() ? { text: declaredVoiceConfig[k] } : '';
+    }
+  }
+  const flat = flattenDeclared(declaredVoiceConfig);
+  const byKey = new Map(flat);
+  // Placeholders: every input tagged data-vc shows the agent's own value as
+  // its "server default", so the label is a fact instead of a shrug.
+  for (const el of document.querySelectorAll('[data-vc]')) {
+    if (!el.dataset.defaultPlaceholder) el.dataset.defaultPlaceholder = el.placeholder;
+    const has = byKey.has(el.dataset.vc);
+    el.placeholder = has ? declaredLabel(byKey.get(el.dataset.vc)) : el.dataset.defaultPlaceholder;
+  }
+  const list = document.getElementById('conn-declared');
+  list.innerHTML = '';
+  if (!declaredVoiceConfig || !flat.length) {
+    list.hidden = true;
+    syncDirection();
+    return;
+  }
+  for (const [k, v] of flat) {
+    const dt = document.createElement('dt');
+    dt.textContent = k;
+    const dd = document.createElement('dd');
+    dd.textContent = declaredLabel(v);
+    if (v === null || v === undefined || v === '') dd.classList.add('declared-empty');
+    dd.title = typeof v === 'string' ? v : '';
+    list.append(dt, dd);
+  }
+  list.hidden = false;
+  syncDirection();
+}
+syncDirection();
+
+// Per-call identity for a callable system_prompt. Hidden unless the server
+// reports MESSER_VOICE_ALLOW_CLIENT_CALL_CONTEXT — otherwise it would be a
+// control whose value the server silently drops.
+const callContextInput = document.getElementById('call-context');
+const callContextSection = document.getElementById('call-context-section');
+const CALL_CONTEXT_STORAGE_KEY = 'messer-voice-call-context';
+callContextInput.value = localStorage.getItem(CALL_CONTEXT_STORAGE_KEY) || '';
+callContextInput.onchange = () => {
+  localStorage.setItem(CALL_CONTEXT_STORAGE_KEY, callContextInput.value);
+  syncCallContext();
+};
+/** Parsed call context, or null when the field is empty/unusable. */
+function callContextPayload() {
+  const raw = callContextInput.value.trim();
+  if (!raw) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const out = {};
+  for (const [k, v] of Object.entries(parsed)) {
+    if (v !== null && v !== undefined && typeof v !== 'object') out[k] = String(v);
+  }
+  return Object.keys(out).length ? out : null;
+}
+function syncCallContext() {
+  const bad = callContextInput.value.trim() && !callContextPayload();
+  callContextInput.style.borderColor = bad ? 'var(--danger)' : '';
+  callContextInput.title = bad
+    ? 'Not a flat JSON object — this will not be sent.'
+    : 'Per-call identity a callable system_prompt reads off the session. On telephony this is set by the webhook, never by the caller.';
+}
+callContextInput.oninput = syncCallContext;
+syncCallContext();
+
+const transportSelect = document.getElementById('transport-select');
+const TRANSPORT_STORAGE_KEY = 'messer-voice-transport';
+const transportFromUrl = new URLSearchParams(location.search).get('transport');
+transportSelect.value = transportFromUrl || localStorage.getItem(TRANSPORT_STORAGE_KEY) || 'webrtc';
+if (![...transportSelect.options].some((o) => o.value === transportSelect.value && !o.disabled)) {
+  transportSelect.value = 'webrtc';
+}
+// Only the *default* WebRTC silently falls back to WS when the server lacks
+// the voice extra (501) — an explicit user/URL choice surfaces the error.
+let transportExplicit = !!(transportFromUrl || localStorage.getItem(TRANSPORT_STORAGE_KEY));
+function isRtcLikeTransport() {
+  return transportSelect.value === 'webrtc' || transportSelect.value === 'livekit';
+}
+function syncNsForTransport() {
+  // WebRTC/LiveKit send the raw mic track, so the worklet's RNNoise output never
+  // reaches the wire — the transport forces browser noise suppression
+  // (startMic mirrors this). Gray the control out instead of lying with it.
+  const rtc = isRtcLikeTransport();
+  nsSelect.disabled = rtc;
+  nsSelect.title = rtc
+    ? 'Not configurable over WebRTC/LiveKit — the browser applies its own noise suppression to the mic track.'
+    : "Mic noise suppression — applied on the next Start. Echo cancellation stays on in every mode.";
+}
+transportSelect.onchange = () => {
+  // Applied on the next Start — a live session keeps its transport.
+  transportExplicit = true;
+  localStorage.setItem(TRANSPORT_STORAGE_KEY, transportSelect.value);
+  syncNsForTransport();
+};
+syncNsForTransport();
+
+const sttSelect = document.getElementById('stt-select');
+const STT_STORAGE_KEY = 'messer-voice-stt-provider';
+sttSelect.value = localStorage.getItem(STT_STORAGE_KEY) || '';
+function syncTdForStt() {
+  // Flux owns end-of-turn — Smart Turn / Namo would only run after Flux
+  // already committed, which feels like "wait until you shut up".
+  if (sttSelect.value === 'deepgram-flux') {
+    const incompatible = !tdSelect.value || ['local', 'lexical'].includes(tdSelect.value);
+    if (incompatible) {
+      tdSelect.value = 'provider';
+      localStorage.setItem(TD_STORAGE_KEY, 'provider');
+    }
+  }
+}
+sttSelect.onchange = () => {
+  // Applied on the next Start — the provider is fixed per WebSocket hello.
+  localStorage.setItem(STT_STORAGE_KEY, sttSelect.value);
+  syncTdForStt();
+};
+syncTdForStt();
+
+const ttsSelect = document.getElementById('tts-select');
+const ttsModelSelect = document.getElementById('tts-model-select');
+const TTS_STORAGE_KEY = 'messer-voice-tts-provider';
+const TTS_MODEL_STORAGE_KEY = 'messer-voice-tts-model';
+// Models per provider — the model picker follows the provider so a foreign
+// model id never rides a provider's wire.
+const TTS_MODELS = {
+  elevenlabs: ['eleven_flash_v2_5', 'eleven_v4_turbo', 'eleven_v4', 'eleven_turbo_v2_5', 'eleven_multilingual_v2'],
+  fishaudio: ['s2.1-pro', 's2.1-pro-free', 's2-pro', 's1'],
+  deepgram: ['aura-2-thalia-en', 'aura-2-andromeda-en', 'aura-2-helena-en', 'aura-2-apollo-en', 'aura-2-asteria-en'],
+  openai: ['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'],
+  munsit: ['faseeh-v1-preview'],
+};
+function syncTtsModels() {
+  const models = TTS_MODELS[ttsSelect.value] || [];
+  const prev = ttsModelSelect.value;
+  ttsModelSelect.innerHTML = '';
+  const def = document.createElement('option');
+  def.value = '';
+  def.textContent = 'Server default';
+  ttsModelSelect.appendChild(def);
+  for (const m of models) {
+    const o = document.createElement('option');
+    o.value = m;
+    o.textContent = m;
+    ttsModelSelect.appendChild(o);
+  }
+  ttsModelSelect.value = models.includes(prev) ? prev : '';
+  // "Server default" provider → the server picks the model too.
+  ttsModelSelect.disabled = !models.length;
+}
+ttsSelect.value = localStorage.getItem(TTS_STORAGE_KEY) || '';
+syncTtsModels();
+{
+  const savedModel = localStorage.getItem(TTS_MODEL_STORAGE_KEY) || '';
+  if ((TTS_MODELS[ttsSelect.value] || []).includes(savedModel)) ttsModelSelect.value = savedModel;
+}
+ttsSelect.onchange = () => {
+  // Applied on the next Start — the provider is fixed per WebSocket hello.
+  localStorage.setItem(TTS_STORAGE_KEY, ttsSelect.value);
+  syncTtsModels();
+  localStorage.setItem(TTS_MODEL_STORAGE_KEY, ttsModelSelect.value);
+};
+ttsModelSelect.onchange = () => {
+  localStorage.setItem(TTS_MODEL_STORAGE_KEY, ttsModelSelect.value);
+};
+
+// --- Agent target (standalone mode) ---------------------------------------
+// Embedded pages keep dialing their own origin exactly as before. Standalone
+// pages route everything through one of two targets:
+//   local    — a messer.server on this machine. Served by the playground
+//              launcher, pressing Start spawns it from the agent file path
+//              (optional fixed port); without the launcher (file://), you
+//              point at a server you started yourself by URL.
+//   platform — a deployed workforce through the Messer platform API. Same
+//              wire protocol; the platform tunnels WS (ticket-authenticated)
+//              and relays RTC signaling (bearer-authenticated).
+const targetSection = document.getElementById('target-section');
+const targetModeSelect = document.getElementById('target-mode');
+const targetLocalBox = document.getElementById('target-local');
+const targetPlatformBox = document.getElementById('target-platform');
+const localUrlInput = document.getElementById('local-url');
+const localUrlField = document.getElementById('local-url-field');
+const launcherBox = document.getElementById('launcher-box');
+const launcherSpecInput = document.getElementById('launcher-spec');
+const launcherPortInput = document.getElementById('launcher-port');
+const btnLauncher = document.getElementById('btn-launcher');
+const launcherStateEl = document.getElementById('launcher-state');
+/** True when this page is served by the playground launcher (spawn-on-Start). */
+let launcherAvailable = false;
+const pf = {
+  api: document.getElementById('pf-api'),
+  org: document.getElementById('pf-org'),
+  project: document.getElementById('pf-project'),
+  workforce: document.getElementById('pf-workforce'),
+  rev: document.getElementById('pf-rev'),
+  token: document.getElementById('pf-token'),
+  endpoint: document.getElementById('pf-endpoint'),
+};
+const TGT_KEY = (k) => `messer-voice-target-${k}`;
+
+function targetMode() {
+  return EMBEDDED ? 'embedded' : (targetModeSelect.value || 'local');
+}
+
+function localBase() {
+  let u = (localUrlInput.value || '').trim() || 'http://localhost:4444';
+  if (!/^https?:\/\//i.test(u)) u = 'http://' + u;
+  return u.replace(/\/+$/, '');
+}
+
+function platformValues() {
+  return {
+    api: ((pf.api.value || '').trim() || 'https://api.dev.messer.local').replace(/\/+$/, ''),
+    org: (pf.org.value || '').trim(),
+    project: (pf.project.value || '').trim(),
+    workforce: (pf.workforce.value || '').trim(),
+    rev: (pf.rev.value || '').trim() || 'main',
+    token: (pf.token.value || '').trim(),
+    endpoint: pf.endpoint.value === 'preview' ? 'preview' : 'deployed',
+  };
+}
+
+function platformBase(v) {
+  v = v || platformValues();
+  return `${v.api}/orgs/${encodeURIComponent(v.org)}/projects/${encodeURIComponent(v.project)}`
+    + `/workforce/${encodeURIComponent(v.workforce)}`;
+}
+
+function validatePlatform(v) {
+  const missing = [];
+  if (!v.org) missing.push('org ID');
+  if (!v.project) missing.push('project ID');
+  if (!v.workforce) missing.push('workforce');
+  if (!v.token) missing.push('token');
+  if (missing.length) throw new Error(`Platform target needs: ${missing.join(', ')}.`);
+}
+
+/**
+ * Origin prefix for plain /voice/* fetches (meta, ambience), or null when the
+ * target can't serve them — the platform tunnels only ws/preview/rtc/ticket.
+ */
+function voiceHttpBase() {
+  const m = targetMode();
+  if (m === 'embedded') return '';
+  if (m === 'local') return localBase();
+  return null;
+}
+
+/** Tickets are single-use and 60s-lived — mint one immediately before each dial. */
+async function mintPlatformTicket(v) {
+  const resp = await fetch(`${platformBase(v)}/voice/ticket?rev=${encodeURIComponent(v.rev)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${v.token}` },
+  });
+  if (!resp.ok) {
+    let detail = '';
+    try { detail = (await resp.json()).error || ''; } catch (_) {}
+    const hint = resp.status === 401 || resp.status === 403 ? ' Check the token.'
+      : resp.status === 400 ? ' Check the branch (rev).'
+      : resp.status === 404 ? ' Check org/project/workforce, and that the branch is deployed.'
+      : '';
+    throw new Error(`Ticket mint failed (${resp.status})${detail ? `: ${detail}` : '.'}${hint}`);
+  }
+  return (await resp.json()).ticket;
+}
+
+/** URL + subprotocols for the WebSocket dial of the current target. */
+async function buildWsConnect() {
+  const m = targetMode();
+  if (m === 'embedded') {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    return { url: `${proto}://${location.host}/voice/ws`, protocols: undefined };
+  }
+  if (m === 'local') {
+    return { url: localBase().replace(/^http/i, 'ws') + '/voice/ws', protocols: undefined };
+  }
+  const v = platformValues();
+  validatePlatform(v);
+  const ticket = await mintPlatformTicket(v);
+  const path = v.endpoint === 'preview' ? 'voice/preview' : 'voice/ws';
+  const wsBase = platformBase(v).replace(/^http/i, 'ws');
+  return {
+    url: `${wsBase}/${path}?rev=${encodeURIComponent(v.rev)}&ticket=${encodeURIComponent(ticket)}`,
+    protocols: ['messer.v1'],
+  };
+}
+
+const NS_STORAGE_KEY = 'messer-voice-noise-suppression';
+nsSelect.value = localStorage.getItem(NS_STORAGE_KEY) || 'browser';
+if (!nsSelect.value) nsSelect.value = 'browser'; // unknown stored value
+nsSelect.onchange = () => {
+  // Applied on the next Start — AudioContext rate / worklet are rebuilt then.
+  localStorage.setItem(NS_STORAGE_KEY, nsSelect.value);
+};
+
+// --- Ambient background audio ------------------------------------------
+// Announced by the server in session_started (`voice_config.ambient`), but
+// mixed locally: the track loops through WebAudio on this page, so nothing
+// crosses the wire and echoCancellation treats it as reference audio. The
+// picker lets you override the server's track (or turn it off) — local-only.
+// An <audio loop> element would insert an audible gap at the seam; a looping
+// AudioBufferSourceNode is gapless (the crossfade is baked into the asset).
+const ambientSelect = document.getElementById('ambient-select');
+const ambientSlider = document.getElementById('ambient-volume');
+const AMBIENT_STORAGE_KEY = 'messer-voice-ambient-volume';
+const AMBIENT_SRC_STORAGE_KEY = 'messer-voice-ambient-source';
+let ambientSource = null, ambientGain = null, ambientToken = 0;
+/** `ambient` config from the last session_started, or null. */
+let serverAmbient = null;
+
+/** Base URL the current preset options were fetched from (avoid refetch loops). */
+let ambienceCatalogBase;
+
+async function loadAmbienceCatalog() {
+  const base = voiceHttpBase();
+  if (base === null || base === ambienceCatalogBase) return;
+  const stored = localStorage.getItem(AMBIENT_SRC_STORAGE_KEY) || '';
+  try {
+    const resp = await fetch(base + '/voice/ambience');
+    if (!resp.ok) return;
+    const presets = (await resp.json()).presets || [];
+    ambienceCatalogBase = base;
+    // Rebuild presets; the first two options ('' and 'off') are fixed markup.
+    while (ambientSelect.options.length > 2) ambientSelect.remove(2);
+    for (const name of presets) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      ambientSelect.appendChild(opt);
+    }
+    ambientSelect.value = stored;
+    if (ambientSelect.selectedIndex < 0) ambientSelect.value = ''; // stale stored preset
+    // The session may auto-start on load and mix before the catalog arrived,
+    // with the picker still on "server default". Setting .value fires no
+    // change event, so re-apply if the restore changed anything.
+    // (No-ops before session_started — applyAmbience bails without audioCtx.)
+    if (ambientSelect.value) void applyAmbience();
+  } catch (_) {}
+}
+
+(() => {
+  const stored = localStorage.getItem(AMBIENT_SRC_STORAGE_KEY) || '';
+  // 'off' exists before the catalog arrives — restore it now so an
+  // auto-started session can't play the server default over a saved "Off"
+  // (and so it survives the catalog fetch failing).
+  if (stored === 'off') ambientSelect.value = 'off';
+  // Standalone pages load the catalog lazily once a local target answers.
+  if (EMBEDDED) void loadAmbienceCatalog();
+})();
+
+function stopAmbience() {
+  ambientToken += 1; // invalidates in-flight fetch/decode
+  if (ambientSource) { try { ambientSource.stop(); ambientSource.disconnect(); } catch (_) {} ambientSource = null; }
+  if (ambientGain) { try { ambientGain.disconnect(); } catch (_) {} ambientGain = null; }
+}
+
+async function applyAmbience() {
+  stopAmbience();
+  if (!audioCtx) return;
+  const sel = ambientSelect.value;
+  if (sel === 'off' || (!sel && !serverAmbient)) return;
+  const base = voiceHttpBase();
+  if (base === null) return; // platform target — ambience assets aren't tunneled
+  const url = base + (sel ? `/voice/ambience/${encodeURIComponent(sel)}` : '/voice/ambience/current');
+  const stored = localStorage.getItem(AMBIENT_STORAGE_KEY);
+  const volume = stored !== null ? Number(stored) / 100 : (serverAmbient?.volume ?? 0.25);
+  ambientSlider.value = String(Math.round(volume * 100));
+  const token = ambientToken;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return;
+    const buf = await audioCtx.decodeAudioData(await resp.arrayBuffer());
+    if (token !== ambientToken || !audioCtx) return;
+    ambientGain = audioCtx.createGain();
+    ambientGain.gain.value = volume;
+    ambientGain.connect(audioCtx.destination);
+    ambientSource = audioCtx.createBufferSource();
+    ambientSource.buffer = buf;
+    ambientSource.loop = true;
+    ambientSource.connect(ambientGain);
+    ambientSource.start();
+  } catch (err) {
+    console.warn('ambience unavailable', err);
+  }
+}
+
+ambientSelect.addEventListener('change', () => {
+  localStorage.setItem(AMBIENT_SRC_STORAGE_KEY, ambientSelect.value);
+  void applyAmbience(); // live switch — no session restart needed
+});
+
+ambientSlider.addEventListener('input', () => {
+  if (ambientGain) ambientGain.gain.value = Number(ambientSlider.value) / 100;
+  localStorage.setItem(AMBIENT_STORAGE_KEY, ambientSlider.value);
+});
+
+// --- Thinking sound ------------------------------------------------------
+// Local-only nicety: a quiet keyboard loop between "the agent started a
+// tool" (agent_status) and the first reply text/audio, so tool latency
+// doesn't feel like a dead line. Reuses the `typing` ambience preset.
+const thinkingToggle = document.getElementById('thinking-sound');
+const THINKING_STORAGE_KEY = 'messer-voice-thinking-sound';
+let thinkingSource = null, thinkingGain = null, thinkingBuf = null, thinkingToken = 0;
+thinkingToggle.checked = localStorage.getItem(THINKING_STORAGE_KEY) === '1';
+thinkingToggle.addEventListener('change', () => {
+  localStorage.setItem(THINKING_STORAGE_KEY, thinkingToggle.checked ? '1' : '0');
+  if (!thinkingToggle.checked) stopThinkingSound();
+});
+
+function stopThinkingSound() {
+  thinkingToken += 1; // invalidates in-flight fetch/decode
+  if (thinkingSource) { try { thinkingSource.stop(); thinkingSource.disconnect(); } catch (_) {} thinkingSource = null; }
+  if (thinkingGain) { try { thinkingGain.disconnect(); } catch (_) {} thinkingGain = null; }
+}
+
+async function startThinkingSound() {
+  if (!thinkingToggle.checked || !audioCtx || thinkingSource) return;
+  const token = ++thinkingToken;
+  try {
+    if (!thinkingBuf) {
+      const base = voiceHttpBase();
+      if (base === null) return; // platform target — ambience assets aren't tunneled
+      const resp = await fetch(base + '/voice/ambience/typing');
+      if (!resp.ok) return;
+      thinkingBuf = await audioCtx.decodeAudioData(await resp.arrayBuffer());
+    }
+    if (token !== thinkingToken || !audioCtx || thinkingSource) return;
+    thinkingGain = audioCtx.createGain();
+    thinkingGain.gain.value = 0.12;
+    thinkingGain.connect(audioCtx.destination);
+    thinkingSource = audioCtx.createBufferSource();
+    thinkingSource.buffer = thinkingBuf;
+    thinkingSource.loop = true;
+    thinkingSource.connect(thinkingGain);
+    thinkingSource.start();
+  } catch (err) {
+    console.warn('thinking sound unavailable', err);
+  }
+}
+
+function setSessionButton(mode) {
+  const start = mode === 'start';
+  btnSession.dataset.mode = start ? 'start' : 'stop';
+  btnSession.disabled = false;
+  btnSession.setAttribute('aria-label', start ? 'Start session' : 'End session');
+  btnSession.title = start ? 'Start a new voice session' : 'End session';
+  btnSession.innerHTML = start
+    ? '<span class="btn-session-icon btn-session-icon--start" aria-hidden="true"></span>'
+    : '<span class="btn-session-icon btn-session-icon--stop" aria-hidden="true"></span>';
+}
+const micBars = () => [...micViz.querySelectorAll('.mic-bar')];
+
+function truncateMiddle(s, max) {
+  if (s.length <= max) return s;
+  const inner = max - 1;
+  const front = Math.ceil(inner / 2);
+  const back = Math.floor(inner / 2);
+  return s.slice(0, front) + '…' + s.slice(s.length - back);
+}
+
+/** Render the runnable strip + declared voice_config from a meta blob (injected or fetched); null clears both. */
+function applyMeta(meta) {
+  const strip = document.getElementById('conn-strip');
+  const verEl = document.getElementById('conn-version');
+  const wrap = document.getElementById('conn-agent');
+  const titleEl = document.getElementById('conn-runnable-title');
+  const specEl = document.getElementById('conn-runnable-spec');
+  if (!strip || !verEl || !wrap || !titleEl || !specEl) return;
+  // Only offer the call-context field where the server will actually honour
+  // it — an unreachable server (null meta) or an older one reports nothing.
+  callContextSection.hidden = !(meta && meta.allow_client_call_context);
+  const section = document.getElementById('agent-section');
+  if (!meta) {
+    applyDeclaredVoiceConfig(null);
+    verEl.textContent = '';
+    verEl.hidden = true;
+    wrap.hidden = true;
+    strip.hidden = true; // no bare "Messer" + no stacked border with TARGET
+    section.hidden = true; // standalone: nothing answered yet — no empty section under TARGET
+    return;
+  }
+  section.hidden = false;
+  applyDeclaredVoiceConfig(meta.voice_config || null);
+  const v = (meta.version || '').trim();
+  verEl.textContent = v;
+  verEl.hidden = !v;
+  const spec = (meta.import_spec || '').trim();
+  const nm = (meta.name || '').trim();
+  const kind = (meta.kind || '').trim();
+  const title = nm ? (kind ? `${nm} · ${kind}` : nm) : kind;
+  if (title || spec) {
+    wrap.hidden = false;
+    titleEl.textContent = title || 'Runnable';
+    if (spec) {
+      specEl.textContent = truncateMiddle(spec, 44);
+      specEl.title = spec;
+      specEl.hidden = false;
+    } else {
+      specEl.textContent = '';
+      specEl.removeAttribute('title');
+      specEl.hidden = true;
+    }
+  } else {
+    wrap.hidden = true;
+  }
+  strip.hidden = verEl.hidden && wrap.hidden;
+}
+
+let ws, audioCtx, micStream, worklet, analyser, currentSource, meterRAF;
+/** WebRTC transport state: the peer connection and the element playing the server's TTS track. */
+let pc = null, remoteAudioEl = null, lkRoom = null;
+let lkTranscriptChunks = null;
+/** In-flight generic `chunk` envelopes, keyed by chunk_id, until all seqs land. */
+let lkChunks = {};
+/** False until WS is open, config frame sent, and AudioContext is running (worklet processes mic). */
+let micAudioToWs = false;
+let nextPlayTime = 0;
+const playbackSources = new Set();
+/** Sample rate reported to the server on connect; TTS audio is decoded at this rate. */
+let sessionSampleRate = SAMPLE_RATE;
+/** Scheduled-but-unfinished TTS segments as {start, end} in audioCtx time. */
+let playbackSchedule = [];
+/** Milliseconds of TTS audio fully played (finished segments). */
+let playedAccumMs = 0;
+let lastPlaybackAckMs = -1;
+let playbackAckTimer = null;
+const PLAYBACK_ACK_INTERVAL_MS = 250;
+/** After barge-in, ignore audio frames still in flight on the WS (server also drops its queue). */
+let suppressAssistantAudio = false;
+
+/** Cumulative ms of TTS audio actually played this session. */
+function computePlayedMs() {
+  if (!audioCtx) return playedAccumMs;
+  const now = audioCtx.currentTime;
+  let inFlight = 0;
+  const remaining = [];
+  for (const seg of playbackSchedule) {
+    if (now >= seg.end) {
+      playedAccumMs += (seg.end - seg.start) * 1000;
+    } else {
+      inFlight += Math.max(0, now - seg.start) * 1000;
+      remaining.push(seg);
+    }
+  }
+  playbackSchedule = remaining;
+  return playedAccumMs + inFlight;
+}
+
+/** Report playback progress so the server can truncate interrupted replies to what was heard. */
+function sendPlaybackAck(force) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const played = computePlayedMs();
+  if (!force && played === lastPlaybackAckMs) return;
+  lastPlaybackAckMs = played;
+  ws.send(JSON.stringify({ type: 'playback', played_ms: played }));
+}
+
+function resetPlaybackTracking() {
+  playbackSchedule = [];
+  playedAccumMs = 0;
+  lastPlaybackAckMs = -1;
+}
+let userEndedSession = false;
+let sessionReady = false;
+/** @type {'connecting'|'live'|'ended'|'error'} */
+let connVisual = 'connecting';
+
+function setConn(state, title, detail) {
+  connVisual = state;
+  const ds = state === 'error' ? 'error' : state === 'ended' ? 'ended' : state === 'live' ? 'live' : 'connecting';
+  footStatus.dataset.state = ds;
+  footStatusTitle.textContent = title;
+  footStatusDetail.textContent = detail;
+  cardEl.classList.toggle('card--inactive', state === 'ended' || state === 'error');
+  cardEl.classList.toggle('card--live', state === 'live');
+  // Hard failures only — normal stop/disconnect uses Start for a new session.
+  btnReconnect.classList.toggle('visible', state === 'error');
+  if (state === 'ended' || state === 'error') setSessionButton('start');
+  else if (state === 'live' || state === 'connecting') setSessionButton('stop');
+}
+
+function updateEmptyState() {
+  const hasDialogue = transcriptEl.querySelector('.msg.user, .msg.assistant');
+  const show = connVisual === 'live' && sessionReady && !hasDialogue && !transcriptEl.querySelector('.msg.partial');
+  voiceEmpty.hidden = !show;
+}
+
+function stopAssistantAudio() {
+  // Clamp unfinished segments to "now" — audio past this point never plays.
+  if (audioCtx) {
+    const now = audioCtx.currentTime;
+    for (const seg of playbackSchedule) seg.end = Math.min(seg.end, Math.max(seg.start, now));
+  }
+  sendPlaybackAck(true);
+  for (const s of playbackSources) {
+    try { s.stop(0); } catch (e) {}
+  }
+  playbackSources.clear();
+  nextPlayTime = 0;
+}
+
+function log(cls, text) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  transcriptEl.appendChild(d);
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  updateEmptyState();
+  return d;
+}
+
+let partialEl = null;
+let statusEl = null;
+function setPartial(text) {
+  if (!text) {
+    if (partialEl) { partialEl.remove(); partialEl = null; }
+    updateEmptyState();
+    return;
+  }
+  // Do NOT seal the in-flight assistant bubble here: a stray mic partial
+  // (breath, echo blip) mid-reply would split one reply across two bubbles.
+  // The live caption is parked *after* the assistant bubble (appendChild
+  // below), so ordering stays readable while the reply keeps growing.
+  if (!partialEl) {
+    partialEl = log('partial', '');
+  } else {
+    // Always park the live caption after the latest committed bubble.
+    transcriptEl.appendChild(partialEl);
+  }
+  partialEl.textContent = '… ' + text;
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  updateEmptyState();
+}
+function setStatus(text) {
+  if (!text) {
+    if (statusEl) { statusEl.remove(); statusEl = null; }
+    updateEmptyState();
+    return;
+  }
+  if (!statusEl) statusEl = log('status', '');
+  else transcriptEl.appendChild(statusEl);
+  statusEl.textContent = text;
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  updateEmptyState();
+}
+
+async function populateDevices() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const mics = devices.filter(d => d.kind === 'audioinput');
+  micSelect.innerHTML = '';
+  for (const mic of mics) {
+    const opt = document.createElement('option');
+    opt.value = mic.deviceId;
+    opt.textContent = mic.label || `Microphone (${mic.deviceId.slice(0, 8)}…)`;
+    micSelect.appendChild(opt);
+  }
+  if (micStream) {
+    const activeId = micStream.getAudioTracks()[0]?.getSettings().deviceId;
+    if (activeId) micSelect.value = activeId;
+  }
+  return mics;
+}
+
+function pickPreferredMic(mics) {
+  const bt = mics.find(m => /airpods|bluetooth|wireless|beats/i.test(m.label));
+  if (bt) return bt.deviceId;
+  const def = mics.find(m => m.deviceId === 'default');
+  if (def) return def.deviceId;
+  return mics.length ? mics[0].deviceId : undefined;
+}
+
+// ---- RNNoise (client-side neural noise suppression) ----------------------
+// Runs as a mic *preprocessor* inside the capture worklet, before PCM is sent
+// to the server — deliberately transport-agnostic (a WebRTC channel later
+// would reuse the same denoised track). Assets come from jsDelivr; any load
+// failure falls back to the browser's built-in suppressor for the session.
+const RNNOISE_CDN = 'https://cdn.jsdelivr.net/npm/@jitsi/rnnoise-wasm@0.2.1/dist';
+/** RNNoise operates on 480-sample frames of 48 kHz audio (10 ms). */
+const RNNOISE_RATE = 48000;
+const RNNOISE_FRAME = 480;
+/** null = not fetched yet; false = fetch failed (don't retry this page load). */
+let rnnoiseAssets = null;
+/** True when the shared AudioContext was built for the RNNoise graph (48 kHz + glue in the worklet module). */
+let rnnoiseCtxActive = false;
+
+async function loadRnnoiseAssets() {
+  const withTimeout = (p) => Promise.race([
+    p, new Promise((_, rej) => setTimeout(() => rej(new Error('fetch timeout')), 6000)),
+  ]);
+  const [glue, wasm] = await Promise.all([
+    withTimeout(fetch(`${RNNOISE_CDN}/rnnoise.js`).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.text();
+    })),
+    withTimeout(fetch(`${RNNOISE_CDN}/rnnoise.wasm`).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.arrayBuffer();
+    })),
+  ]);
+  return { glue, wasm };
+}
+
+/**
+ * Capture worklet module source. With `glue` (the emscripten factory
+ * `createRNNWasmModule`) prepended, the processor can denoise: it buffers
+ * 480-sample frames at the context rate (48 kHz), runs rnnoise_process_frame
+ * in-place, then decimates 3:1 (mean of 3 — cheap anti-alias; speech lives
+ * well under the resulting 8 kHz Nyquist) so the server keeps receiving the
+ * same 16 kHz PCM as the plain path. Until the wasm module resolves, frames
+ * pass through un-denoised at the same output rate, so the negotiated
+ * sample_rate never changes mid-session.
+ */
+function captureWorkletSource(glue) {
+  return (glue || '') + `
+    class Capture extends AudioWorkletProcessor {
+      constructor(options) {
+        super();
+        this._buf = [];
+        this._frame = [];
+        this._denoise = !!(options && options.processorOptions && options.processorOptions.denoise);
+        this._outRate = this._denoise ? sampleRate / 3 : sampleRate;
+        this._rn = null; // { mod, state, ptr } once the wasm module is ready
+        this.port.onmessage = (e) => {
+          const msg = e.data;
+          if (msg && msg.type === 'rnnoise-init') this._initRnnoise(msg.wasm);
+        };
+      }
+      _initRnnoise(wasmBytes) {
+        try {
+          createRNNWasmModule({ wasmBinary: new Uint8Array(wasmBytes) }).then((mod) => {
+            const state = mod._rnnoise_create();
+            const ptr = mod._malloc(${RNNOISE_FRAME} * 4);
+            this._rn = { mod, state, ptr };
+            this.port.postMessage({ type: 'rnnoise-ready' });
+          }).catch((err) => this.port.postMessage({ type: 'rnnoise-error', error: String(err) }));
+        } catch (err) {
+          this.port.postMessage({ type: 'rnnoise-error', error: String(err) });
+        }
+      }
+      _pushDenoised(ch) {
+        for (let i = 0; i < ch.length; i++) this._frame.push(ch[i]);
+        while (this._frame.length >= ${RNNOISE_FRAME}) {
+          const frame = this._frame.splice(0, ${RNNOISE_FRAME});
+          if (this._rn) {
+            const { mod, state, ptr } = this._rn;
+            const base = ptr >> 2;
+            // Re-read HEAPF32 around the call: wasm memory growth detaches old views.
+            let heap = mod.HEAPF32;
+            // RNNoise expects float samples in int16 range.
+            for (let j = 0; j < ${RNNOISE_FRAME}; j++) heap[base + j] = frame[j] * 32768;
+            mod._rnnoise_process_frame(state, ptr, ptr);
+            heap = mod.HEAPF32;
+            for (let j = 0; j < ${RNNOISE_FRAME}; j++) frame[j] = heap[base + j] / 32768;
+          }
+          for (let j = 0; j < ${RNNOISE_FRAME}; j += 3) {
+            this._buf.push((frame[j] + frame[j + 1] + frame[j + 2]) / 3);
+          }
+        }
+      }
+      process(inputs) {
+        const ch = inputs[0][0];
+        if (!ch) return true;
+        if (this._denoise) {
+          this._pushDenoised(ch);
+        } else {
+          for (let i = 0; i < ch.length; i++) this._buf.push(ch[i]);
+        }
+        const needed = Math.floor(this._outRate * ${CHUNK_MS / 1000});
+        while (this._buf.length >= needed) {
+          const slice = this._buf.splice(0, needed);
+          const i16 = new Int16Array(slice.length);
+          for (let j = 0; j < slice.length; j++) {
+            let s = Math.max(-1, Math.min(1, slice[j]));
+            i16[j] = s < 0 ? s * 32768 : s * 32767;
+          }
+          this.port.postMessage(i16.buffer, [i16.buffer]);
+        }
+        return true;
+      }
+    }
+    registerProcessor('capture', Capture);
+  `;
+}
+
+async function startMic(deviceId) {
+  if (currentSource) { currentSource.disconnect(); currentSource = null; }
+  if (worklet) { worklet.disconnect(); worklet = null; }
+  if (analyser) { analyser.disconnect(); analyser = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+
+  // WebRTC ships the raw getUserMedia track; RNNoise lives in the worklet
+  // and would be silently bypassed — force the browser suppressor instead.
+  const nsMode = isRtcLikeTransport() ? 'browser' : nsSelect.value;
+  let useRnnoise = nsMode === 'rnnoise';
+  if (useRnnoise && rnnoiseAssets === null) {
+    try {
+      rnnoiseAssets = await loadRnnoiseAssets();
+    } catch (err) {
+      console.warn('RNNoise assets failed to load — falling back to browser noise suppression.', err);
+      rnnoiseAssets = false;
+    }
+  }
+  if (useRnnoise && !rnnoiseAssets) useRnnoise = false;
+  // The context (rate + worklet module) is created once per page; a mic change
+  // mid-session must keep matching it, whatever the current fetch state says.
+  if (audioCtx) useRnnoise = rnnoiseCtxActive;
+
+  const constraints = {
+    audio: {
+      echoCancellation: true, // always: the barge-in echo gates assume the browser AEC is doing its job
+      // Never stack two suppressors — browser NS stays on only in 'browser'
+      // mode or as the fallback when RNNoise assets failed to load.
+      noiseSuppression: nsMode === 'browser' || (nsMode === 'rnnoise' && !useRnnoise),
+      autoGainControl: true,
+      sampleRate: useRnnoise ? RNNOISE_RATE : SAMPLE_RATE,
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+    }
+  };
+  micStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+  if (!audioCtx) {
+    audioCtx = new AudioContext({ sampleRate: useRnnoise ? RNNOISE_RATE : SAMPLE_RATE });
+    if (useRnnoise && Math.round(audioCtx.sampleRate) !== RNNOISE_RATE) {
+      // Decimating a non-48k context by 3 would yield a wire rate the STT
+      // provider rejects (e.g. 44100/3 = 14700). Rebuild the plain graph and
+      // restore the browser suppressor for this session.
+      console.warn(`RNNoise needs a 48 kHz AudioContext; got ${audioCtx.sampleRate} — falling back to browser noise suppression.`);
+      await audioCtx.close();
+      audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+      useRnnoise = false;
+      try { await micStream.getAudioTracks()[0].applyConstraints({ noiseSuppression: true }); } catch (_) {}
+    }
+    rnnoiseCtxActive = useRnnoise;
+    await audioCtx.audioWorklet.addModule('data:text/javascript,'
+      + encodeURIComponent(captureWorkletSource(useRnnoise ? rnnoiseAssets.glue : '')));
+  }
+
+  currentSource = audioCtx.createMediaStreamSource(micStream);
+  worklet = new AudioWorkletNode(audioCtx, 'capture', {
+    processorOptions: { denoise: rnnoiseCtxActive },
+  });
+  if (rnnoiseCtxActive) {
+    // Copy: the transferable is consumed per node, and mic changes make new nodes.
+    const wasmBytes = rnnoiseAssets.wasm.slice(0);
+    worklet.port.postMessage({ type: 'rnnoise-init', wasm: wasmBytes }, [wasmBytes]);
+  }
+  worklet.port.onmessage = (e) => {
+    const d = e.data;
+    if (d && d.type === 'rnnoise-ready') { console.info('RNNoise active on mic input.'); return; }
+    if (d && d.type === 'rnnoise-error') {
+      console.warn('RNNoise failed in the audio worklet — mic continues un-denoised.', d.error);
+      return;
+    }
+    if (!micAudioToWs || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(new Uint8Array(d));
+  };
+  currentSource.connect(worklet);
+  const silent = audioCtx.createGain();
+  silent.gain.value = 0;
+  worklet.connect(silent);
+  silent.connect(audioCtx.destination);
+
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  currentSource.connect(analyser);
+  const pcmBuf = new Float32Array(analyser.fftSize);
+  const bars = micBars();
+  const barLevel = bars.map(() => 0);
+  if (meterRAF) cancelAnimationFrame(meterRAF);
+  (function drawMeter() {
+    analyser.getFloatTimeDomainData(pcmBuf);
+    let peak = 0;
+    for (let i = 0; i < pcmBuf.length; i++) peak = Math.max(peak, Math.abs(pcmBuf[i]));
+    const pct = Math.min(100, Math.round(peak * 280));
+    micViz.classList.toggle('active', pct > 3 && connVisual === 'live');
+    for (let i = 0; i < bars.length; i++) {
+      const target = pct * (0.35 + i * 0.14);
+      barLevel[i] = Math.max(target, barLevel[i] * 0.82);
+      const h = 4 + barLevel[i] * 0.22;
+      bars[i].style.height = `${Math.min(26, h)}px`;
+    }
+    meterRAF = requestAnimationFrame(drawMeter);
+  })();
+
+  try {
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+  } catch (_) { /* autoplay policy may block until user gesture */ }
+
+  await populateDevices();
+}
+
+micSelect.onchange = () => {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({type: 'mic_change'}));
+  void startMic(micSelect.value).then(() => {
+    // On WebRTC the pc holds the (now stopped) old track — swap in the new one.
+    const track = micStream?.getAudioTracks()[0];
+    const sender = pc?.getSenders?.().find((s) => s.track?.kind === 'audio');
+    if (sender && track) void sender.replaceTrack(track);
+  });
+};
+
+navigator.mediaDevices.addEventListener('devicechange', async () => {
+  await populateDevices();
+});
+
+function base64ToBytes(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
+function playPCM(b64) {
+  if (!audioCtx || suppressAssistantAudio) return;
+  if (audioCtx.state === 'suspended') void audioCtx.resume();
+  const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const i16 = new Int16Array(raw.buffer);
+  const f32 = new Float32Array(i16.length);
+  for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768;
+  // Build the buffer at the rate reported to the server (== server TTS rate),
+  // not the fixed SAMPLE_RATE: browsers may force a different context rate, and
+  // a mismatch makes buf.duration diverge from the server's byte timing so the
+  // played_ms acks (and thus barge-in truncation) mis-estimate heard audio.
+  const buf = audioCtx.createBuffer(1, f32.length, sessionSampleRate);
+  buf.getChannelData(0).set(f32);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  const startAt = Math.max(nextPlayTime, audioCtx.currentTime);
+  src.start(startAt);
+  nextPlayTime = startAt + buf.duration;
+  playbackSchedule.push({ start: startAt, end: startAt + buf.duration });
+  playbackSources.add(src);
+  src.onended = () => playbackSources.delete(src);
+}
+
+btnReconnect.onclick = () => location.reload();
+
+let sessionBusy = false;
+/** Bumped on every teardown so an in-flight `start()` can't resurrect a dead session. */
+let startGen = 0;
+
+async function endSession({ userInitiated = false, silent = false } = {}) {
+  startGen += 1;
+  userEndedSession = userInitiated;
+  stopAssistantAudio();
+  stopAmbience();
+  stopThinkingSound();
+  if (playbackAckTimer) { clearInterval(playbackAckTimer); playbackAckTimer = null; }
+  micAudioToWs = false;
+  sessionReady = false;
+  micViz.classList.remove('active');
+  if (ws) {
+    const sock = ws;
+    ws = null;
+    sock.onclose = null;
+    sock.onerror = null;
+    sock.onmessage = null;
+    try { sock.close(); } catch (_) {}
+  }
+  if (pc) {
+    const conn = pc;
+    pc = null;
+    conn.onconnectionstatechange = null;
+    conn.ontrack = null;
+    try { conn.close(); } catch (_) {}
+  }
+  if (lkRoom) {
+    const room = lkRoom;
+    lkRoom = null;
+    try { await room.disconnect(); } catch (_) {}
+  }
+  lkTranscriptChunks = null;
+  lkChunks = {};
+  if (remoteAudioEl) {
+    try { remoteAudioEl.pause(); remoteAudioEl.srcObject = null; } catch (_) {}
+    remoteAudioEl = null;
+  }
+  if (worklet) { try { worklet.disconnect(); } catch (_) {} worklet = null; }
+  if (currentSource) { try { currentSource.disconnect(); } catch (_) {} currentSource = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx) {
+    try { await audioCtx.close(); } catch (_) {}
+    audioCtx = null;
+    rnnoiseCtxActive = false;
+  }
+  analyser = null;
+  if (meterRAF) { cancelAnimationFrame(meterRAF); meterRAF = null; }
+  setSessionButton('start');
+  if (!silent) {
+    if (userInitiated) {
+      setConn('ended', 'Session ended', 'Click Start for a new session.');
+    } else {
+      setConn('ended', 'Disconnected', 'Click Start for a new session.');
+    }
+  }
+  updateEmptyState();
+}
+
+async function startSession() {
+  if (sessionBusy) return;
+  sessionBusy = true;
+  btnSession.disabled = true;
+  try {
+    // Always a fresh session: tear down mic/WS/graph, then open a new one.
+    await endSession({ userInitiated: false, silent: true });
+    userEndedSession = false;
+    await start();
+  } catch (err) {
+    console.error(err);
+    setSessionButton('start');
+    setConn('error', 'Could not start', err?.message || 'Microphone or connection failed.');
+  } finally {
+    sessionBusy = false;
+    btnSession.disabled = false;
+  }
+}
+
+btnSession.onclick = () => {
+  if (btnSession.dataset.mode === 'stop') {
+    void endSession({ userInitiated: true });
+    return;
+  }
+  void startSession();
+};
+
+/** Config keys shared by the WS hello and the RTC offer body. */
+function sessionConfigPayload() {
+  const cfg = {};
+  if (tdSelect.value) cfg.turn_detector = tdSelect.value;
+  if (sttSelect.value) cfg.stt_provider = sttSelect.value;
+  if (ttsSelect.value) cfg.tts_provider = ttsSelect.value;
+  if (ttsModelSelect.value) cfg.tts_model = ttsModelSelect.value;
+  if (sttModelInput.value.trim()) cfg.stt_model = sttModelInput.value.trim();
+  if (languageInput.value.trim()) cfg.language = languageInput.value.trim();
+  if (voiceInput.value.trim()) cfg.voice = voiceInput.value.trim();
+  const sttExtra = jsonObjectOrNull(sttExtraInput);
+  if (sttExtra) cfg.stt_extra = sttExtra;
+  const ttsExtra = jsonObjectOrNull(ttsExtraInput);
+  if (ttsExtra) cfg.tts_extra = ttsExtra;
+  if (vadSelect.value) cfg.vad_endpointing = vadSelect.value === 'on';
+  const turnTimeout = numOrNull(turnTimeoutInput, { min: 0 });
+  if (turnTimeout !== null && turnTimeout > 0) cfg.turn_timeout_secs = turnTimeout;
+  if (turnFallbackSelect.value === 'off') {
+    cfg.turn_timeout_fallback = ''; // '' = cancel the turn silently
+  } else if (turnFallbackSelect.value === 'custom' && turnFallbackText.value.trim()) {
+    cfg.turn_timeout_fallback = turnFallbackText.value.trim();
+  }
+  if (fillerSelect.value === 'off') {
+    cfg.filler = { enabled: false };
+  } else if (fillerSelect.value === 'on') {
+    // The server deep-merges this over its own filler config, so empty
+    // fields keep the server's (or the built-in) values.
+    cfg.filler = { enabled: true };
+    if (fillerPrompt.value.trim()) cfg.filler.system_prompt = fillerPrompt.value.trim();
+    const delay = numOrNull(fillerDelay, { min: 0 });
+    if (delay !== null) cfg.filler.delay_secs = delay;
+    const repeat = numOrNull(fillerRepeat, { min: 0 });
+    if (repeat !== null && repeat > 0) cfg.filler.repeat_secs = repeat;
+    const maxPerTurn = numOrNull(fillerMax, { min: 1, integer: true });
+    if (maxPerTurn !== null) cfg.filler.max_per_turn = maxPerTurn;
+    const timeout = numOrNull(fillerTimeout, { min: 0 });
+    if (timeout !== null && timeout > 0) cfg.filler.timeout_secs = timeout;
+    if (fillerModel.value.trim().includes('/')) cfg.filler.model = fillerModel.value.trim();
+  }
+  // Both openers travel; `direction` tells the server which one this call
+  // uses (greeting_for_direction). The inbound block is also the outbound
+  // fallback, so it is never redundant to send.
+  cfg.direction = directionSelect.value === 'outbound' ? 'outbound' : 'inbound';
+  const greetingPayload = greeting.payload();
+  if (greetingPayload !== undefined) cfg.greeting = greetingPayload;
+  const outboundPayload = outbound.payload();
+  if (outboundPayload !== undefined) cfg.outbound_greeting = outboundPayload;
+  const idlePayload = userIdlePayload();
+  if (idlePayload !== undefined) cfg.user_idle = idlePayload;
+  if (!callContextSection.hidden) {
+    const callContext = callContextPayload();
+    if (callContext) cfg.call_context = callContext;
+  }
+  return cfg;
+}
+
+/** Fresh-session UI/playback state, shared by both transports. */
+function resetSessionUi() {
+  transcriptEl.innerHTML = '';
+  window._assistantEl = null;
+  window._lastAssistantEl = null;
+  window._turnBubbles = [];
+  window._replyDone = false;
+  window._sawUserCommit = false;
+  partialEl = null;
+  statusEl = null;
+  resetPlaybackTracking();
+  suppressAssistantAudio = false;
+  stopAssistantAudio();
+  sessionReady = false;
+}
+
+async function start() {
+  const gen = startGen;
+  // Fail on incomplete platform config before prompting for the microphone.
+  if (targetMode() === 'platform') validatePlatform(platformValues());
+  if (transportSelect.value === 'livekit' && targetMode() === 'local' && !launcherAvailable) {
+    throw new Error('LiveKit on the local target needs the playground launcher (`python -m messer.server.playground`) so it can mint room tokens.');
+  }
+  // Local target behind the launcher: spawn (or reuse) the agent server first,
+  // so the WS/RTC dial below lands on a healthy process.
+  let spawned = null;
+  if (targetMode() === 'local' && launcherAvailable) {
+    spawned = await ensureLocalServer();
+    if (gen !== startGen) return;
+  }
+  setConn('connecting', 'Getting ready', 'Microphone and server connection…');
+  userEndedSession = false;
+  sessionReady = false;
+
+  await startMic();
+  if (gen !== startGen) return;
+  const mics = await populateDevices();
+  const preferred = pickPreferredMic(mics);
+  const activeId = micStream?.getAudioTracks()[0]?.getSettings().deviceId;
+  if (preferred && preferred !== activeId) {
+    await startMic(preferred);
+    if (gen !== startGen) return;
+    await populateDevices();
+  }
+
+  if (transportSelect.value === 'livekit') {
+    let dial;
+    if (targetMode() === 'platform') {
+      dial = await mintPlatformLivekitDial();
+      if (gen !== startGen) return;
+    } else {
+      dial = spawned?.livekit;
+      if (!dial?.url || !dial?.token) {
+        throw new Error('Launcher did not return a LiveKit dial (url/token). Put LIVEKIT_API_KEY / LIVEKIT_API_SECRET / MESSER_LIVEKIT_URL in the .env next to where you launched the playground (or the agent .env).');
+      }
+    }
+    await startLivekit(gen, dial);
+    return;
+  }
+
+  if (transportSelect.value === 'webrtc') {
+    try {
+      await startRtc(gen);
+      return;
+    } catch (err) {
+      if (gen !== startGen) return;
+      if (!err?.rtcUnsupported || transportExplicit) throw err;
+      // Default transport against a server without the voice extra (501):
+      // behave like the old default and connect over WebSocket instead.
+      // Not persisted — RTC is retried first on the next page load.
+      try { pc?.close(); } catch (_) {}
+      pc = null;
+      transportSelect.value = 'ws';
+      syncNsForTransport();
+    }
+  }
+
+  const isPlatform = targetMode() === 'platform';
+  setConn('connecting', 'Connecting', isPlatform
+    ? 'Minting ticket and dialing the platform (cold start can take several seconds)…'
+    : 'Opening WebSocket to the server…');
+  micAudioToWs = false;
+  // Platform: mint-then-dial, fresh single-use ticket per attempt.
+  const dial = await buildWsConnect();
+  if (gen !== startGen) return;
+  ws = new WebSocket(dial.url, dial.protocols);
+  ws.binaryType = 'arraybuffer';
+  if (gen !== startGen) {
+    try { ws.close(); } catch (_) {}
+    ws = null;
+    return;
+  }
+
+  ws.onopen = () => {
+    if (gen !== startGen) return;
+    // The config hello MUST be the first frame on the socket — the server
+    // reads one frame as session config. stopAssistantAudio() below sends a
+    // playback ack, which used to race ahead and eat the config slot.
+    // Report the worklet's OUTPUT rate: the RNNoise graph runs the context at
+    // 48 kHz but decimates 3:1 before sending, so the wire rate is ctx/3.
+    const ctxRate = audioCtx ? Math.round(audioCtx.sampleRate) : SAMPLE_RATE;
+    const sr = rnnoiseCtxActive ? Math.round(ctxRate / 3) : ctxRate;
+    sessionSampleRate = sr;
+    ws.send(JSON.stringify({ sample_rate: sr, ...sessionConfigPayload() }));
+    resetSessionUi();
+    setConn('live', 'Starting…', 'Loading STT / turn models (first session can take a few seconds)…');
+    if (playbackAckTimer) clearInterval(playbackAckTimer);
+    playbackAckTimer = setInterval(() => sendPlaybackAck(false), PLAYBACK_ACK_INTERVAL_MS);
+    const tryArmMic = async () => {
+      try {
+        if (audioCtx?.state === 'suspended') await audioCtx.resume();
+      } catch (_) {}
+      if (audioCtx?.state === 'running') {
+        micAudioToWs = true;
+        return true;
+      }
+      return false;
+    };
+    void (async () => {
+      if (await tryArmMic()) return;
+      setConn('live', 'Tap to capture', 'Your browser paused the mic graph — click or press a key here to start streaming audio.');
+      const kick = async () => {
+        if (await tryArmMic()) {
+          window.removeEventListener('pointerdown', kick);
+          window.removeEventListener('keydown', kick);
+          if (sessionReady) {
+            setConn('live', 'Listening', 'Speak naturally — audio streams to your Messer agent.');
+          } else {
+            setConn('live', 'Connected', 'Waiting for voice session…');
+          }
+        }
+      };
+      window.addEventListener('pointerdown', kick, { passive: true });
+      window.addEventListener('keydown', kick);
+    })();
+    setConn('live', 'Connected', 'Waiting for voice session…');
+    updateEmptyState();
+  };
+
+  ws.onclose = (ev) => {
+    micAudioToWs = false;
+    if (playbackAckTimer) { clearInterval(playbackAckTimer); playbackAckTimer = null; }
+    sessionReady = false;
+    micViz.classList.remove('active');
+    // Teardown from endSession/startSession already nulled `ws` — ignore.
+    if (connVisual === 'ended' || connVisual === 'error') {
+      updateEmptyState();
+      return;
+    }
+    if (userEndedSession) {
+      setConn('ended', 'Session ended', 'Click Start for a new session.');
+    } else {
+      setConn('ended', 'Disconnected', ev.wasClean
+        ? 'Connection closed. Click Start for a new session.'
+        : 'Connection dropped — check the server, then click Start.');
+    }
+    updateEmptyState();
+  };
+
+  ws.onerror = () => {
+    setConn('error', 'Connection error', isPlatform
+      ? 'Could not open the socket. Check the token, IDs and rev, and that the branch is deployed (browsers hide the HTTP status of a failed upgrade).'
+      : 'Could not keep the WebSocket open. Is the server running?');
+  };
+
+  ws.onmessage = (e) => {
+    let msg;
+    try {
+      msg = JSON.parse(e.data);
+    } catch (err) {
+      console.error('voice ws: bad json', err);
+      return;
+    }
+    handleServerMessage(msg);
+  };
+}
+
+/** One handler for both transports: WS frames and RTC data-channel messages. */
+function handleServerMessage(msg) {
+  switch (msg.type) {
+      case 'session_started':
+        sessionReady = true;
+        serverAmbient = msg.ambient || null;
+        void applyAmbience();
+        {
+          const bits = [];
+          if (msg.direction) bits.push(msg.direction === 'outbound' ? 'outbound call' : 'inbound call');
+          if (msg.model) bits.push(msg.model);
+          if (msg.stt_provider) bits.push(`STT ${msg.stt_provider}${msg.stt_model ? `/${msg.stt_model}` : ''}`);
+          if (msg.tts_provider) bits.push(`TTS ${msg.tts_provider}`);
+          if (msg.turn_detector) bits.push(msg.turn_detector);
+          if (msg.vad_endpointing) bits.push('VAD endpointing');
+          setConn('live', 'Listening', bits.length
+            ? `Speak naturally — ${bits.join(' · ')}.`
+            : 'Speak naturally — audio streams to your Messer agent.');
+        }
+        updateEmptyState();
+        break;
+      case 'transcript_partial':
+        setPartial(msg.text);
+        break;
+      case 'agent_status':
+        setStatus(msg.text || '');
+        void startThinkingSound(); // a tool is running — mask the dead air
+        break;
+      case 'agent_interaction':
+      case 'agent_approval': {
+        // The run is parked waiting for us, so it is not working: drop the
+        // dead-air masking and say what it is waiting on. A real client renders
+        // a card here and resumes over HTTP with parent_id=run_id and
+        // resume={<interaction_id|approval_id>: value} — the playground only
+        // shows that the suspension reached the wire.
+        setStatus(null);
+        stopThinkingSound();
+        const isApproval = msg.type === 'agent_approval';
+        const id = isApproval ? msg.approval_id : msg.interaction_id;
+        const ask = isApproval
+          ? (msg.prompt || msg.ui?.title || msg.description)
+          : (msg.payload?.question || msg.payload?.action);
+        log('status', `${isApproval ? 'Approval' : 'Input'} required${msg.kind ? ` (${msg.kind})` : ''}: ${ask || id}`);
+        console.info('voice suspension', { type: msg.type, run_id: msg.run_id, id, msg });
+        break;
+      }
+      case 'filler':
+        // Spoken latency-masker. Own bubble, never in _turnBubbles: the
+        // interrupted-rewrite must not fold it into the reply text.
+        log('assistant filler', msg.text);
+        break;
+      case 'transcript_committed':
+        setPartial(null);
+        setStatus(null);
+        // New user turn — allow TTS again (barge-in may have suppressed audio).
+        suppressAssistantAudio = false;
+        // Seal the prior assistant turn. interrupt() for a not-yet-spoken
+        // CONTINUE rewrite arrives after this commit's predecessor already
+        // sealed — without sealing here, an empty heard_text interrupt can
+        // wipe the *previous* completed reply (still in _turnBubbles).
+        window._turnBubbles = [];
+        window._replyDone = true;
+        window._assistantEl = null;
+        window._sawUserCommit = true;
+        if (msg.replace) {
+          const users = transcriptEl.querySelectorAll('.msg.user');
+          const last = users[users.length - 1];
+          if (last) {
+            last.textContent = msg.text;
+            transcriptEl.scrollTop = transcriptEl.scrollHeight;
+            updateEmptyState();
+            break;
+          }
+        }
+        log('user', msg.text);
+        break;
+      case 'agent_text_delta':
+        setPartial(null);
+        setStatus(null);
+        stopThinkingSound();
+        suppressAssistantAudio = false;
+        // First delta after a finished reply starts a new turn's bubble set.
+        if (window._replyDone) { window._turnBubbles = []; window._replyDone = false; }
+        if (!window._assistantEl) {
+          // Assistant text before the first user commit can only be the
+          // opener — the session is otherwise purely reactive.
+          window._assistantEl = log(window._sawUserCommit ? 'assistant' : 'assistant greeting', '');
+          (window._turnBubbles = window._turnBubbles || []).push(window._assistantEl);
+        }
+        window._assistantEl.textContent += msg.text;
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+        updateEmptyState();
+        break;
+      case 'agent_text_done':
+        // Keep a handle on the finished bubble: a barge-in while its TTS is
+        // still playing sends `interrupted.heard_text` after this point.
+        window._lastAssistantEl = window._assistantEl;
+        window._assistantEl = null;
+        window._replyDone = true;
+        updateEmptyState();
+        break;
+      case 'audio':
+        if (thinkingSource) stopThinkingSound(); // speech (filler or reply) takes over
+        playPCM(msg.data);
+        break;
+      case 'interrupted': {
+        // Align the displayed reply with what was actually spoken aloud — the
+        // reply may already be "done" (barge-in during buffered playback).
+        // A mid-stream STT partial can split one reply across several bubbles
+        // (setPartial seals the in-flight bubble); rewrite the *whole* set,
+        // not just the last fragment.
+        //
+        // Skip when nothing is in flight for *this* turn: CONTINUE can interrupt
+        // a just-started LLM call (heard="") and must not delete the prior
+        // completed assistant bubble still referenced by _lastAssistantEl.
+        const inFlight = Boolean(window._assistantEl)
+          || (window._turnBubbles && window._turnBubbles.length && !window._replyDone);
+        if (msg.heard_text !== undefined && msg.heard_text !== null && (inFlight || msg.heard_text)) {
+          const bubbles = (window._turnBubbles && window._turnBubbles.length)
+            ? window._turnBubbles
+            : [window._assistantEl || window._lastAssistantEl].filter(Boolean);
+          for (const el of bubbles.slice(1)) el.remove();
+          const first = bubbles[0];
+          if (first) {
+            if (msg.heard_text) first.textContent = msg.heard_text;
+            else first.remove();
+          }
+        }
+        window._turnBubbles = [];
+        window._replyDone = false;
+        window._assistantEl = null;
+        window._lastAssistantEl = null;
+        suppressAssistantAudio = true;
+        stopAssistantAudio();
+        stopThinkingSound();
+        updateEmptyState();
+        break;
+      }
+      case 'error':
+        log('error', msg.message);
+        break;
+      case 'session_transcript':
+        window._sessionTranscript = msg.entries;
+        break;
+      case 'session_ended':
+        setConn('ended', 'Session ended', 'Click Start for a new session.');
+        break;
+  }
+}
+
+const LIVEKIT_CLIENT_ESM = 'https://cdn.jsdelivr.net/npm/livekit-client@2.15.16/+esm';
+const LIVEKIT_EVENTS_TOPIC = 'messer.events';
+
+/**
+ * Platform target: ask the monolith for a LiveKit room. Deployed endpoint is
+ * the body-discriminated `POST voice/rtc`; preview is `POST voice/preview` —
+ * both answer `{transport, url, token, room, identity}` after the box joined.
+ */
+async function mintPlatformLivekitDial() {
+  const pv = platformValues();
+  validatePlatform(pv);
+  const isPreview = pv.endpoint === 'preview';
+  setConn('connecting', 'Connecting', isPreview
+    ? 'Minting a LiveKit room against the branch worktree (first call after a source edit pays a uv sync — up to ~2 min)…'
+    : 'Minting a LiveKit room through the platform (box spawn can take up to ~30 s)…');
+  const pathTail = isPreview ? 'voice/preview' : 'voice/rtc';
+  const resp = await fetch(`${platformBase(pv)}/${pathTail}?rev=${encodeURIComponent(pv.rev)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${pv.token}` },
+    body: JSON.stringify({ transport: 'livekit', config: sessionConfigPayload() }),
+  });
+  if (!resp.ok) {
+    let detail = `Server answered ${resp.status}.`;
+    try { detail = (await resp.json()).error || detail; } catch (_) {}
+    if (resp.status === 409) {
+      detail += isPreview
+        ? ' LiveKit is not enabled on this platform (MESSER_LIVEKIT_* config / kill switch).'
+        : ' Flag the project (Projects.voice_transport = livekit) or switch the transport to WebRTC.';
+    }
+    throw new Error(detail);
+  }
+  const dial = await resp.json();
+  if (dial.transport !== 'livekit' || !dial.url || !dial.token) {
+    throw new Error('Platform did not return a LiveKit dial — is the monolith older than the voice/rtc transport fork?');
+  }
+  return dial;
+}
+
+async function startLivekit(gen, dial) {
+  setConn('connecting', 'Connecting', `Joining LiveKit room ${dial.room}…`);
+  const { Room, RoomEvent, Track } = await import(LIVEKIT_CLIENT_ESM);
+  if (gen !== startGen) return;
+  const room = new Room();
+  lkRoom = room;
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  function handleLkPayload(bytes) {
+    let msg;
+    try { msg = JSON.parse(decoder.decode(bytes)); } catch (err) {
+      console.error('voice livekit: bad json', err);
+      return;
+    }
+    if (msg?.type === 'session_transcript' && Number.isFinite(msg.seq) && Number.isFinite(msg.total) && msg.total > 1) {
+      lkTranscriptChunks = lkTranscriptChunks || [];
+      lkTranscriptChunks[msg.seq] = msg;
+      if (lkTranscriptChunks.filter(Boolean).length === msg.total) {
+        const entries = lkTranscriptChunks.flatMap((c) => c.entries || []);
+        const startedAt = lkTranscriptChunks[0]?.started_at;
+        lkTranscriptChunks = null;
+        handleServerMessage({ type: 'session_transcript', entries, ...(startedAt != null ? { started_at: startedAt } : {}) });
+      }
+      return;
+    }
+    // Generic envelope for any other payload over the reliable-data cap
+    // (an approval card carrying a build brief is routinely past it): base64
+    // slices of one message, concatenated by seq.
+    if (msg?.type === 'chunk' && msg.chunk_id && Number.isFinite(msg.seq) && Number.isFinite(msg.total)) {
+      const pending = (lkChunks[msg.chunk_id] = lkChunks[msg.chunk_id] || { parts: [], seen: 0, total: msg.total });
+      // A group that never completes (a lost or duplicated final chunk) would
+      // otherwise sit here for the rest of the call. Keys are in insertion
+      // order, so the oldest incomplete group is the one to drop.
+      const ids = Object.keys(lkChunks);
+      if (ids.length > 8) delete lkChunks[ids[0]];
+      if (pending.parts[msg.seq] === undefined) pending.seen += 1;
+      pending.parts[msg.seq] = msg.data || '';
+      if (pending.seen < pending.total) return;
+      delete lkChunks[msg.chunk_id];
+      try {
+        handleServerMessage(JSON.parse(decoder.decode(base64ToBytes(pending.parts.join('')))));
+      } catch (err) {
+        console.error('voice livekit: bad chunked payload', msg.msg_type, err);
+      }
+      return;
+    }
+    handleServerMessage(msg);
+  }
+
+  room.on(RoomEvent.DataReceived, (payload, _p, _k, topic) => {
+    if (gen !== startGen) return;
+    if (topic && topic !== LIVEKIT_EVENTS_TOPIC) return;
+    handleLkPayload(payload);
+  });
+
+  room.on(RoomEvent.TrackSubscribed, (track) => {
+    if (gen !== startGen) return;
+    if (track.kind !== Track.Kind.Audio) return;
+    remoteAudioEl = remoteAudioEl || new Audio();
+    remoteAudioEl.autoplay = true;
+    remoteAudioEl.srcObject = new MediaStream([track.mediaStreamTrack]);
+    remoteAudioEl.play?.().catch(() => { /* autoplay policy — resumes on gesture */ });
+  });
+
+  room.on(RoomEvent.Disconnected, () => {
+    if (gen !== startGen || lkRoom !== room) return;
+    sessionReady = false;
+    micViz.classList.remove('active');
+    if (connVisual === 'ended' || connVisual === 'error') { updateEmptyState(); return; }
+    if (userEndedSession) {
+      setConn('ended', 'Session ended', 'Click Start for a new session.');
+    } else {
+      setConn('ended', 'Disconnected', 'LiveKit room closed. Click Start for a new session.');
+    }
+    updateEmptyState();
+  });
+
+  const ctxRate = audioCtx ? Math.round(audioCtx.sampleRate) : SAMPLE_RATE;
+  const sr = rnnoiseCtxActive ? Math.round(ctxRate / 3) : ctxRate;
+  const sendHello = () => {
+    if (gen !== startGen || lkRoom !== room) return;
+    room.localParticipant.publishData(
+      encoder.encode(JSON.stringify({ sample_rate: sr, ...sessionConfigPayload() })),
+      { reliable: true, topic: LIVEKIT_EVENTS_TOPIC },
+    ).catch(() => { /* agent not in the room yet — the resend below covers it */ });
+  };
+  // Reliable data only reaches participants already in the room. The launcher's
+  // healthcheck can pass before the agent's lifespan driver has joined, so a
+  // single hello at connect time would be dropped and the driver's wait would
+  // time out (dropdown config lost). Re-send whenever the agent shows up.
+  room.on(RoomEvent.ParticipantConnected, () => sendHello());
+
+  await room.connect(dial.url, dial.token);
+  if (gen !== startGen) {
+    try { await room.disconnect(); } catch (_) {}
+    if (lkRoom === room) lkRoom = null;
+    return;
+  }
+  // A MediaStreamTrack published bare is source=Unknown. Tokens that pin
+  // canPublishSources:["microphone"] (platform preview) reject that with
+  // "failed to publish track, insufficient permissions" — join already
+  // succeeded; this is not the browser mic prompt.
+  await room.localParticipant.publishTrack(micStream.getAudioTracks()[0], {
+    source: Track.Source.Microphone,
+  });
+  if (gen !== startGen) return;
+  sessionSampleRate = sr;
+  sendHello();
+  resetSessionUi();
+  setConn('live', 'Starting…', 'Loading STT / turn models (first session can take a few seconds)…');
+  updateEmptyState();
+}
+
+async function startRtc(gen) {
+  const isPlatform = targetMode() === 'platform';
+  // One snapshot for the whole dial: the ICE-gathering wait below yields for
+  // seconds, and form edits during it must not mix endpoint/rev/token between
+  // reads — changes apply on the next Start.
+  const pv = isPlatform ? platformValues() : null;
+  if (pv) validatePlatform(pv);
+  const isPreview = !!pv && pv.endpoint === 'preview';
+  setConn('connecting', 'Connecting', isPreview
+    ? 'Negotiating WebRTC against the branch worktree (first call after a source edit pays a uv sync — up to ~2 min)…'
+    : isPlatform
+      ? 'Negotiating WebRTC through the platform (box spawn can take up to ~30 s)…'
+      : 'Negotiating WebRTC with the server…');
+  // Platform answers are relay-only — the relay only accepts traffic from
+  // addresses it saw in the offer. Without STUN the browser offers private
+  // LAN addresses, connectivity checks die ~15 s after a "successful" answer,
+  // and nothing surfaces an error. STUN only; no TURN credentials on our side.
+  pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:turn.messer.local:3478' }],
+  });
+  const conn = pc;
+
+  // Raw mic track (browser AEC/NS applied via getUserMedia constraints). The
+  // worklet graph from startMic keeps driving the level meter; its PCM output
+  // goes nowhere because micAudioToWs stays false on this transport.
+  pc.addTrack(micStream.getAudioTracks()[0], micStream);
+
+  // The server binds to whatever channel the offer carries — creating it
+  // here puts the SCTP m-line in the offer.
+  const dc = pc.createDataChannel('events');
+  dc.onmessage = (e) => {
+    if (gen !== startGen) return;
+    let msg;
+    try {
+      msg = JSON.parse(e.data);
+    } catch (err) {
+      console.error('voice rtc: bad json', err);
+      return;
+    }
+    handleServerMessage(msg);
+  };
+
+  pc.ontrack = (e) => {
+    // TTS arrives as a real audio track: the browser handles decode, jitter
+    // and clock — no playPCM, no playback acks (the server paces playback
+    // itself, so barge-in truncation is exact without them).
+    remoteAudioEl = remoteAudioEl || new Audio();
+    remoteAudioEl.autoplay = true;
+    remoteAudioEl.srcObject = e.streams[0] || new MediaStream([e.track]);
+    remoteAudioEl.play?.().catch(() => { /* autoplay policy — resumes on gesture */ });
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (gen !== startGen || pc !== conn) return;
+    if (['failed', 'closed', 'disconnected'].includes(conn.connectionState)) {
+      sessionReady = false;
+      micViz.classList.remove('active');
+      if (connVisual === 'ended' || connVisual === 'error') { updateEmptyState(); return; }
+      if (userEndedSession) {
+        setConn('ended', 'Session ended', 'Click Start for a new session.');
+      } else {
+        setConn('ended', 'Disconnected', 'Connection closed. Click Start for a new session.');
+      }
+      updateEmptyState();
+    }
+  };
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  // One-round-trip signaling: wait for ICE gathering so the offer is complete.
+  // Local servers accept a bounded wait (host candidates alone are enough);
+  // the platform is no-trickle, so give gathering longer to finish there.
+  if (pc.iceGatheringState !== 'complete') {
+    await new Promise((resolve) => {
+      const timer = setTimeout(resolve, isPlatform ? 8000 : 2000);
+      pc.addEventListener('icegatheringstatechange', () => {
+        if (conn.iceGatheringState === 'complete') { clearTimeout(timer); resolve(); }
+      });
+    });
+  }
+  if (gen !== startGen) return;
+
+  let rtcUrl = '/voice/rtc';
+  const rtcHeaders = { 'Content-Type': 'application/json' };
+  if (targetMode() === 'local') {
+    rtcUrl = localBase() + '/voice/rtc';
+  } else if (isPlatform) {
+    // Same signaling contract on both endpoints — preview just sources the
+    // branch worktree instead of a deployment (POST + offer selects RTC there).
+    const path = isPreview ? 'voice/preview' : 'voice/rtc';
+    rtcUrl = `${platformBase(pv)}/${path}?rev=${encodeURIComponent(pv.rev)}`;
+    rtcHeaders.Authorization = `Bearer ${pv.token}`;
+  }
+  const resp = await fetch(rtcUrl, {
+    method: 'POST',
+    headers: rtcHeaders,
+    body: JSON.stringify({
+      sdp: conn.localDescription.sdp,
+      type: 'offer',
+      config: sessionConfigPayload(),
+    }),
+  });
+  if (!resp.ok) {
+    let detail = `Server answered ${resp.status}.`;
+    try { detail = (await resp.json()).error || detail; } catch (_) {}
+    if (resp.status === 501) {
+      detail += isPreview
+        ? ' The branch pins a messer without RTC preview support — bump it to messer >= 2.3.2.'
+        : isPlatform
+          ? ' The deployed messer lacks the voice extra (needs messer[voice] >= 2.3.2).'
+          : ' Install it: uv pip install "messer[voice]".';
+    }
+    if (isPlatform && resp.status === 404) {
+      detail += isPreview ? ' Check org/project/workforce and the branch (rev).' : ' No running deployment for that branch?';
+    }
+    const err = new Error(detail);
+    err.rtcUnsupported = resp.status === 501;
+    throw err;
+  }
+  const answer = await resp.json();
+  if (gen !== startGen) return;
+  await conn.setRemoteDescription(answer);
+
+  resetSessionUi();
+  setConn('live', 'Starting…', 'Loading STT / turn models (first session can take a few seconds)…');
+  updateEmptyState();
+}
+
+// --- Standalone bootstrap --------------------------------------------------
+
+function syncTransportForTarget() {
+  // Every transport works on every target now: LiveKit mints locally via the
+  // launcher and on platform via the monolith's voice/rtc / voice/preview
+  // fork (a 409 surfaces when the platform/project isn't flagged for it).
+  for (const opt of transportSelect.options) opt.disabled = false;
+  syncNsForTransport();
+}
+
+function syncTargetVisibility() {
+  const m = targetModeSelect.value;
+  targetLocalBox.hidden = m !== 'local';
+  targetPlatformBox.hidden = m !== 'platform';
+  syncTransportForTarget();
+}
+
+/** Guards stale async probe results after the target changed under them. */
+let probeSeq = 0;
+
+/** Healthcheck + meta fetch against the local target; drives the strip and idle status. */
+async function probeLocal() {
+  if (targetMode() !== 'local') return;
+  // Launcher mode with no child yet: nothing to probe — Start spawns it.
+  if (launcherAvailable && lastChildState !== 'running') {
+    applyMeta(null);
+    if (connVisual !== 'live' && connVisual !== 'connecting') {
+      setConn('ended', 'Ready', 'Pick an agent file, then press Start — the server is spawned for you.');
+    }
+    return;
+  }
+  const seq = ++probeSeq;
+  const base = localBase();
+  const idle = () => connVisual !== 'live' && connVisual !== 'connecting';
+  try {
+    const r = await fetch(base + '/healthcheck');
+    if (seq !== probeSeq) return;
+    if (!r.ok) throw new Error(`healthcheck ${r.status}`);
+    let meta = null;
+    try {
+      const mr = await fetch(base + '/voice/meta');
+      if (mr.ok) meta = await mr.json(); // older servers lack /voice/meta — fine
+    } catch (_) {}
+    if (seq !== probeSeq) return;
+    applyMeta(meta);
+    void loadAmbienceCatalog();
+    if (idle()) setConn('ended', 'Ready', `Server answering at ${base} — press Start.`);
+  } catch (_) {
+    if (seq !== probeSeq) return;
+    applyMeta(null);
+    if (idle()) setConn('ended', 'No server', launcherAvailable
+      ? 'The spawned server is not answering — press Start to spawn it again.'
+      : `Nothing answering at ${base}. Start a messer.server there, then press Start.`);
+  }
+}
+
+// --- Launcher client (spawns `uv run python -m messer.server` children) ----
+// Only reachable when this page is served by `python -m messer.server.playground`
+// — the launcher endpoints live on the page's own origin. Spawning is implicit:
+// pressing Start ensures a child for the agent path in the form (see
+// ensureLocalServer). Opened from the filesystem or elsewhere, the status probe
+// fails and the manual Server URL field is shown instead.
+let lastChildState = null;
+
+async function fetchLauncherStatus() {
+  try {
+    const r = await fetch('/launcher/status');
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+function renderLauncherChild(child) {
+  const state = child?.state || 'stopped';
+  const stoppable = state === 'running' || state === 'starting';
+  btnLauncher.hidden = !stoppable; // spawning happens on Start, so the button only stops
+  if (state === 'starting') {
+    launcherStateEl.textContent = `Starting on port ${child.port}… (first run may pay a uv sync)`;
+  } else if (state === 'running') {
+    launcherStateEl.textContent = `Running on port ${child.port} (pid ${child.pid})`;
+  } else if (state === 'exited') {
+    const lastLog = (child.logs || []).filter(Boolean).slice(-1)[0] || '';
+    launcherStateEl.textContent = `Exited (code ${child.exit_code}).${lastLog ? ` Last log: ${lastLog}` : ''}`;
+  } else {
+    launcherStateEl.textContent = '';
+  }
+}
+
+function adoptSpawnedChild(child) {
+  if (!child?.port) return;
+  localUrlInput.value = `http://${location.hostname || 'localhost'}:${child.port}`;
+  localStorage.setItem(TGT_KEY('local-url'), localUrlInput.value);
+}
+
+function startLauncherPolling() {
+  setInterval(async () => {
+    const st = await fetchLauncherStatus();
+    if (!st) return;
+    renderLauncherChild(st.child);
+    const state = st.child?.state || 'stopped';
+    if (state === 'running' && lastChildState !== 'running') {
+      adoptSpawnedChild(st.child);
+      void probeLocal();
+    }
+    lastChildState = state;
+  }, 3000);
+}
+
+btnLauncher.onclick = async () => {
+  btnLauncher.disabled = true;
+  try {
+    const r = await fetch('/launcher/stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    renderLauncherChild((await r.json()).child);
+    void probeLocal();
+  } catch (err) {
+    launcherStateEl.textContent = String(err?.message || err);
+  } finally {
+    btnLauncher.disabled = false;
+  }
+};
+
+/** Optional fixed port for the spawned child, or null for a launcher-picked free one. */
+function launcherPort() {
+  const raw = launcherPortInput.value.trim();
+  if (!raw) return null;
+  const p = parseInt(raw, 10);
+  if (!Number.isFinite(p) || p < 1 || p > 65535) throw new Error(`Invalid port: ${raw}`);
+  return p;
+}
+
+/**
+ * Spawn-on-Start: make sure the launcher child is running the agent currently
+ * in the form (respawning on spec/port changes) and healthy before dialing.
+ * Blocks through the child's `starting` phase — the first run of a project can
+ * pay a `uv sync`, so the deadline is generous.
+ */
+async function ensureLocalServer() {
+  const spec = launcherSpecInput.value.trim();
+  if (!spec) throw new Error('Enter an agent first (path/to/agent.py::object).');
+  const port = launcherPort();
+  localStorage.setItem(TGT_KEY('spec'), spec);
+
+  const st = await fetchLauncherStatus();
+  if (!st) throw new Error('Playground launcher is not reachable — restart `python -m messer.server.playground`.');
+  let child = st.child;
+  const alive = child && (child.state === 'running' || child.state === 'starting');
+  const transport = transportSelect.value;
+  // LiveKit driver is one-shot (MESSER_VOICE_SINGLE_SESSION=1) — always respawn
+  // so Start after Stop gets a fresh room/token. Also respawn on spec/port/transport mismatch.
+  const mustRespawn = transport === 'livekit'
+    || !alive
+    || child.requested_import_spec !== spec
+    || (port !== null && child.port !== port)
+    || (child.transport && child.transport !== transport);
+  if (mustRespawn) {
+    setConn('connecting', 'Spawning server', `uv run messer.server — ${spec}`);
+    const r = await fetch('/launcher/spawn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ import_spec: spec, transport, ...(port !== null ? { port } : {}) }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || `Spawn failed (${r.status}).`);
+    child = data.child;
+  }
+  renderLauncherChild(child);
+
+  const deadline = Date.now() + 180_000;
+  while (child.state !== 'running') {
+    if (child.state === 'exited') {
+      const lastLog = (child.logs || []).filter(Boolean).slice(-1)[0] || '';
+      throw new Error(`Server exited (code ${child.exit_code}).${lastLog ? ` Last log: ${lastLog}` : ''}`);
+    }
+    if (child.state === 'stopped') throw new Error('Server was stopped before it became ready.');
+    if (Date.now() > deadline) throw new Error('Server did not become healthy in time — check its logs in the launcher terminal.');
+    setConn('connecting', 'Starting server', `Waiting for the agent on port ${child.port}… (first run may pay a uv sync)`);
+    await new Promise((res) => setTimeout(res, 500));
+    child = (await fetchLauncherStatus())?.child || { state: 'stopped' };
+    renderLauncherChild(child);
+  }
+  lastChildState = 'running';
+  adoptSpawnedChild(child);
+  void probeLocal();
+  return child;
+}
+
+function onTargetChanged() {
+  probeSeq += 1; // cancel in-flight probes for the previous target
+  if (targetMode() === 'local') {
+    void probeLocal();
+  } else {
+    applyMeta(null);
+    if (connVisual !== 'live' && connVisual !== 'connecting') {
+      setConn('ended', 'Ready', 'Fill in the workforce details, then press Start.');
+    }
+  }
+}
+
+async function initStandalone() {
+  // Standalone layout mirrors the right panel: TARGET (panel header), then --- AGENT.
+  document.getElementById('agent-panel-title').hidden = true;
+  targetSection.hidden = false;
+  targetSection.classList.add('panel-section--top');
+  document.getElementById('target-heading').className = 'panel-title';
+  // The agent section has no heading of its own: the runnable strip and the
+  // declared voice_config *are* the content, and the section (with its rule)
+  // only shows once a server has answered (see applyMeta).
+  document.getElementById('agent-section').classList.remove('panel-section--top');
+  targetModeSelect.value = localStorage.getItem(TGT_KEY('mode')) || 'local';
+  if (!targetModeSelect.value) targetModeSelect.value = 'local';
+  localUrlInput.value = localStorage.getItem(TGT_KEY('local-url')) || '';
+  pf.api.value = localStorage.getItem(TGT_KEY('pf-api')) || '';
+  pf.org.value = localStorage.getItem(TGT_KEY('pf-org')) || '';
+  pf.project.value = localStorage.getItem(TGT_KEY('pf-project')) || '';
+  pf.workforce.value = localStorage.getItem(TGT_KEY('pf-workforce')) || '';
+  pf.rev.value = localStorage.getItem(TGT_KEY('pf-rev')) || '';
+  pf.token.value = localStorage.getItem(TGT_KEY('pf-token')) || '';
+  pf.endpoint.value = localStorage.getItem(TGT_KEY('pf-endpoint')) || 'deployed';
+  syncTargetVisibility();
+
+  targetModeSelect.onchange = () => {
+    localStorage.setItem(TGT_KEY('mode'), targetModeSelect.value);
+    syncTargetVisibility();
+    onTargetChanged();
+  };
+  localUrlInput.onchange = () => {
+    localStorage.setItem(TGT_KEY('local-url'), localUrlInput.value.trim());
+    void probeLocal();
+  };
+  for (const [key, el] of Object.entries(pf)) {
+    el.onchange = () => {
+      localStorage.setItem(TGT_KEY(`pf-${key}`), el.value);
+      if (key === 'endpoint') syncTransportForTarget();
+    };
+  }
+
+  const st = await fetchLauncherStatus();
+  if (st) {
+    launcherAvailable = true;
+    launcherBox.hidden = false;
+    localUrlField.hidden = true; // launcher mode: the URL is derived from the spawned child
+    launcherSpecInput.value = localStorage.getItem(TGT_KEY('spec')) || st.launcher?.default_import_spec || '';
+    launcherPortInput.value = localStorage.getItem(TGT_KEY('port')) || '';
+    launcherSpecInput.onchange = () => localStorage.setItem(TGT_KEY('spec'), launcherSpecInput.value.trim());
+    launcherPortInput.onchange = () => localStorage.setItem(TGT_KEY('port'), launcherPortInput.value.trim());
+    renderLauncherChild(st.child);
+    lastChildState = st.child?.state || null;
+    // Adopt a running survivor's URL for probing/meta; whether Start reuses it
+    // is decided in ensureLocalServer against the child's own spawned spec.
+    if (st.child?.state === 'running') adoptSpawnedChild(st.child);
+    startLauncherPolling();
+  }
+  onTargetChanged();
+}
+
+applyMeta(EMBEDDED ? META : null);
+setSessionButton('start');
+cardEl.classList.add('card--inactive');
+if (EMBEDDED) {
+  setConn('connecting', 'Getting ready', 'Microphone and server connection…');
+  // Auto-start on load — no idle play click. Start remains after Stop for a new session.
+  void startSession();
+} else {
+  setConn('ended', 'Ready', 'Pick a target, then press Start.');
+  void initStandalone();
+}
+</script>
+</body>
+</html>

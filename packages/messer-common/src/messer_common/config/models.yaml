@@ -1,0 +1,76 @@
+# Model configuration for Messer. Model IDs are never hardcoded in code: they live here.
+# Source: Anthropic models overview (current models table, cached 2026-10-06).
+# Prices are USD per million tokens and seed the `model_prices` table (editable in /admin).
+
+tiers:
+  fast: anthropic/claude-haiku-5-5
+  standard: anthropic/claude-sonnet-5-5
+  powerful: anthropic/claude-opus-5-5
+
+# Guard routes simple turns to `small` and complex ones to `large`.
+guard:
+  small: anthropic/claude-haiku-5-5
+  large: anthropic/claude-sonnet-5-5
+
+# Composer roles (tier per build mode).
+composer:
+  architect: fast
+  builders:
+    fast: fast
+    standard: standard
+    powerful: powerful
+
+# Strict EU residency: Claude on AWS Bedrock in an EU region (Mantle endpoint, `anthropic.` prefix).
+# Availability per EU region must be verified with:
+#   aws bedrock list-foundation-models --region eu-central-1 --by-provider anthropic
+bedrock:
+  region: eu-central-1
+  allowed_regions: [eu-central-1, eu-west-1, eu-west-3, eu-north-1, eu-south-1]
+  models:
+    anthropic/claude-haiku-5-5: anthropic.claude-haiku-5-5
+    anthropic/claude-sonnet-5-5: anthropic.claude-sonnet-5-5
+    anthropic/claude-opus-5-5: anthropic.claude-opus-5-5
+
+# Request defaults applied by the model gateway per model family.
+# Opus 5.5 / Sonnet 5.5 / Haiku 5.5: thinking cannot be disabled; effort controls depth.
+request_defaults:
+  anthropic/claude-haiku-5-5: {effort: low}
+  anthropic/claude-sonnet-5-5: {effort: medium}
+  anthropic/claude-opus-5-5: {effort: medium}
+
+prices:
+  - model: anthropic/claude-haiku-5-5
+    display_name: Claude Haiku 5.5
+    input: 0.10
+    output: 0.50
+    cache_read: 0.01
+    cache_write: 0.125
+    context_window: 1000000
+  - model: anthropic/claude-sonnet-5-5
+    display_name: Claude Sonnet 5.5
+    input: 2.00
+    output: 10.00
+    cache_read: 0.20
+    cache_write: 2.50
+    context_window: 1000000
+  - model: anthropic/claude-opus-5-5
+    display_name: Claude Opus 5.5
+    input: 4.00
+    output: 20.00
+    cache_read: 0.20
+    cache_write: 5.00
+    context_window: 1000000
+  - model: anthropic/claude-fable-5-1
+    display_name: Claude Fable 5.1
+    input: 10.00
+    output: 50.00
+    cache_read: 0.25
+    cache_write: 12.50
+    context_window: 1000000
+  - model: messer/demo
+    display_name: Modelo demo (sin clave)
+    input: 0.0
+    output: 0.0
+    cache_read: 0.0
+    cache_write: 0.0
+    context_window: 200000

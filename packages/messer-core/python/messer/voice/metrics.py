@@ -1,0 +1,75 @@
+"""Per-turn latency metrics for :class:`~messer.voice.VoiceSession`.
+
+The headline voice metric is ``eou_to_first_audio_ms`` — the time between the
+user's end of utterance (committed transcript) and the first byte of TTS audio
+emitted back to the client.
+
+All durations are wall-clock milliseconds derived from ``time.monotonic()``
+stamps taken inside the session. Fields are ``None`` when the corresponding
+stage never happened (e.g. the turn was interrupted before any audio).
+"""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict
+
+from .events import VoiceSessionEvent
+
+
+class TurnMetrics(BaseModel):
+    """Latency and volume measurements for a single conversation turn."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    turn_index: int
+    run_id: str | None = None
+    """Id of the agent run this turn produced, to join metrics against the trace."""
+    user_text_chars: int
+    speech_end_to_transcript_ms: float | None = None
+    """The user's ASR latency: their last speech -> the STT's committed
+    transcript arriving. This is the time the user spends waiting on the
+    transcriber, before any ``eou_to_*`` clock starts. ``None`` when there was
+    no end-of-speech evidence to measure from."""
+    speech_end_source: Literal["vad", "partial"] | None = None
+    """What stamped the end of speech: the local Silero VAD's last speech frame
+    (``vad``), or — without a local VAD — the STT's last interim transcript
+    (``partial``), a later and coarser stand-in."""
+    eou_to_llm_first_token_ms: float | None = None
+    """Committed transcript -> first LLM text delta."""
+    eou_to_tts_first_byte_ms: float | None = None
+    """Committed transcript -> first PCM chunk emitted."""
+    eou_to_first_audio_ms: float | None = None
+    """The headline number (same stamp as ``eou_to_tts_first_byte_ms``)."""
+    llm_total_ms: float | None = None
+    """Turn start -> agent generator done."""
+    tts_total_ms: float | None = None
+    """First TTS segment start -> last TTS segment end."""
+    turn_total_ms: float
+    interrupted: bool
+    tts_segments: int
+    audio_bytes: int
+    playback_acks_received: bool = False
+    """True when the client reported ``played_ms`` acks this session — the heard
+    position is client-truth rather than the wall-clock schedule estimate."""
+    heard_bytes: int | None = None
+    """PCM bytes of this turn the user actually heard before an interruption
+    (``None`` for uninterrupted turns or when the position is unknown).
+    Compare against ``audio_bytes`` to measure estimate-vs-ack drift."""
+    vad_endpointed: bool = False
+    """True when this turn's committed transcript was forced by the local VAD
+    endpointing fast path (Silero + audio EOU) rather than the STT provider's
+    own silence debounce — the ``eou_to_*`` numbers then start earlier."""
+    filler_spoken: bool = False
+    """True when a tool-call filler phrase was spoken this turn — the
+    ``eou_to_first_audio_ms`` stamp then reflects the filler, not the reply."""
+    filler_count: int = 0
+    """How many filler phrases were spoken (>1 with ``repeat_secs`` on)."""
+
+
+class TurnMetricsEvent(VoiceSessionEvent):
+    """Emitted once per turn, after ``AgentTextDone`` (or on interruption)."""
+
+    type: Literal["metrics"] = "metrics"
+    metrics: TurnMetrics

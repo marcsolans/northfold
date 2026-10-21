@@ -1,0 +1,58 @@
+
+[1m================================================================================================[0m
+[1m  Messer delegation vs OpenAI Agents SDK handoff benchmark[0m
+  100 iters | 40 burst | 100 mem | 200 throughput ops
+[1m================================================================================================[0m
+  Messer: OK  |  OAI: OK
+    Messer delegation latency... p50=273.1 us
+    Messer delegation memory... 62 KB peak
+    Messer delegation burst (40 concurrent)... p50=345.8 us
+    Messer delegation throughput conc=1... 2299/s
+    Messer delegation throughput conc=10... 2193/s
+    Messer delegation throughput conc=50... 2205/s
+    OAI handoff latency... p50=1.46 ms
+    OAI handoff memory... 97 KB peak
+    OAI handoff burst (40 concurrent)... p50=20.35 ms
+    OAI handoff throughput conc=1... 604/s
+    OAI handoff throughput conc=10... 1006/s
+    OAI handoff throughput conc=50... 1296/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Delegation / handoff[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency  (x100 sequential runs)[0m
+                Messer delegation       OAI handoff
+  ------------  ----------------  ----------------
+          mean          446.9 us           1.71 ms
+           p50          273.1 us           1.46 ms
+           p95          489.7 us           2.12 ms
+           p99          17.05 ms          18.66 ms
+
+  [1mMemory  (x100 runs)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer delegation               62.2 KB         637  B
+  OAI handoff                     97.3 KB         996  B
+
+  [1mBurst  (40 concurrent)[0m
+                Messer delegation       OAI handoff
+  ------------  ----------------  ----------------
+           p50          345.8 us          20.35 ms
+           p75          370.0 us          36.44 ms
+           p95          660.3 us          37.01 ms
+           p99          16.98 ms          37.33 ms
+           max          16.98 ms          37.33 ms
+
+  [1mThroughput  (200 loops)[0m
+                Messer delegation       OAI handoff
+  ------------  ----------------  ----------------
+             1            2299/s             604/s
+            10            2193/s            1006/s
+            50            2205/s            1296/s
+
+[2m------------------------------------------------------------------------------------------------
+  OpenAI Agents SDK has a true handoff primitive.
+  Messer column is the closest agent-composition equivalent: supervisor -> worker tool -> final.
+------------------------------------------------------------------------------------------------[0m
+

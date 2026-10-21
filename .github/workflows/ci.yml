@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "claude/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_PYTHON: "3.12"
+  MESSER_ENV: test
+
+jobs:
+  python:
+    name: Python — lint, types, tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      MESSER_TEST_DB_HOST: localhost:5432
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Prepare database roles
+        run: |
+          psql -h localhost -U postgres -c "CREATE ROLE messer LOGIN PASSWORD 'messer' CREATEROLE CREATEDB"
+          psql -h localhost -U postgres -c "CREATE DATABASE messer_test OWNER messer"
+          psql -h localhost -U postgres -d messer_test -c "CREATE EXTENSION vector; CREATE EXTENSION pg_trgm; CREATE EXTENSION unaccent;"
+      - run: uv sync --all-packages --frozen
+      - name: Ruff
+        run: uv run --no-sync ruff check $(ls -d packages/messer-common apps/api services/* packages/connectors packages/messer-sdk-py infra/migrations 2>/dev/null)
+      - name: Ruff (engine)
+        working-directory: packages/messer-core
+        run: ../../.venv/bin/ruff check python
+      - name: Pyright
+        run: uv run --no-sync pyright
+      - name: Engine tests (messer-core)
+        working-directory: packages/messer-core
+        run: ../../.venv/bin/python -m pytest -q --no-cov -n 4 -o addopts="" -m "not integration" python/tests
+      - name: Platform tests (API, RLS, services)
+        run: |
+          # The test fixtures create databases with `su postgres`; in CI the database already exists.
+          uv run --no-sync pytest $(ls -d apps/api/tests packages/*/tests services/*/tests 2>/dev/null)
+
+  web:
+    name: Web — lint, types, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --if-present lint
+      - run: pnpm -r --if-present typecheck
+      - run: pnpm --filter @messer/web build
+        env:
+          MESSER_API_URL: http://localhost:8000
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    needs: [python, web]
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["1025:1025", "8025:8025"]
+    env:
+      PGPASSWORD: postgres
+      MESSER_ENV: local
+      DATABASE_URL: postgresql+psycopg://messer:messer@localhost:5432/messer
+      DATABASE_APP_URL: postgresql+psycopg://messer_app:messer_app@localhost:5432/messer
+      DATABASE_READONLY_URL: postgresql+psycopg://messer_readonly:messer_readonly@localhost:5432/messer
+      REDIS_URL: redis://localhost:6379/0
+      MESSER_EMAIL_PROVIDER: smtp
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      MESSER_WEB_URL: http://localhost:3000
+      MESSER_API_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Database
+        run: |
+          psql -h localhost -U postgres -c "CREATE ROLE messer LOGIN PASSWORD 'messer' CREATEROLE CREATEDB"
+          psql -h localhost -U postgres -c "CREATE DATABASE messer OWNER messer"
+          psql -h localhost -U postgres -d messer -c "CREATE EXTENSION vector; CREATE EXTENSION pg_trgm; CREATE EXTENSION unaccent;"
+      - run: uv sync --all-packages --frozen
+      - run: pnpm install --frozen-lockfile
+      - run: uv run --no-sync alembic -c infra/migrations/alembic.ini upgrade head
+      - run: uv run --no-sync python -m messer_api.cli bootstrap
+      - name: Start services
+        run: |
+          nohup uv run --no-sync uvicorn messer_api.main:app --port 8000 > api.log 2>&1 &
+          if [ -f services/runtime/pyproject.toml ]; then nohup uv run --no-sync python -m messer_runtime > runtime.log 2>&1 & fi
+          if [ -f services/worker/pyproject.toml ]; then nohup uv run --no-sync python -m messer_worker > worker.log 2>&1 & fi
+          pnpm --filter @messer/web build
+          nohup pnpm --filter @messer/web start > web.log 2>&1 &
+          npx --yes wait-on -t 120000 http://localhost:8000/health http://localhost:3000
+      - run: pnpm --filter @messer/e2e exec playwright install --with-deps chromium
+      - run: pnpm --filter @messer/e2e test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+            *.log
+
+  security:
+    name: Security — audits and secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: uv sync --all-packages --frozen
+      - name: pip-audit
+        run: uv run --no-sync --with pip-audit pip-audit --progress-spinner off --skip-editable
+      - run: pnpm install --frozen-lockfile
+      - name: npm audit (production dependencies)
+        run: pnpm audit --prod --audit-level high
+      - name: Secret scanning (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

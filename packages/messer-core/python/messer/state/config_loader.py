@@ -1,0 +1,313 @@
+# Modified by Messer: platform calls are redirected to the Messer platform API (see NOTICE).
+import configparser
+import os
+from pathlib import Path
+from typing import NamedTuple
+
+import structlog
+from pydantic import SecretStr
+
+from .config import PlatformConfig, PlatformSubject
+
+logger = structlog.get_logger("messer.state.config_loader")
+
+MESSER_CONFIG_DIR = Path.home() / ".messer"
+
+_TRUTHY_STRINGS = frozenset({"true", "1", "t", "yes", "y", "enabled", "on"})
+
+
+def _is_truthy_string(value: str) -> bool:
+    return value.lower() in _TRUTHY_STRINGS
+
+
+class FileConfig(NamedTuple):
+    """Raw values extracted from ~/.messer/ config and credentials files."""
+
+    base_url: str | None
+    api_key: SecretStr | None
+    org: str | None
+    sync_traces_enabled: bool | None
+
+
+def _resolve_section_name(profile: str) -> str:
+    """Convert a profile name to the INI section name.
+
+    Follows AWS CLI convention:
+    - "default" maps to [default]
+    - Any other name maps to [profile <name>]
+    """
+    if profile == "default":
+        return "default"
+    return f"profile {profile}"
+
+
+_file_config_cache: dict[str, FileConfig] = {}
+"""Per-profile cache of ~/.messer file reads. Only used when reading the real
+config dir (config_dir is None) — explicit config_dir calls (tests) always
+re-read. Cleared by force_refresh in resolve_platform_config."""
+
+
+def load_file_config(
+    profile: str | None = None,
+    config_dir: Path | None = None,
+    force_refresh: bool = False,
+) -> FileConfig:
+    """Load configuration from ~/.messer/config and ~/.messer/credentials files.
+
+    Results for the real config dir are cached per profile: these files are read
+    on every RunContext creation (including once per run in chained sessions),
+    and disk I/O + configparser dominate the cost. Pass ``force_refresh=True``
+    to re-read from disk and refresh the cache.
+
+    Args:
+        profile: Profile name to load. If None, uses MESSER_PROFILE env var
+                 or falls back to "default".
+        config_dir: Override the config directory (for testing). Disables caching.
+        force_refresh: Re-read files even when a cached result exists.
+    """
+    if profile is None:
+        profile = os.getenv("MESSER_PROFILE", "default")
+
+    cacheable = config_dir is None
+    if cacheable and not force_refresh and profile in _file_config_cache:
+        return _file_config_cache[profile]
+
+    base_dir = config_dir or MESSER_CONFIG_DIR
+    config_path = base_dir / "config"
+    credentials_path = base_dir / "credentials"
+
+    section = _resolve_section_name(profile)
+
+    base_url: str | None = None
+    org: str | None = None
+    api_key: SecretStr | None = None
+    sync_traces_enabled: bool | None = None
+
+    if config_path.is_file():
+        config = configparser.ConfigParser()
+        try:
+            config.read(config_path)
+            if config.has_section(section):
+                base_url = config.get(section, "base_url", fallback=None)
+                org = config.get(section, "org", fallback=None)
+                if config.has_option(section, "sync_traces"):
+                    sync_traces_enabled = _is_truthy_string(config.get(section, "sync_traces"))
+                else:
+                    sync_traces_enabled = None
+            else:
+                logger.debug(
+                    f"Profile section '{section}' not found in config file.",
+                    config_path=str(config_path),
+                    profile=profile,
+                )
+        except configparser.Error as e:
+            logger.warning(
+                "Failed to parse messer config file.",
+                config_path=str(config_path),
+                error=str(e),
+            )
+
+    if credentials_path.is_file():
+        credentials = configparser.ConfigParser()
+        try:
+            credentials.read(credentials_path)
+            if credentials.has_section(section):
+                raw_key = credentials.get(section, "api_key", fallback=None)
+                if raw_key:
+                    api_key = SecretStr(raw_key)
+            else:
+                logger.debug(
+                    f"Profile section '{section}' not found in credentials file.",
+                    credentials_path=str(credentials_path),
+                    profile=profile,
+                )
+        except configparser.Error as e:
+            logger.warning(
+                "Failed to parse messer credentials file.",
+                credentials_path=str(credentials_path),
+                error=str(e),
+            )
+
+    result = FileConfig(
+        base_url=base_url,
+        api_key=api_key,
+        org=org,
+        sync_traces_enabled=sync_traces_enabled,
+    )
+    if cacheable:
+        _file_config_cache[profile] = result
+    return result
+
+
+def _merge_sync_traces_enabled(platform_config: PlatformConfig, file_config: FileConfig) -> None:
+    """Fill sync_traces_enabled from file then default (True) when not set on platform_config."""
+    if platform_config.sync_traces_enabled is not None:
+        return
+    if file_config.sync_traces_enabled is not None:
+        platform_config.sync_traces_enabled = file_config.sync_traces_enabled
+        logger.debug(
+            "Resolved sync_traces_enabled from config file.",
+            value=file_config.sync_traces_enabled,
+        )
+        return
+    platform_config.sync_traces_enabled = True
+    logger.debug("Defaulted sync_traces_enabled to True.")
+
+
+def _strip_scheme(url: str) -> str:
+    """Strip https:// or http:// prefix from a URL to get just the host."""
+    if url.startswith("https://"):
+        return url[len("https://") :]
+    if url.startswith("http://"):
+        return url[len("http://") :]
+    return url
+
+
+_cached_default_config: PlatformConfig | None = None
+_default_config_resolved: bool = False
+
+
+def resolve_platform_config(
+    platform_config: PlatformConfig | None = None,
+    profile: str | None = None,
+    config_dir: Path | None = None,
+    force_refresh: bool = False,
+) -> PlatformConfig | None:
+    """Resolve platform configuration by merging sources with precedence.
+
+    Per-field precedence (highest to lowest):
+    1. Fields already set on the input platform_config
+    2. Environment variables
+    3. ~/.messer/ config and credentials files
+
+    Sync trace persistence uses ``sync_traces_enabled`` on ``PlatformConfig``.
+    When that field is unset, the ``sync_traces`` option in ~/.messer/config is checked,
+    then defaults to True.
+
+    When called with default arguments (no platform_config, profile, or config_dir),
+    the result is cached for subsequent calls. This avoids re-reading config files
+    and environment variables on every RunContext creation.
+
+    Args:
+        platform_config: Existing config to fill in missing fields for.
+        profile: Profile name for file config. Defaults to MESSER_PROFILE env var or "default".
+        config_dir: Override the config directory (for testing).
+        force_refresh: Re-read env/file sources even on a default call, bypassing
+            (and refreshing) the cached default. Use when env credentials may have
+            been set after an earlier default resolution cached ``None``.
+    """
+    global _cached_default_config, _default_config_resolved
+
+    is_default_call = platform_config is None and profile is None and config_dir is None
+    if is_default_call and _default_config_resolved and not force_refresh:
+        return _cached_default_config.model_copy() if _cached_default_config else None
+
+    # A config that already went through this function (e.g. inherited from a
+    # previous run's context during session chaining) has every field filled —
+    # skip the file/env re-resolution entirely.
+    if platform_config is not None and platform_config._fully_resolved and not force_refresh:
+        return platform_config
+
+    if force_refresh:
+        _file_config_cache.clear()
+
+    file_config = load_file_config(profile=profile, config_dir=config_dir, force_refresh=force_refresh)
+    logger.debug("Loaded file config.", file_config=file_config._asdict())
+
+    if not platform_config:
+        # No platform_config — build from scratch with bearer auth
+        host = os.getenv("MESSER_API_HOST")
+        if host:
+            logger.debug("Resolved host from MESSER_API_HOST.", host=host)
+        elif os.getenv("MESSER_API_URL"):
+            # The Messer platform API serves the engine endpoints under /api/v1.
+            host = f"{os.environ['MESSER_API_URL'].rstrip('/')}/api/v1"
+            logger.debug("Resolved host from MESSER_API_URL.", host=host)
+        elif file_config.base_url:
+            host = file_config.base_url
+            logger.debug("Resolved host from config file.", host=host)
+
+        api_key = os.getenv("MESSER_API_KEY") or os.getenv("MESSER_API_TOKEN")
+        if api_key:
+            logger.debug("Resolved api_key from environment variable.")
+        else:
+            api_key = file_config.api_key
+            if api_key:
+                logger.debug("Resolved api_key from credentials file.")
+
+        if not host or not api_key:
+            logger.debug("Could not resolve platform config.", has_host=bool(host), has_api_key=bool(api_key))
+            if is_default_call:
+                _cached_default_config, _default_config_resolved = None, True
+            return None
+
+        platform_config = PlatformConfig(
+            host=host,
+            auth={"type": "bearer", "token": api_key},  # type: ignore
+        )
+        logger.debug("Built platform config from scratch.", host=host)
+    else:
+        logger.debug("Using existing platform config.", host=platform_config.host)
+
+    # Resolve subject fields: explicit > env > file
+    existing_subject = platform_config.subject
+
+    org_id = None
+    if existing_subject:
+        org_id = existing_subject.org_id
+    if not org_id:
+        org_id = os.getenv("MESSER_ORG_ID")
+        if org_id:
+            logger.debug("Resolved org_id from MESSER_ORG_ID.", org_id=org_id)
+        else:
+            org_id = file_config.org
+            if org_id:
+                logger.debug("Resolved org_id from config file.", org_id=org_id)
+    else:
+        logger.debug("Using org_id from existing subject.", org_id=org_id)
+
+    if not org_id:
+        logger.debug("No org_id found, skipping subject resolution.")
+        _merge_sync_traces_enabled(platform_config, file_config)
+        platform_config._fully_resolved = True
+        if is_default_call:
+            _cached_default_config, _default_config_resolved = platform_config, True
+        return platform_config
+
+    app_id = None
+    if existing_subject:
+        app_id = existing_subject.app_id
+    if not app_id:
+        app_id = os.getenv("MESSER_APP_ID")
+
+    project_id = None
+    if existing_subject:
+        project_id = existing_subject.project_id
+    if not project_id:
+        project_id = os.getenv("MESSER_PROJECT_ID")
+
+    rev = existing_subject.rev if existing_subject else None
+    if not rev:
+        rev = os.getenv("MESSER_REV")
+
+    platform_config.subject = PlatformSubject(
+        org_id=org_id,
+        app_id=app_id,
+        project_id=project_id,
+        rev=rev,
+    )
+    logger.debug(
+        "Resolved platform subject.",
+        org_id=org_id,
+        app_id=app_id,
+        project_id=project_id,
+        rev=rev,
+    )
+
+    _merge_sync_traces_enabled(platform_config, file_config)
+
+    platform_config._fully_resolved = True
+    if is_default_call:
+        _cached_default_config, _default_config_resolved = platform_config, True
+
+    return platform_config

@@ -1,0 +1,207 @@
+---
+title: "Context & State Management"
+description: "The shared memory that connects everything together across the entire lifetime of a run"
+---
+
+The RunContext is the central storage and state management system for your runs. Beyond storing spans, it enables data sharing between components, input/output manipulation, and hierarchical data access across parent-child relationships.
+
+## Accessing the RunContext
+
+The RunContext is accessible from any callable within a Runnable's execution using `get_run_context()`. This includes:
+
+- **Main handlers**: The main function that does the work (_i.e._ the function you pass to a Tool).
+- **Default parameter callables**: Functions used to compute default values at runtime (as shown in [Runnables](./runnables#parameter-handling-and-basic-execution)).
+- **Lifecycle hooks**: Functions that run before or after the main handler.
+
+The `RunContext.current_span()` method returns the span object for the currently executing Runnable, containing all execution data - input parameters, output, timing, metadata, and any custom data you store on it. You get direct access to the live span object being built during execution.
+
+Here's a simple example showing context access from a main handler:
+
+```python highlight={7}
+from datetime import datetime
+
+import httpx
+from messer import Tool
+from messer.state import get_run_context
+
+async def api_call(endpoint: str) -> dict:
+    span = get_run_context().current_span()
+    # Store request metadata for observability
+    span.endpoint = endpoint
+    span.request_start = datetime.now()
+    # Perform actual HTTP request
+    async with httpx.AsyncClient() as client:
+        response = await client.get(endpoint)
+    # Store response metadata for debugging/monitoring
+    span.response_status = response.status_code
+    span.request_duration = datetime.now() - span.request_start
+    return response.json()
+
+api_tool = Tool(
+    name="api_call",
+    handler=api_call,
+)
+```
+
+<Note>
+Beyond `current_span()`, the RunContext provides methods like `.parent_span()` and `.step_span()` to access parent or neighbor spans. We'll explore these methods in future sections when working with multi-step workflows and nested executions.
+</Note>
+
+## Lifecycle Hooks
+
+Beyond the main handler, Runnables support lifecycle hooks - functions that run at specific points during execution. These provide structured access points for context interaction and enable powerful data transformation patterns.
+
+Every Runnable supports two optional hooks:
+
+- **`pre_hook`**: A function that runs before the main handler
+- **`post_hook`**: A function that runs after the main handler completes
+
+Hooks can modify inputs, store custom data, and transform outputs - all while sharing the same RunContext.
+
+### Pre-hooks: Modifying Input and Adding Context
+
+A `pre_hook` runs before your handler and can both modify input parameters and store additional context data:
+
+```python highlight={19}
+from datetime import datetime
+
+from messer.state import get_run_context
+
+def pre_hook():
+    span = get_run_context().current_span()
+    # Modify input parameters that will be passed to the handler
+    span.input["name"] = span.input["name"].capitalize()
+    # Add a new parameter
+    span.input["location"] = "Barcelona"
+    # Store custom data for later use
+    span.greet_time = datetime.now()
+
+def greet(name: str, location: str) -> str:
+    return f"Hello {name} from {location}!"
+
+greet_tool = Tool(
+    name="greet",
+    pre_hook=pre_hook,
+    handler=greet,
+)
+
+result = await greet_tool(name="alice").collect() # "Hello Alice from Barcelona!"
+```
+
+Pre-hooks are perfect for:
+- **Data Preparation**: Process raw webhook payloads, parse JSON, or normalize input formats
+- **Input Enhancement**: Enrich data with additional context from databases or APIs
+- **Request Preprocessing**: Extract headers, validate signatures, or decode authentication tokens
+- **State Initialization**: Set up execution context, timestamps, or tracking metadata
+
+### Post-hooks: Processing Output After Completion
+
+A `post_hook` runs after your handler and can access both input and output. You can also **modify or completely replace the output** by assigning a new value to `span.output`:
+
+```python highlight={8}
+def post_hook():
+    span = get_run_context().current_span()
+    # Retrieve custom data stored in pre_hook
+    greet_time = span.greet_time
+    print(f"Greeting at {greet_time}")
+    # Modify the output before it's returned
+    # You can assign any value to completely replace the handler's output
+    span.output = "Greeting overridden!"
+
+greet_tool = Tool(
+    name="greet",
+    pre_hook=pre_hook,
+    handler=greet,
+    post_hook=post_hook,
+)
+
+result = await greet_tool(name="alice").collect() # "Greeting overridden!"
+```
+
+<Note>
+**Output Modification**: You can completely replace the output in a post-hook by assigning to `span.output`. The assigned value will be returned instead of the handler's original output. This is useful for transforming results, adding metadata, or implementing custom response formatting.
+</Note>
+
+Post-hooks are perfect for:
+- **Logging**: Record execution details and results
+- **Metadata Storage**: Store processing metrics, timestamps, or analysis data
+- **Output Modification**: Transform or enrich the final result
+- **Cleanup Tasks**: Handle resource cleanup or state management
+
+<Tip>
+These simple examples show the basics. In practice, hooks excel at:
+
+- **Input manipulation**: Processing webhooks where we don't control the shape of the incoming data.
+- **Agent adaptation**: Converting between modalities (audio ↔ text) for different models.
+
+More advanced patterns in the [Agents](../agents) section.
+</Tip>
+
+## Using Agents in Hooks
+
+When you use an Agent inside a `pre_hook` or `post_hook`, you need to call `.nest()` to establish the proper hierarchical path for tracing and context management. This ensures the agent's execution is correctly nested under the parent agent's path.
+
+<Note>
+Agents used as tools within another agent are automatically nested. However, agents used in hooks require manual nesting.
+</Note>
+
+```python highlight={13}
+from messer import Agent
+from messer.state import get_run_context
+
+# Agent that will be used in a hook
+agent_is_company = Agent(
+    name="agent_is_company",
+    system_prompt="""Determine if the input is a company name.
+    Return only 'true' or 'false'.""",
+    model="openai/gpt-4.1-mini"
+)
+
+# Nest the agent under the parent agent's path
+agent_is_company.nest("agent")
+
+async def pre_hook():
+    span = get_run_context().current_span()
+    
+    result = await agent_is_company(
+        prompt=f"Is '{span.input.get('name')}' a company?"
+    ).collect()
+    
+    span.is_company = result.output.collect_text().strip().lower() == "true"
+
+agent = Agent(
+    name="agent",
+    model="openai/gpt-4.1-mini",
+    pre_hook=pre_hook
+)
+```
+
+The `.nest()` method updates the agent's path hierarchy, ensuring proper tracing structure (e.g., `agent.agent_is_company` instead of just `agent_is_company`) and correct span nesting under the parent. Nested agents still run with **isolated memory** — they do not inherit the parent's conversation history (see [Nested Agent Memory](/agents/memory#nested-agent-memory)).
+
+## Early Exit with bail()
+
+Use `bail()` to exit early from any Runnable execution when validation fails or conditions aren't met. The `bail()` function raises an `EarlyExit` error that stops execution of the current runnable.
+
+You can use `bail()` in:
+- **Handlers**: Exit early from tool or agent handlers
+- **Hooks**: Exit early from pre_hook or post_hook functions
+- **Default parameter callables**: Exit early when computing default values
+
+```python highlight={6}
+from messer.errors import bail
+from messer import Tool
+
+def process_data(role: str) -> str:
+    if role != "admin":
+        bail("Admin access required")
+    
+    return f"Processed: {role}"
+
+tool = Tool(
+    name="process_data",
+    handler=process_data
+)
+```
+
+This is useful for input validation, filtering unwanted requests, or implementing conditional logic in any Runnable.
+

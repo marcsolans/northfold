@@ -1,0 +1,67 @@
+---
+title: "Tracing & Observability"
+description: "Comprehensive execution tracing with input/output/error/timing capture for complete observability"
+---
+
+Events stream execution notifications such as starts, content deltas, pauses, and completion. They do not themselves persist conversation memory. Applications can consume or record them, and the HTTP job store and background-task APIs retain bounded event logs. Traces capture span input, output, errors, timing, and usage through the configured tracing provider.
+
+## Traces
+
+A Trace is the core data structure that captures execution information for every runnable execution, providing a complete audit trail of what happened. This tracing system enables complete observability into your application's behavior and performance.
+
+For the previous LLM example, a single **span** inside the run's trace would look like this:
+
+```python
+from messer.state.tracing.span import Span
+
+llm_span = Span(
+    path="agent.llm",
+    call_id="068c4458383678be800031537a8df42e",
+    parent_call_id="068c4458382e708f8000cc0f9b19d970",
+    t0=1640995200000,  # Start time (Unix ms)
+    t1=1640995201000,  # End time (Unix ms)
+    input={
+        "model": "openai/gpt-4o-mini",
+        "messages": [{
+            "role": "user",
+            "content": [{"type": "text", "text": "Hello"}],
+        }],
+    },
+    output={
+        "role": "assistant",
+        "content": [{"type": "text", "text": "Hello! How can I assist you today?"}],
+    },
+    usage={
+        "openai/gpt-4o-mini:input_text_tokens": 32,
+        "openai/gpt-4o-mini:output_text_tokens": 10,
+    },
+    metadata={
+        "type": "LLM",
+        "model_provider": "openai",
+        "model_name": "gpt-4o-mini",
+        "ttft": 1.218775834015105,  # Time To First Token
+        "tps": 103.44992571967803,  # Tokens Per Second
+    },
+)
+```
+
+Spans are stored in a `Trace` — a dict keyed by `call_id`. Access them during or after a run via `get_run_context()._trace` or helper methods like `step_span()`.
+
+That's a single span, but spans don't usually come in isolation — they're organized into larger execution units: Runs.
+
+## Runs
+
+A Run represents the complete execution of your application - from the moment you invoke a runnable until it finishes. Think of it as the lifecycle of a single request or operation, whether that's a simple function call or a complex multi-step agent workflow.
+
+Every Run is composed of a collection of spans:
+
+- **Simple execution**: Running a single tool generates one span — the tool's input, output, timing, and metadata
+- **Complex execution**: Running an agent generates multiple spans as it decides which tools to use, calls LLMs for reasoning, executes tools, and processes results
+
+All spans within a run share the same `run_id` (via `RunContext.id`), creating a complete execution history that you can analyze, debug, or replay.
+
+### The Run Context
+
+Traces are stored in the RunContext - a central hub that manages all run data. You can access traces during execution, control storage behavior, and use this system to share data between different parts of your run.
+
+More on this in the [Context](./context) section.

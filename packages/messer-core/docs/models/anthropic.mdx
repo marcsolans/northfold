@@ -1,0 +1,332 @@
+---
+title: "Anthropic"
+description: "Claude Fable 5.1, Opus 5.5, Sonnet 5.5, and Haiku 5.5 models with specs, pricing, and capabilities"
+---
+
+<Note>Source: [Anthropic model docs](https://platform.claude.com/docs/en/about-claude/models/overview) · [Release notes](https://platform.claude.com/docs/en/release-notes/overview) · [Pricing](https://platform.claude.com/docs/en/about-claude/pricing)</Note>
+
+### How cache and fast-mode pricing is tracked
+
+Claude 4.6 and later models bill the full 1M window at standard rates, except Haiku 5.5: prompts over 100,000 tokens use a higher rate for the full request. For global streaming requests, Messer's collector emits one unit per disjoint token bucket. Multipliers below are relative to the model's input rate unless specified otherwise:
+
+| Anthropic `usage` field | Usage key on `OutputEvent.usage` | Rate |
+| --- | --- | --- |
+| `input_tokens` | `input_tokens` | 1x |
+| `cache_read_input_tokens` | `cache_read_input_tokens` | 0.1x (0.05x on Opus 5.5 and Sonnet 5.5; 0.025x on Fable 5.1) |
+| `cache_creation.ephemeral_5m_input_tokens` | `ephemeral_5m_input_tokens` | 1.25x |
+| `cache_creation.ephemeral_1h_input_tokens` | `ephemeral_1h_input_tokens` | 2x |
+| `cache_creation_input_tokens` (only when no valid per-TTL breakdown is reported) | `cache_creation_input_tokens` | 1.25x fallback; assumes 5m TTL |
+| `output_tokens` | `output_tokens` | output rate |
+| `server_tool_use.*_requests` | e.g. `web_search_requests` | per call |
+
+`output_tokens_details.thinking_tokens` is a subset of `output_tokens` and is **not** emitted as a separate unit (it would be billed twice). On Opus 5.5 / Opus 5 / Opus 4.8, `usage.speed == "fast"` ([fast mode](https://platform.claude.com/docs/en/build-with-claude/fast-mode), 2x) suffixes every token unit with `_fast`, e.g. `anthropic/claude-opus-5-5:output_tokens_fast`; pass `model_params={"extra_body": {"speed": "fast"}, "extra_headers": {"anthropic-beta": "fast-mode-2026-02-01"}}` to opt in. If a stream is interrupted before the final `message_delta`, the prompt-side units are still recorded from `message_start` (Anthropic charges them regardless); output is left unbilled.
+
+On Haiku 5.5, the tier threshold uses `input_tokens + cache_read_input_tokens + cache_creation_input_tokens`. Exactly 100,000 prompt tokens still use the lower rates. Above that boundary, every token unit receives `_long_context`, including output and both cache-write durations, e.g. `anthropic/claude-haiku-5-5:ephemeral_1h_input_tokens_long_context`. The per-TTL write breakdown is already included in `cache_creation_input_tokens` and is not counted twice. Per-call tool fees keep their original units. The same tier selection applies to prompt usage from interrupted streams.
+
+Web search costs &#36;0.01 per search plus token charges; web fetch has no additional per-call fee. Code execution is free alongside the current web search/fetch tools; otherwise Anthropic bills execution time, with 1,550 free hours per organization per month, then &#36;0.05 per container-hour and a five-minute minimum. A `code_execution_requests` count alone is insufficient to calculate that charge.
+
+The catalog stores global standard input, output, cache-read, and both cache-write rates explicitly: `cached_input_price` for reads, `cache_write_price` for 5m writes, and `cache_write_1h_price` for 1h writes. The SQL generator omits each missing or null rate independently, including its fast-mode variant; it never derives cache prices from the input price. Omitted rates are unknown, not free. The collector does not distinguish Batch API or US-only inference pricing in its usage keys. Apply those provider modifiers separately when reconciling billing. An aggregate cache-write count without a valid TTL breakdown cannot exactly price 1h or mixed-TTL writes.
+
+## Latest
+
+<CardGroup cols={2}>
+  <Card title="claude-fable-5-1">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-fable-5-1`
+
+  Anthropic's most capable generally available model. Successor to Fable 5 for long-running agentic coding, knowledge work, and research, with fewer false-positive safety refusals in multi-turn agent loops. Same price as Fable 5; cache reads are 75% cheaper.
+
+  - &#36;10 / &#36;50 per 1M tokens (input / output); cache reads &#36;0.25 (0.025x input); batch &#36;5 / &#36;25
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Adaptive thinking (always on)
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2026
+  - <Icon icon="triangle-exclamation" size={14} /> `tool_choice` `any` / `tool` not supported (400); requires 30-day data retention (no ZDR)
+  </Card>
+
+  <Card title="claude-opus-5-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-opus-5-5`
+
+  Latest Opus for long-running agentic coding and knowledge work. Lower input, output, and cache-read prices than Opus 5.
+
+  - &#36;4 / &#36;20 per 1M tokens (input / output); cache reads &#36;0.20; 5m / 1h cache writes &#36;5 / &#36;8
+  - Fast mode &#36;8 / &#36;40; cache reads &#36;0.40; 5m / 1h writes &#36;10 / &#36;16 (Claude API research preview, requires access)
+  - Provider Batch API input / output &#36;2 / &#36;10; global prices, US-only inference adds 10%
+  - <Icon icon="window-maximize" size={14} /> 1M context at standard rates
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output (300K with the provider's Batch API beta)
+  - <Icon icon="keyboard" size={14} /> Text, Image input; Text output
+  - <Icon icon="brain" size={14} /> Adaptive thinking always on; default effort `medium`
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2026
+  - <Icon icon="triangle-exclamation" size={14} /> Disabled/budgeted thinking and forced `tool_choice` (`any` / `tool`) return 400
+  </Card>
+
+  <Card title="claude-opus-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-opus-5`
+
+  Previous Opus generation for complex agentic coding and enterprise work. Superseded by Opus 5.5, which has lower token and cache-read prices.
+
+  - &#36;5 / &#36;25 per 1M tokens (input / output; Fast mode &#36;10 / &#36;50 at ~2.5x speed)
+  - <Icon icon="window-maximize" size={14} /> 1M context (default and maximum)
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Adaptive thinking (on by default)
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff May 2026
+  </Card>
+
+  <Card title="claude-sonnet-5-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-sonnet-5-5`
+
+  Latest Sonnet for coding, agents, and professional work. Supersedes Sonnet 5 at the same input/output prices and half the cache-read price.
+
+  - &#36;2 / &#36;10 per 1M tokens (input / output); cache reads &#36;0.10; 5m / 1h cache writes &#36;2.50 / &#36;4
+  - Provider Batch API input / output &#36;1 / &#36;5; cache reads &#36;0.05; 5m / 1h writes &#36;1.25 / &#36;2
+  - US-only inference adds 10% to all token rates: standard input / output &#36;2.20 / &#36;11; cache reads &#36;0.11; 5m / 1h writes &#36;2.75 / &#36;4.40
+  - No long-context surcharge; fast mode is not available
+  - <Icon icon="window-maximize" size={14} /> 1M context at standard rates
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output (300K with the provider's Batch API beta)
+  - <Icon icon="keyboard" size={14} /> Text, Image input; Text output
+  - <Icon icon="brain" size={14} /> Adaptive thinking on by default; default effort `high`
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2026; released September 28, 2026
+  - <Icon icon="triangle-exclamation" size={14} /> Disabled/budgeted thinking, forced `tool_choice` (`any` / `tool`), and non-default sampling parameters return 400
+  </Card>
+
+  <Card title="claude-sonnet-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-sonnet-5`
+
+  Previous Sonnet generation for coding, agents, and everyday professional work. Superseded by Sonnet 5.5 at the same token prices.
+
+  - &#36;2 / &#36;10 per 1M tokens (input / output)
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Adaptive thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jan 2026
+  </Card>
+
+  <Card title="claude-opus-4-8">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-opus-4-8`
+
+  Previous Opus generation for agentic coding, long-running tasks, and complex reasoning. Same price as Opus 5 — migrate unless you depend on thinking being off by default.
+
+  - &#36;5 / &#36;25 per 1M tokens (input / output)
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Adaptive thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jan 2026
+  </Card>
+
+  <Card title="claude-opus-4-7">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-opus-4-7`
+
+  Frontier Opus for agentic coding and complex reasoning: stronger software engineering, verification, and high-resolution vision than 4.6, with adaptive thinking and a 1M-token context window at standard per-token rates.
+
+  - &#36;5 / &#36;25 per 1M tokens (input / output)
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Adaptive thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jan 2026
+  </Card>
+
+  <Card title="claude-opus-4-6">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-opus-4-6`
+
+  Anthropic's most intelligent model for building agents and coding. Exceptional at planning, code review, debugging, and operating reliably within large codebases.
+
+  - &#36;5 / &#36;25
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff May 2025
+  </Card>
+
+  <Card title="claude-haiku-5-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-haiku-5-5`
+
+  Latest and fastest Haiku for high-volume classification, extraction, routing, and subagent tasks.
+
+  - Prompts up to 100K: &#36;0.10 / &#36;0.50 per 1M tokens (input / output); cache reads &#36;0.01; 5m / 1h cache writes &#36;0.125 / &#36;0.20
+  - Prompts over 100K: input / output &#36;0.50 / &#36;2.50; cache reads &#36;0.05; 5m / 1h cache writes &#36;0.625 / &#36;1 (full request)
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output (300K with the provider's Batch API beta)
+  - <Icon icon="keyboard" size={14} /> Text, Image input; Text output
+  - <Icon icon="brain" size={14} /> Adaptive thinking on by default; default effort `medium`
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2026; released October 7, 2026
+  - <Icon icon="triangle-exclamation" size={14} /> Omit non-default `temperature`, `top_p`, and `top_k`; recount token budgets when migrating from Haiku 4.5
+  </Card>
+</CardGroup>
+
+---
+
+## Legacy
+
+<CardGroup cols={2}>
+  <Card title="claude-haiku-4-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-haiku-4-5`
+
+  Previous Haiku generation for office files, strategy planning, and business analysis. Superseded by Haiku 5.5.
+
+  - &#36;1 / &#36;5
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 64K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Feb 2025
+  </Card>
+  <Card title="claude-fable-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-fable-5`
+
+  Previous Fable generation for long-horizon agentic work, complex reasoning, and ambitious multi-day coding tasks. Superseded by Fable 5.1 at the same price.
+
+  - &#36;10 / &#36;50 per 1M tokens (input / output)
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Adaptive thinking (always on)
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jan 2026
+  </Card>
+
+  <Card title="claude-opus-4-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-opus-4-5`
+
+  Previous flagship Opus model with top-tier reasoning and coding capabilities.
+
+  - &#36;5 / &#36;25
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 64K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff May 2025
+  </Card>
+
+  <Card title="claude-sonnet-4-6">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-sonnet-4-6`
+
+  Previous Sonnet generation with strong speed/intelligence balance and computer use skills. Superseded by Sonnet 5.
+
+  - &#36;3 / &#36;15
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 64K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Aug 2025
+  </Card>
+
+  <Card title="claude-sonnet-4-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `anthropic/claude-sonnet-4-5`
+
+  Previous Sonnet generation with strong all-around performance and 1M beta context support. Deprecated September 30, 2026; retires November 30, 2026. Migrate to `anthropic/claude-sonnet-5-5`.
+
+  - &#36;3 / &#36;15
+  - <Icon icon="window-maximize" size={14} /> 200K context (1M beta)
+  - <Icon icon="right-from-bracket" size={14} /> 64K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jan 2025
+  </Card>
+</CardGroup>
+
+## Using Haiku 5.5
+
+Set `ANTHROPIC_API_KEY` and select the full model ID:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="classifier",
+    model="anthropic/claude-haiku-5-5",
+    max_tokens=4096,
+    model_params={"output_config": {"effort": "medium"}},
+)
+```
+
+Adaptive thinking is on by default, and thinking tokens count toward `max_tokens`. Messer collects text and thinking blocks separately. Omit non-default sampling parameters. Haiku 5.5 uses the newer tokenizer, which produces approximately 30% more tokens for the same text than Haiku 4.5; recount prompts and budgets before migrating. Replay stored thinking blocks through the account that produced them or a linked account.
+
+Automatic prompt caching is enabled by Messer. The 100K pricing threshold includes uncached input, cache reads, and cache writes; output uses the rate selected by the prompt length. `scripts/generate_costs_sql.py` emits both standard and `_long_context` token rates, including 5m and 1h cache writes. Apply the generated SQL when updating a billing database; changing the catalog alone does not update stored rates.
+
+Haiku 5.5 specs and pricing verified October 7, 2026 against the [model specifications](https://platform.claude.com/docs/en/models/haiku-5-5/overview), [migration guide](https://platform.claude.com/docs/en/models/haiku-5-5/migration-guide), and [API pricing](https://platform.claude.com/docs/en/about-claude/pricing).
+
+## Using Sonnet 5.5
+
+Set `ANTHROPIC_API_KEY` and select the full model ID:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="coder",
+    model="anthropic/claude-sonnet-5-5",
+    max_tokens=16000,
+    model_params={"output_config": {"effort": "high"}},
+)
+```
+
+Omit `thinking` to use adaptive thinking. To turn off up-front thinking, pass `model_params={"thinking": {"type": "between_tools"}, "output_config": {"effort": "high"}}`; this requires `high` effort or below. Use `auto` with strict tools or structured outputs instead of forced tool selection. Leave `temperature`, `top_p`, and `top_k` at their defaults.
+
+With adaptive thinking, progress text between tool calls arrives in thinking blocks and is omitted by default. Set `thinking.display="summarized"` to receive it; `between_tools` returns it without a display setting. Preserve thinking blocks and the preceding conversation unchanged when replaying them. Native computer use on the Claude API requires `computer_toolset_20260801`; the older `computer_20251124` tool is rejected.
+
+Automatic prompt caching is enabled by Messer; Sonnet 5.5 requires at least 512 cacheable tokens. All prices above are USD per 1M tokens except per-call/time-based tool fees. The 50% Batch API discount and 10% US-only inference premium stack across token categories. Partner cloud pricing and negotiated discounts may differ.
+
+See the [Sonnet 5.5 specifications](https://platform.claude.com/docs/en/models/sonnet-5-5/overview) and [migration notes](https://platform.claude.com/docs/en/models/sonnet-5-5/whats-new-sonnet-5-5). Sonnet 5.5 cache reads were halved on October 7, 2026; standard reads now cost &#36;0.10 per 1M tokens (&#36;0.05 with Batch, &#36;0.11 with US-only inference). Anthropic catalog token and cache prices verified October 7, 2026 against [Anthropic's price list](https://platform.claude.com/docs/en/about-claude/pricing).
+
+## Using Opus 5.5
+
+Set `ANTHROPIC_API_KEY` and select the full model ID:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="coder",
+    model="anthropic/claude-opus-5-5",
+    max_tokens=16000,
+    model_params={"output_config": {"effort": "medium"}},
+)
+```
+
+Use effort to control thinking depth; omit `thinking` or use adaptive thinking. For tool use, choose `auto` with strict tools or structured output instead of forcing a tool. Progress text between tool calls now arrives in thinking blocks and is empty by default; `thinking.display="summarized"` returns text, while `"updates"` requires the `thinking-display-updates-2026-08-18` beta header. Preserve thinking blocks unchanged within the conversation. The older `computer_20251124` tool is no longer accepted on the Claude API; use `computer_toolset_20260801` if supplying native computer tools.
+
+See the [Opus 5.5 specifications](https://platform.claude.com/docs/en/models/opus-5-5/overview) and [migration guide](https://platform.claude.com/docs/en/models/opus-5-5/migration-guide) for model-bound thinking, refusal handling, and provider-specific differences. Pricing verified September 23, 2026 against [Anthropic's price list](https://platform.claude.com/docs/en/about-claude/pricing).
+
+## Lifecycle audit
+
+Checked October 3, 2026 against the [model lifecycle](https://platform.claude.com/docs/en/about-claude/model-deprecations) and [model overview](https://platform.claude.com/docs/en/about-claude/models/overview). Opus 4.1 was removed from the catalog after its August 5 retirement. Sonnet 4.5 remains available until November 30. Haiku 4.5 remains active; its earliest-retirement commitment is not a shutdown announcement. Restricted Mythos models are not generally available catalog entries.

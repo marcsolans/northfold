@@ -1,0 +1,133 @@
+
+[1m════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer Workflow vs LangGraph StateGraph — DAG benchmark[0m
+  200 iters · 500 burst · 200 mem runs · 1000 throughput ops
+  Trivial handlers (no LLM). Pure DAG scheduling overhead.
+  [2mBoth use native async (ainvoke / .collect()). Single shared instance.[0m
+[1m════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mVerifying correctness...[0m
+  sequential: Messer=19  LangGraph=19  ok
+  fanout: Messer=54  LangGraph=54  ok
+  diamond: Messer=46  LangGraph=46  ok
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 1: Sequential  (A → B → C → D)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×200)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+          mean     403.8 µs      1.47 ms      2.16 ms
+           p50     328.9 µs      1.42 ms      1.97 ms
+           p95     416.8 µs      1.89 ms      3.02 ms
+           p99     698.6 µs      1.98 ms      4.33 ms
+
+  [1mMemory  (×200 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         333.9 KB        1709  B
+  LG (bare)                       76.9 KB         394  B
+  LG + LangSmith               29085.2 KB      148916  B
+
+  [1mBurst  (500 concurrent)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+           p50     66.08 ms    328.81 ms    608.99 ms
+           p75     70.53 ms    346.87 ms    637.31 ms
+           p95     74.13 ms    363.06 ms    664.80 ms
+           p99     75.07 ms    367.26 ms    672.69 ms
+           max     75.42 ms    375.03 ms    684.35 ms
+
+  [2mwall: Messer 75.4 ms  |  LG bare 375.0 ms  |  LG+Smith 684.3 ms[0m
+
+  [1mThroughput  (1000 runs)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+             1        2433/s         574/s         415/s
+            10        2906/s         932/s         457/s
+            50        4440/s        1005/s         577/s
+           200        2807/s         990/s         636/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 2: Fan-out/in  (A → [B, C, D] → E)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×200)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+          mean     774.7 µs      1.82 ms      3.05 ms
+           p50     675.1 µs      1.76 ms      2.92 ms
+           p95     960.5 µs      2.45 ms      3.91 ms
+           p99      1.43 ms      3.40 ms      4.72 ms
+
+  [1mMemory  (×200 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         249.7 KB        1278  B
+  LG (bare)                      382.8 KB        1960  B
+  LG + LangSmith               30708.4 KB      157227  B
+
+  [1mBurst  (500 concurrent)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+           p50    109.31 ms    437.19 ms    734.58 ms
+           p75    111.90 ms    462.92 ms    753.33 ms
+           p95    114.78 ms    477.16 ms    770.51 ms
+           p99    115.30 ms    486.57 ms    779.40 ms
+           max    115.58 ms    488.16 ms    813.24 ms
+
+  [2mwall: Messer 115.6 ms  |  LG bare 488.2 ms  |  LG+Smith 813.2 ms[0m
+
+  [1mThroughput  (1000 runs)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+             1        1820/s         600/s         327/s
+            10        2728/s         825/s         428/s
+            50        2905/s         917/s         501/s
+           200        2456/s        1004/s         554/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 3: Diamond  (A → [B, C] → D)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×200)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+          mean     529.2 µs      1.46 ms      2.66 ms
+           p50     398.5 µs      1.40 ms      2.51 ms
+           p95     715.7 µs      1.94 ms      3.54 ms
+           p99      4.76 ms      2.24 ms      4.71 ms
+
+  [1mMemory  (×200 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         247.7 KB        1268  B
+  LG (bare)                       95.3 KB         488  B
+  LG + LangSmith               29077.6 KB      148877  B
+
+  [1mBurst  (500 concurrent)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+           p50     96.23 ms    359.21 ms    678.37 ms
+           p75    101.69 ms    416.87 ms    716.51 ms
+           p95    104.44 ms    579.03 ms    747.09 ms
+           p99    104.78 ms    610.14 ms    760.64 ms
+           max    105.07 ms    616.62 ms    762.98 ms
+
+  [2mwall: Messer 105.1 ms  |  LG bare 616.6 ms  |  LG+Smith 763.0 ms[0m
+
+  [1mThroughput  (1000 runs)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+             1        1650/s         668/s         412/s
+            10        3071/s         949/s         472/s
+            50        2750/s        1110/s         604/s
+           200        2938/s         925/s         650/s
+
+[2m────────────────────────────────────────────────────────────────────────────
+  Both frameworks execute identical DAGs with trivial handlers.
+  Both run natively async (ainvoke / .collect()) on a single shared instance.
+  Graph compilation and Workflow construction excluded from timing.
+────────────────────────────────────────────────────────────────────────────[0m
+

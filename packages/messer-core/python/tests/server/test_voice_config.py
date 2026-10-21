@@ -1,0 +1,792 @@
+"""Tests for ``/voice`` STT/TTS config: env defaults, runnable merge, client overrides, lifespan."""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from pydantic import ValidationError
+from messer import __version__ as messer_version
+from messer.server import voice as voice_routes
+from messer.server.http import create_app, lifespan
+from messer.utils import ImportSpec
+from messer.voice.config import DEFAULT_VOICE_ID, FillerConfig, GreetingConfig, RecordingConfig, VoiceConfig
+
+from .voice_env import VOICE_ENV_KEYS
+
+
+@pytest.mark.usefixtures("clear_voice_env")
+class TestVoiceWarmupIntended:
+    """Non-voice deployments must not pre-load ONNX models at server boot.
+
+    Regression: warmup used to run for every Agent app whenever the
+    messer[voice] extra was installed (e.g. platform images from messer[all]),
+    downloading and loading Smart Turn + Namo + Silero for nothing.
+    """
+
+    class _Runnable:
+        voice_config = None
+
+    def _clear_warmup_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("MESSER_VOICE_WARMUP", raising=False)
+        for k in list(os.environ):
+            if k.startswith("MESSER_VOICE_"):
+                monkeypatch.delenv(k, raising=False)
+
+    def test_no_voice_signals_means_no_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._clear_warmup_env(monkeypatch)
+        assert voice_routes.voice_warmup_intended(self._Runnable()) is False
+
+    def test_runnable_voice_config_enables_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._clear_warmup_env(monkeypatch)
+        r = self._Runnable()
+        r.voice_config = {"stt_provider": "elevenlabs"}
+        assert voice_routes.voice_warmup_intended(r) is True
+
+    def test_voice_env_enables_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("MESSER_VOICE_LANGUAGE", "en")
+        assert voice_routes.voice_warmup_intended(self._Runnable()) is True
+
+    def test_elevenlabs_voice_id_enables_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("ELEVENLABS_VOICE_ID", "abc")
+        assert voice_routes.voice_warmup_intended(self._Runnable()) is True
+
+    def test_env_override_forces_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The playground launcher sets MESSER_VOICE_WARMUP=1 for its children."""
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("MESSER_VOICE_WARMUP", "1")
+        assert voice_routes.voice_warmup_intended(self._Runnable()) is True
+
+    def test_env_override_forces_no_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("MESSER_VOICE_WARMUP", "0")
+        r = self._Runnable()
+        r.voice_config = {"stt_provider": "elevenlabs"}  # even a voice app
+        assert voice_routes.voice_warmup_intended(r) is False
+
+    def test_platform_media_owner_skips_warmup(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Headless dest box: sidecar owns media. voice_config must not load onnx."""
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("MESSER_VOICE_MEDIA_OWNER", "platform")
+        r = self._Runnable()
+        r.voice_config = {"stt_provider": "elevenlabs"}
+        assert voice_routes.voice_warmup_intended(r) is False
+
+    def test_platform_media_owner_beats_warmup_force_on(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("MESSER_VOICE_MEDIA_OWNER", "platform")
+        monkeypatch.setenv("MESSER_VOICE_WARMUP", "1")
+        r = self._Runnable()
+        r.voice_config = {"stt_provider": "elevenlabs"}
+        assert voice_routes.voice_warmup_intended(r) is False
+
+    def test_platform_media_owner_is_not_a_warmup_signal(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Informational owner env must not trip the any(MESSER_VOICE_*) heuristic."""
+        self._clear_warmup_env(monkeypatch)
+        monkeypatch.setenv("MESSER_VOICE_MEDIA_OWNER", "platform")
+        assert voice_routes.voice_warmup_intended(self._Runnable()) is False
+
+
+class TestVoiceOnnxWarmupIntended:
+    """Flux / provider EOU must not pull Smart Turn + Namo + Silero at boot."""
+
+    def test_flux_skips_onnx(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("DEEPGRAM_API_KEY", "test-key")
+        cfg = VoiceConfig(stt_provider="deepgram", stt_model="flux-general-multi")
+        assert voice_routes.voice_onnx_warmup_intended(cfg) is False
+
+    def test_flux_without_key_loads_onnx(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Sessions fall back to Scribe + the local detector, so boot warms it."""
+        monkeypatch.delenv("DEEPGRAM_API_KEY", raising=False)
+        assert voice_routes.voice_onnx_warmup_intended(VoiceConfig()) is True
+
+    def test_elevenlabs_loads_onnx(self) -> None:
+        cfg = VoiceConfig(
+            stt_provider="elevenlabs",
+            stt_model="scribe_v2_realtime",
+            turn_detector="local",
+        )
+        assert voice_routes.voice_onnx_warmup_intended(cfg) is True
+
+    def test_flux_with_explicit_local_still_skips(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Session setup overrides local → provider for Flux; warmup must match.
+        monkeypatch.setenv("DEEPGRAM_API_KEY", "test-key")
+        cfg = VoiceConfig(
+            stt_provider="deepgram",
+            stt_model="flux-general-multi",
+            turn_detector="local",
+        )
+        assert voice_routes.voice_onnx_warmup_intended(cfg) is False
+
+    def test_explicit_heuristic_skips_onnx(self) -> None:
+        cfg = VoiceConfig(stt_provider="elevenlabs", turn_detector="heuristic")
+        assert voice_routes.voice_onnx_warmup_intended(cfg) is False
+
+    def test_nova_loads_onnx(self) -> None:
+        cfg = VoiceConfig(
+            stt_provider="deepgram-nova",
+            stt_model="nova-3",
+            turn_detector="local",
+        )
+        assert voice_routes.voice_onnx_warmup_intended(cfg) is True
+
+    def test_explicit_provider_skips_onnx(self) -> None:
+        cfg = VoiceConfig(stt_provider="elevenlabs", turn_detector="provider")
+        assert voice_routes.voice_onnx_warmup_intended(cfg) is False
+
+
+@pytest.mark.usefixtures("clear_voice_env")
+class TestDefaultVoiceConfigFromEnv:
+    def test_defaults_when_unset(self) -> None:
+        cfg = voice_routes.default_voice_config_from_env()
+        assert cfg.stt_provider == "deepgram"
+        assert cfg.stt_model == "flux-general-multi"
+        assert cfg.turn_detector is None  # → "provider" on Flux
+        assert cfg.tts_provider == "elevenlabs"
+        assert cfg.tts_model == "eleven_v4_turbo"
+        assert cfg.voice == DEFAULT_VOICE_ID
+        assert cfg.language is None  # provider auto-detect
+        assert cfg.sample_rate == 16_000
+        assert cfg.stt_extra["commit_strategy"] == "vad"
+        assert cfg.tts_extra["auto_mode"] is True
+
+    def test_env_overrides(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MESSER_STT_PROVIDER", "deepgram")
+        monkeypatch.setenv("MESSER_STT_MODEL", "custom_stt")
+        monkeypatch.setenv("MESSER_TTS_MODEL", "custom_tts")
+        monkeypatch.setenv("MESSER_VOICE_LANGUAGE", "en")
+        cfg = voice_routes.default_voice_config_from_env()
+        assert cfg.stt_provider == "deepgram"
+        assert cfg.stt_model == "custom_stt"
+        assert cfg.tts_model == "custom_tts"
+        assert cfg.language == "en"
+
+    def test_elevenlabs_voice_id_precedence(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
+        monkeypatch.delenv("MESSER_VOICE_ID", raising=False)
+        monkeypatch.setenv("MESSER_VOICE_ID", "from_messer")
+        assert voice_routes.default_voice_config_from_env().voice == "from_messer"
+        monkeypatch.setenv("ELEVENLABS_VOICE_ID", "from_el")
+        assert voice_routes.default_voice_config_from_env().voice == "from_el"
+
+
+@pytest.mark.usefixtures("clear_voice_env")
+class TestMergeVoiceConfig:
+    def test_no_runnable_voice_config_uses_env_only(self) -> None:
+        class R:
+            pass
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.language is None
+        assert merged.voice == DEFAULT_VOICE_ID
+
+    def test_dict_overrides_top_level(self) -> None:
+        class R:
+            voice_config = {"voice": "v1", "language": "pt"}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.voice == "v1"
+        assert merged.language == "pt"
+        assert merged.stt_model == "flux-general-multi"
+
+    def test_callable_voice_config(self) -> None:
+        class R:
+            @staticmethod
+            def voice_config():
+                return {"voice": "callable_v"}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.voice == "callable_v"
+
+    def test_voice_config_instance(self) -> None:
+        class R:
+            voice_config = VoiceConfig(voice="typed_v", language="de")
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.voice == "typed_v"
+        assert merged.language == "de"
+        assert merged.stt_model == "flux-general-multi"
+
+    def test_stt_extra_deep_merge(self) -> None:
+        class R:
+            voice_config = {"stt_extra": {"vad_threshold": 0.99}}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.stt_extra["commit_strategy"] == "vad"
+        assert merged.stt_extra["vad_threshold"] == 0.99
+
+    def test_tts_extra_deep_merge(self) -> None:
+        class R:
+            voice_config = {"tts_extra": {"auto_mode": False}}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.tts_extra["auto_mode"] is False
+
+    def test_none_values_in_runnable_dict_skipped(self) -> None:
+        class R:
+            voice_config = {"voice": None, "language": "it"}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.voice == DEFAULT_VOICE_ID
+        assert merged.language == "it"
+
+    def test_unknown_key_fails_fast(self) -> None:
+        """A typo'd voice_config key must raise (at server boot), not silently no-op."""
+
+        class R:
+            voice_config = {"languag": "en"}
+
+        with pytest.raises(ValidationError, match="languag"):
+            voice_routes.merge_voice_config(R())
+
+    def test_recording_dict_is_validated(self) -> None:
+        class R:
+            voice_config = {"recording": {"dir": "/tmp/rec", "layout": "sideways"}}
+
+        with pytest.raises(ValidationError, match="layout"):
+            voice_routes.merge_voice_config(R())
+
+    def test_turn_detector_instance_passes_through(self) -> None:
+        sentinel = object()
+
+        class R:
+            voice_config = {"turn_detector": sentinel}
+
+        assert voice_routes.merge_voice_config(R()).turn_detector is sentinel
+
+    def test_filler_deep_merges_over_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Agent's partial filler dict must not drop platform MESSER_VOICE_FILLER_* settings."""
+        monkeypatch.setenv("MESSER_VOICE_FILLER_SYSTEM_PROMPT", "PLATFORM PROMPT")
+        monkeypatch.setenv("MESSER_VOICE_FILLER_MODEL", "openai/gpt-4o-mini")
+
+        class R:
+            voice_config = {"filler": {"delay_secs": 2.0}}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.filler.system_prompt == "PLATFORM PROMPT"
+        assert merged.filler.model == "openai/gpt-4o-mini"
+        assert merged.filler.delay_secs == 2.0
+
+    def test_empty_filler_dict_keeps_env_config(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MESSER_VOICE_FILLER_SYSTEM_PROMPT", "PLATFORM PROMPT")
+
+        class R:
+            voice_config = {"filler": {}}
+
+        assert voice_routes.merge_voice_config(R()).filler.system_prompt == "PLATFORM PROMPT"
+
+    def test_filler_via_voice_config_instance_merges_sparsely(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Unset FillerConfig fields (e.g. the default prompt) must not clobber env values."""
+        monkeypatch.setenv("MESSER_VOICE_FILLER_SYSTEM_PROMPT", "PLATFORM PROMPT")
+
+        class R:
+            voice_config = VoiceConfig(filler=FillerConfig(delay_secs=2.0))
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.filler.system_prompt == "PLATFORM PROMPT"
+        assert merged.filler.delay_secs == 2.0
+
+    def test_filler_without_env_uses_agent_values(self) -> None:
+        class R:
+            voice_config = {"filler": {"delay_secs": 0.5}}
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.filler.delay_secs == 0.5
+
+    def test_invalid_filler_key_fails_fast(self) -> None:
+        class R:
+            voice_config = {"filler": {"phrase_list": ["nope"]}}
+
+        with pytest.raises(ValidationError, match="phrase_list"):
+            voice_routes.merge_voice_config(R())
+
+
+class TestMergeClientVoiceOverrides:
+    def test_overlay(self) -> None:
+        base = VoiceConfig(voice="a", language="es")
+        out = voice_routes.merge_client_voice_overrides(base, {"language": "en", "voice": "b"})
+        assert out.language == "en"
+        assert out.voice == "b"
+        assert out.sample_rate == 16_000
+
+    def test_none_skipped(self) -> None:
+        base = VoiceConfig(voice="a", language="es")
+        out = voice_routes.merge_client_voice_overrides(base, {"language": None})
+        assert out.language == "es"
+
+    def test_non_allowlisted_keys_ignored(self) -> None:
+        base = VoiceConfig(recording=RecordingConfig(dir="/srv/rec"))
+        out = voice_routes.merge_client_voice_overrides(
+            base,
+            {"recording": {"dir": "/tmp/evil"}, "turn_detector": "heuristic", "bogus": 1, "voice": "b"},
+        )
+        assert out.recording is not None and out.recording.dir == "/srv/rec"
+        assert out.voice == "b"
+
+    def test_allowlist_is_subset_of_model_fields(self) -> None:
+        assert voice_routes.CLIENT_SETTABLE_VOICE_FIELDS <= set(VoiceConfig.model_fields)
+        assert "recording" not in voice_routes.CLIENT_SETTABLE_VOICE_FIELDS
+
+
+_HOSTILE_HELLO = {
+    "stt_extra": {"stt_host": "evil.example", "callback": "https://evil.example/t", "eot_threshold": 0.9},
+    "tts_extra": {"tts_host": "evil.example", "speed": 1.1},
+}
+
+
+class TestClientExtrasAllowlist:
+    """A caller must never pick the provider WebSocket host.
+
+    The adapters read ``stt_host`` / ``tts_host`` off the extras and send the
+    API key in that handshake; Deepgram Nova and ElevenLabs forward any other
+    key into the query string. Client extras are therefore allow-listed to
+    tuning knobs and layered *over* the server's extras, never replacing them.
+    """
+
+    def test_hostile_hello_loses_host_and_callback(self) -> None:
+        out = voice_routes.merge_client_voice_overrides(VoiceConfig(), _HOSTILE_HELLO)
+        assert "stt_host" not in out.stt_extra
+        assert "callback" not in out.stt_extra
+        assert "tts_host" not in out.tts_extra
+        # The tuning knobs on the same hello still apply.
+        assert out.stt_extra["eot_threshold"] == 0.9
+        assert out.tts_extra["speed"] == 1.1
+
+    def test_adapters_resolve_their_default_host_after_the_merge(self) -> None:
+        from urllib.parse import urlparse
+
+        from messer.voice import AudioInputConfig, AudioOutputConfig
+        from messer.voice.deepgram import DeepgramFluxSTT, DeepgramNovaSTT
+        from messer.voice.fish_audio import _DEFAULT_HOST as FISH_HOST
+        from messer.voice.munsit import _DEFAULT_HOST as MUNSIT_HOST
+        from messer.voice.munsit import MunsitStreamSTT
+
+        out = voice_routes.merge_client_voice_overrides(VoiceConfig(), _HOSTILE_HELLO)
+        stt_cfg = AudioInputConfig(extra=out.stt_extra)
+        for stt in (DeepgramFluxSTT(), DeepgramNovaSTT()):
+            assert urlparse(stt._build_uri(stt_cfg)).hostname == "api.deepgram.com"
+        assert urlparse(MunsitStreamSTT()._build_uri(stt_cfg)).hostname == MUNSIT_HOST
+        # No Nova query param may carry the callback either.
+        assert "callback" not in urlparse(DeepgramNovaSTT()._build_uri(stt_cfg)).query
+        tts_cfg = AudioOutputConfig(extra=out.tts_extra)
+        assert tts_cfg.extra.get("tts_host", MUNSIT_HOST) == MUNSIT_HOST
+        assert tts_cfg.extra.get("tts_host", FISH_HOST) == FISH_HOST
+
+    def test_server_pin_survives_client_tuning(self) -> None:
+        base = VoiceConfig(tts_extra={"dialect": "emirati"}, stt_extra={"hotwords": "Messer"})
+        out = voice_routes.merge_client_voice_overrides(
+            base, {"tts_extra": {"speed": 1.1}, "stt_extra": {"endpointing": 400}}
+        )
+        assert out.tts_extra == {"dialect": "emirati", "speed": 1.1}
+        assert out.stt_extra == {"hotwords": "Messer", "endpointing": 400}
+
+    def test_server_set_host_still_works(self) -> None:
+        """Self-hosted Munsit / on-prem Deepgram: the *server* keeps choosing the host."""
+        base = VoiceConfig(stt_extra={"stt_host": "munsit.internal"}, tts_extra={"tts_host": "munsit.internal"})
+        out = voice_routes.merge_client_voice_overrides(base, {"stt_extra": {"endpointing": 400}, "tts_extra": {}})
+        assert out.stt_extra["stt_host"] == "munsit.internal"
+        assert out.tts_extra["tts_host"] == "munsit.internal"
+        # And a client cannot move it either.
+        out = voice_routes.merge_client_voice_overrides(base, _HOSTILE_HELLO)
+        assert out.stt_extra["stt_host"] == "munsit.internal"
+        assert out.tts_extra["tts_host"] == "munsit.internal"
+
+    def test_client_cannot_clear_a_server_key(self) -> None:
+        base = VoiceConfig(tts_extra={"dialect": "emirati"})
+        out = voice_routes.merge_client_voice_overrides(base, {"tts_extra": {"dialect": None}})
+        assert out.tts_extra["dialect"] == "emirati"
+
+    @pytest.mark.parametrize("bad", ["stt_host=evil", 7, ["stt_host", "evil"]])
+    def test_non_object_extra_keeps_servers(self, bad) -> None:
+        base = VoiceConfig(stt_extra={"vad_threshold": 0.9})
+        out = voice_routes.merge_client_voice_overrides(base, {"stt_extra": bad})
+        assert out.stt_extra == {"vad_threshold": 0.9}
+
+    def test_allowlists_carry_no_host_url_or_callback(self) -> None:
+        for allowed in (voice_routes.CLIENT_TUNING_STT_EXTRA, voice_routes.CLIENT_TUNING_TTS_EXTRA):
+            for key in allowed:
+                assert not key.endswith(("_host", "_url")), key
+                assert key not in ("callback", "metadata", "correlation_id"), key
+
+    def test_phone_tuned_sip_extras_are_allowlisted(self) -> None:
+        """The LiveKit SIP path injects its PSTN VAD tuning as *client* extras."""
+        from messer.server.livekit_sip import _PHONE_TUNED_STT_EXTRA
+
+        assert set(_PHONE_TUNED_STT_EXTRA) <= voice_routes.CLIENT_TUNING_STT_EXTRA
+
+    def test_livekit_hello_path(self) -> None:
+        """Dial ``client_config`` (browser config forwarded by the platform) + data-channel hello."""
+        from messer.server.livekit_session import merge_client_config
+
+        base = VoiceConfig(tts_extra={"dialect": "emirati"})
+        config = merge_client_config(
+            json.dumps({"stt_extra": {"stt_host": "evil.example"}}),
+            {"tts_extra": {"tts_host": "evil.example", "speed": 1.1}},
+        )
+        out = voice_routes.merge_client_voice_overrides(base, config)
+        assert "stt_host" not in out.stt_extra
+        assert out.tts_extra == {"dialect": "emirati", "speed": 1.1}
+
+    def test_telephony_parameters_cannot_carry_extras(self) -> None:
+        """``<Parameter>`` values are strings; the start-frame allowlist has no extras at all."""
+        from messer.server.telephony import _CONFIG_PARAM_KEYS
+
+        assert "stt_extra" not in _CONFIG_PARAM_KEYS
+        assert "tts_extra" not in _CONFIG_PARAM_KEYS
+
+    def test_build_voice_session_hostile_hello(self) -> None:
+        """End to end through the WS/RTC entry point: the session's adapter configs carry no host."""
+        from messer import Agent
+        from messer.core.test_model import TestModel
+
+        agent = Agent(name="voice_test", model=TestModel(responses=["hi"]), tools=[])
+        defaults = VoiceConfig(turn_detector="heuristic", tts_extra={"dialect": "emirati"})
+        session, _ = voice_routes.build_voice_session(agent, defaults, _HOSTILE_HELLO)
+        assert "stt_host" not in session.audio_input.extra
+        assert "callback" not in session.audio_input.extra
+        assert "tts_host" not in session.audio_output.extra
+        assert session.audio_output.extra["dialect"] == "emirati"
+        assert session.audio_output.extra["speed"] == 1.1
+
+
+class TestDefaultPipeline:
+    """Deepgram Flux with provider turn detection, ElevenLabs v4 turbo speech."""
+
+    @staticmethod
+    def _session(defaults: VoiceConfig) -> tuple[Any, dict[str, Any]]:
+        from messer import Agent
+        from messer.core.test_model import TestModel
+
+        agent = Agent(name="voice_test", model=TestModel(responses=["hi"]), tools=[])
+        return voice_routes.build_voice_session(agent, defaults, {})
+
+    def test_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("DEEPGRAM_API_KEY", "test-key")
+        session, meta = self._session(VoiceConfig())
+        assert meta["stt_provider"] == "deepgram-flux"
+        assert meta["stt_model"] == "flux-general-multi"
+        assert meta["turn_detector"] == "ProviderTurnDetector"
+        assert meta["tts_provider"] == "elevenlabs"
+        assert session.audio_output.model == "eleven_v4_turbo"
+
+    def test_without_deepgram_key_falls_back_to_scribe(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Deepgram reads its key only at connect: every session would fail there."""
+        monkeypatch.delenv("DEEPGRAM_API_KEY", raising=False)
+        session, meta = self._session(VoiceConfig(turn_detector="heuristic"))
+        assert meta["stt_provider"] == "elevenlabs"
+        assert meta["stt_model"] is None  # the Flux id never reaches the Scribe wire
+        assert session.audio_output.model == "eleven_v4_turbo"
+
+
+class TestLifespanVoiceState:
+    @pytest.mark.asyncio
+    async def test_lifespan_sets_voice_config_from_runnable(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        mod = tmp_path / "runnable_voice.py"
+        mod.write_text(
+            'class R:\n'
+            '    voice_config = {"language": "nl", "voice": "nl_voice"}\n'
+            "agent = R()\n",
+        )
+        monkeypatch.setenv("MESSER_RUNNABLE", f"{mod.resolve()}::agent")
+        for k in VOICE_ENV_KEYS:
+            monkeypatch.delenv(k, raising=False)
+
+        app = FastAPI()
+        spec = ImportSpec.from_fqn(os.environ["MESSER_RUNNABLE"])
+        async with lifespan(app, spec):
+            assert app.state.voice_config.language == "nl"
+            assert app.state.voice_config.voice == "nl_voice"
+            assert app.state.voice_config.stt_extra["commit_strategy"] == "vad"
+
+    @pytest.mark.asyncio
+    async def test_lifespan_merge_with_env(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        mod = tmp_path / "plain.py"
+        mod.write_text("class T: pass\nrunnable = T()\n")
+        monkeypatch.setenv("MESSER_RUNNABLE", f"{mod.resolve()}::runnable")
+        for k in VOICE_ENV_KEYS:
+            monkeypatch.delenv(k, raising=False)
+        monkeypatch.setenv("MESSER_VOICE_ID", "env_only_voice")
+
+        app = FastAPI()
+        spec = ImportSpec.from_fqn(os.environ["MESSER_RUNNABLE"])
+        async with lifespan(app, spec):
+            assert app.state.voice_config.voice == "env_only_voice"
+
+
+class TestCreateAppVoiceIntegration:
+    def test_testclient_startup_sets_voice_config(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        mod = tmp_path / "app.py"
+        mod.write_text(
+            'class R:\n'
+            '    voice_config = {"language": "sv"}\n'
+            "x = R()\n",
+        )
+        monkeypatch.setenv("MESSER_RUNNABLE", f"{mod.resolve()}::x")
+        for k in VOICE_ENV_KEYS:
+            monkeypatch.delenv(k, raising=False)
+
+        app = create_app()
+        with TestClient(app) as client:
+            r = client.get("/healthcheck")
+            assert r.status_code == 204
+            assert app.state.voice_config.language == "sv"
+
+    def test_voice_page_injects_runnable_meta(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        mod = tmp_path / "named.py"
+        mod.write_text(
+            "from messer import Agent\n"
+            'r = Agent(name="voice_demo", model="messer/TestModel", tools=[])\n',
+        )
+        monkeypatch.setenv("MESSER_RUNNABLE", f"{mod.resolve()}::r")
+        for k in VOICE_ENV_KEYS:
+            monkeypatch.delenv(k, raising=False)
+
+        app = create_app()
+        with TestClient(app) as client:
+            r = client.get("/voice/")
+            assert r.status_code == 200
+            assert "voice_demo" in r.text
+            assert "Agent" in r.text
+            meta_match = re.search(
+                r'id="messer-voice-runnable-meta">([^<]+)</script>',
+                r.text,
+            )
+            assert meta_match is not None
+            meta = json.loads(meta_match.group(1))
+            assert Path(meta["import_spec"].split("::")[0]).resolve() == mod.resolve()
+            assert messer_version in r.text
+
+
+class TestVoiceServerScript:
+    def test_main_sets_messer_runnable_and_calls_cli(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        script = tmp_path / "voice_server.py"
+        script.write_text(
+            "import os\n"
+            "import sys\n"
+            "from pathlib import Path\n"
+            "from messer.server.http import run_server_cli\n"
+            "agent = object()\n"
+            "def main():\n"
+            '    os.environ["MESSER_RUNNABLE"] = f"{Path(__file__).resolve()}::agent"\n'
+            "    run_server_cli(sys.argv[1:])\n"
+        )
+        argv_captured: list[list[str]] = []
+
+        def fake_run_server_cli(argv: list[str] | None = None) -> None:
+            argv_captured.append(list(argv) if argv is not None else [])
+
+        monkeypatch.setattr("messer.server.http.run_server_cli", fake_run_server_cli)
+
+        spec = importlib.util.spec_from_file_location("_voice_server_under_test", script)
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        monkeypatch.setattr(sys, "argv", [str(script), "--port", "9999"])
+        mod.main()
+
+        assert len(argv_captured) == 1
+        assert argv_captured[0] == ["--port", "9999"]
+        runn = os.environ["MESSER_RUNNABLE"]
+        assert runn.endswith("::agent")
+        assert "voice_server.py" in runn
+
+
+@pytest.mark.usefixtures("clear_voice_env")
+class TestDeclaredVoiceConfig:
+    """``declared_voice_config`` — the wire form behind ``GET /voice_config``.
+
+    A platform sidecar that joins the room on the agent's behalf reads this to
+    honour the agent's opener / language / voice. It must be *what the agent
+    set*, not the box's env-merged defaults, and never a server-only knob.
+    """
+
+    def test_nothing_declared_is_empty(self):
+        class R:
+            voice_config = None
+
+        assert voice_routes.declared_voice_config(R()) == {}
+        assert voice_routes.declared_voice_config(object()) == {}
+
+    def test_dict_is_sparse_and_json_safe(self):
+        class R:
+            voice_config = {
+                "language": "es",
+                "greeting": {"text": "Hola, soy el copiloto.", "interruptible": False, "model": object()},
+                "filler": {"delay_secs": 0.8, "model": "groq/llama"},
+                "turn_detector": lambda: None,
+                "model": None,
+                "recording": {"dir": "/var/lib/rec", "on_saved": lambda *_args: None},
+                "ambient": {"source": "/etc/passwd"},
+            }
+
+        out = voice_routes.declared_voice_config(R())
+        assert out == {
+            "language": "es",
+            "greeting": {"text": "Hola, soy el copiloto.", "interruptible": False},
+            "filler": {"delay_secs": 0.8, "model": "groq/llama"},
+        }
+        json.dumps(out)  # wire-safe by construction
+
+    def test_voice_config_instance_only_reports_fields_the_agent_set(self):
+        class R:
+            voice_config = VoiceConfig(language="ca", greeting="Bon dia")
+
+        out = voice_routes.declared_voice_config(R())
+        assert out["language"] == "ca"
+        assert out["greeting"] == {"text": "Bon dia"}
+        # Defaults the agent never touched are not "declared".
+        assert "stt_provider" not in out and "voice" not in out and "sample_rate" not in out
+
+    def test_model_instances_inside_a_dict_are_reported_sparsely(self):
+        """Regression: a ``GreetingConfig`` / ``FillerConfig`` *inside a dict*
+        used to be dropped by the JSON pass while ``merge_voice_config`` still
+        honoured it — the box spoke the opener, the endpoint said there was none."""
+
+        class R:
+            voice_config = {
+                "language": "es",
+                "greeting": GreetingConfig(text="Hola", delay_ms=300),
+                "filler": FillerConfig(delay_secs=0.8),
+            }
+
+        declared = voice_routes.declared_voice_config(R())
+        assert declared == {
+            "language": "es",
+            "greeting": {"text": "Hola", "delay_ms": 300},  # sparse: only what was set
+            "filler": {"delay_secs": 0.8},
+        }
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.greeting is not None and merged.greeting.text == "Hola" and merged.greeting.delay_ms == 300
+        assert merged.filler is not None and merged.filler.delay_secs == 0.8
+
+    def test_voice_config_instance_keeps_nested_blocks_sparse_too(self, monkeypatch):
+        """The ``VoiceConfig`` spelling must not clobber env-supplied nested
+        values with the nested model's *defaults* (the original reason for the
+        sparse redo), and must report the same shape as the dict spelling."""
+        monkeypatch.setenv("MESSER_VOICE_GREETING", "Env opener")
+
+        class R:
+            voice_config = VoiceConfig(greeting=GreetingConfig(delay_ms=250, instructions="be brief"))
+
+        declared = voice_routes.declared_voice_config(R())
+        assert declared == {"greeting": {"delay_ms": 250, "instructions": "be brief"}}
+        merged = voice_routes.merge_voice_config(R())
+        # Env text survives the agent's partial greeting block.
+        assert merged.greeting is not None and merged.greeting.text == "Env opener" and merged.greeting.delay_ms == 250
+
+    def test_ambient_travels_as_a_preset_but_never_as_a_path(self):
+        """The first platform-media PSTN call with an agent that asked for the
+        café bed got silence behind the voice: ``ambient`` was withheld
+        wholesale. A preset name is portable (same CDN asset on any host); a
+        file path names this box's disk and stays here."""
+        from messer.voice.config import AmbientAudioConfig
+
+        class Preset:
+            voice_config = {"ambient": {"source": "Cafe", "volume": 0.3}}
+
+        assert voice_routes.declared_voice_config(Preset()) == {"ambient": {"source": "cafe", "volume": 0.3}}
+
+        class Instance:
+            voice_config = {"ambient": AmbientAudioConfig(source="office")}
+
+        assert voice_routes.declared_voice_config(Instance()) == {"ambient": {"source": "office"}}
+
+        class Top:  # VoiceConfig spelling must be just as sparse (Bugbot: default volume leaked)
+            voice_config = VoiceConfig(ambient=AmbientAudioConfig(source="office"))
+
+        assert voice_routes.declared_voice_config(Top()) == {"ambient": {"source": "office"}}
+
+        class Path_:
+            voice_config = {"language": "es", "ambient": {"source": "/srv/beds/lobby.ogg", "volume": 0.2}}
+
+        assert voice_routes.declared_voice_config(Path_()) == {"language": "es"}
+
+        class Garbage:
+            voice_config = {"ambient": {"source": "cafe", "volume": "loud"}}
+
+        assert voice_routes.declared_voice_config(Garbage()) == {"ambient": {"source": "cafe"}}
+
+    def test_outbound_greeting_is_declared_sparsely_and_resolved_by_direction(self):
+        """``greeting`` is the inbound opener; ``outbound_greeting`` says what to
+        do on a call we placed — a different line, or ``""`` for silence. The
+        session never knows the direction, so the resolver is for the host."""
+        from messer.voice.config import greeting_for_direction
+
+        class Both:
+            voice_config = {
+                "greeting": "Hey, this is your calorie coach. What have you eaten today?",
+                "outbound_greeting": {"text": "Hi, it's your coach checking in — got a minute?", "delay_ms": 500},
+            }
+
+        declared = voice_routes.declared_voice_config(Both())
+        # A bare string travels as written (the consumer coerces, like ``""``); a block stays sparse.
+        assert declared["greeting"] == "Hey, this is your calorie coach. What have you eaten today?"
+        assert declared["outbound_greeting"] == {"text": "Hi, it's your coach checking in — got a minute?", "delay_ms": 500}
+        merged = voice_routes.merge_voice_config(Both())
+        assert greeting_for_direction(merged, outbound=False).text.startswith("Hey")
+        assert greeting_for_direction(merged, outbound=True).text.startswith("Hi, it's")
+
+        class Quiet:  # inbound opener, silence on outbound
+            voice_config = {"greeting": "Thanks for calling.", "outbound_greeting": ""}
+
+        assert voice_routes.declared_voice_config(Quiet()) == {"greeting": "Thanks for calling.", "outbound_greeting": ""}
+        merged = voice_routes.merge_voice_config(Quiet())
+        assert greeting_for_direction(merged, outbound=False).text == "Thanks for calling."
+        assert greeting_for_direction(merged, outbound=True) is None
+
+        class OnlyInbound:  # unset → the one opener serves both directions
+            voice_config = {"greeting": "Hello there."}
+
+        merged = voice_routes.merge_voice_config(OnlyInbound())
+        assert greeting_for_direction(merged, outbound=True).text == "Hello there."
+        assert "outbound_greeting" not in voice_routes.declared_voice_config(OnlyInbound())
+
+    def test_callable_is_resolved(self):
+        class R:
+            @staticmethod
+            def voice_config():
+                return {"voice": "abc123", "turn_detector": "lexical"}
+
+        assert voice_routes.declared_voice_config(R()) == {"voice": "abc123", "turn_detector": "lexical"}
+
+    def test_merge_still_sees_the_same_declaration(self):
+        """Refactor guard: ``merge_voice_config`` and ``declared_voice_config``
+        read the declaration through one normalizer."""
+
+        class R:
+            voice_config = VoiceConfig(language="es", greeting="Hola")
+
+        merged = voice_routes.merge_voice_config(R())
+        assert merged.language == "es" and merged.greeting is not None and merged.greeting.text == "Hola"

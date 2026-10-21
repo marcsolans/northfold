@@ -1,0 +1,62 @@
+---
+title: "Semantic and Hybrid Search"
+description: "Give an agent a parameterized search tool over an existing Messer knowledge base"
+---
+
+Create or connect a knowledge base and ingest your documents in the Messer Platform first. Inspect its schema to find the table and columns to search. This example assumes an indexed `articles` table; replace that fixed table name with your own.
+
+Configure platform access before the first call:
+
+```bash .env
+MESSER_API_HOST=api.messer.local
+MESSER_API_KEY=your_platform_token
+MESSER_ORG_ID=your_org_id
+MESSER_KB_ID=your_knowledge_base_id
+OPENAI_API_KEY=your_openai_key
+```
+
+The Python helper is `messer.platform.knowledge_bases.query`. It accepts SQL and positional parameters and resolves organization/knowledge-base IDs from explicit keywords or the environment. Platform authentication also needs the API host and token, or existing Messer credentials.
+
+```python
+import asyncio
+
+from dotenv import load_dotenv
+from messer import Agent
+from messer.platform.knowledge_bases import query
+
+load_dotenv()
+
+
+async def search_articles(question: str) -> dict:
+    """Search the indexed articles table by meaning and keywords."""
+    return await query(
+        "SELECT * FROM hybrid_search('articles', $1, $2, 8)",
+        [question, question],
+    )
+
+
+agent = Agent(
+    name="research_assistant",
+    model="openai/gpt-4.1-mini",
+    system_prompt=(
+        "Use search_articles to answer questions about our documentation. "
+        "Base your answer on retrieved records and say when the records are insufficient."
+    ),
+    tools=[search_articles],
+)
+
+
+async def main():
+    result = await agent(prompt="How do I configure authentication?").collect()
+    if result.error:
+        raise RuntimeError(result.error["message"])
+    print(result.output.collect_text())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+Search-position string parameters are embedded by the platform for vector retrieval. Hybrid search takes a vector query and a full-text query, so pass the same question twice to combine semantic and keyword matching. Use `vector_search('articles', $1, 8)` for semantic-only retrieval or `fts_search('articles', $1, 8)` for keyword-only retrieval.
+
+Keep table identifiers fixed in application code and pass user text through `$1`, `$2`, and `params`. An unindexed or nonexistent table needs ingestion/index setup; the tool does not create it. See the [Knowledge base query API](/api-reference/knowledge-bases/query) for the request contract.

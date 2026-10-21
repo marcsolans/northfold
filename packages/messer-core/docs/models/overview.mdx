@@ -1,0 +1,65 @@
+---
+title: "Overview"
+description: "Specs, pricing, and capabilities for every supported model"
+---
+
+Model specifications, availability, and pricing reviewed October 3, 2026, with Haiku 5.5 and Sonnet 5.5 cache pricing updated October 7, 2026. **Price** means USD per 1M text tokens (input / output) at the provider's Standard short-context tier, preferring published post-promotion rates. Where only promotional rates are published, those rates are retained and explicitly labeled. Long-context thresholds vary by model: Anthropic Haiku 5.5 &gt;100K, OpenAI &gt;272K, Google Pro &gt;200K, xAI ≥200K, and selected BytePlus models &gt;128K input tokens. These models reprice the whole request; Messer reports distinct `<unit>_long_context` usage keys — see the [OpenAI page](/models/openai#how-long-context-and-cache-pricing-is-tracked).
+
+Dedicated deployments, restricted access, unknown prices, conflicting sources, and future retirement dates are noted on each provider page. Unknown prices are not free. Audio, image generation, tool calls, cache storage, regional premiums, and time-dependent pricing need separate billing. Model capabilities do not imply every provider-native endpoint is available through `Agent`.
+
+`scripts/generate_costs_sql.py` generates catalog token rates, including published cache, long-context, and supported service-tier rates. It omits unknown prices and dedicated deployments instead of estimating them. It also omits ambiguous OpenAI search fees because the current usage metric does not distinguish standard search from the more expensive non-reasoning preview search. Generated SQL updates matching rates but does not delete existing rows for retired or omitted models; review those rows before applying a billing update.
+
+<CardGroup cols={3}>
+  <Card title="Anthropic" icon="microchip" href="/models/anthropic">
+    Claude Fable 5.1, Opus 5.5, Sonnet 5.5, and Haiku 5.5
+  </Card>
+  <Card title="BytePlus" icon="microchip" href="/models/byteplus">
+    Dola Seed 2.1, Seed 2.0, DeepSeek, and GLM
+  </Card>
+  <Card title="Cerebras" icon="microchip" href="/models/cerebras">
+    Wafer-scale inference at world-record token speeds
+  </Card>
+  <Card title="Fireworks" icon="microchip" href="/models/fireworks">
+    Open-source models via Fireworks
+  </Card>
+  <Card title="Google" icon="microchip" href="/models/google">
+    Gemini 3.8, 3.7, earlier Gemini models, and Gemini 4 availability
+  </Card>
+  <Card title="Groq" icon="microchip" href="/models/groq">
+    Ultra-low latency via Groq LPU
+  </Card>
+  <Card title="Moonshot (Kimi)" icon="microchip" href="/models/moonshot">
+    Kimi K3 / K2.x via Moonshot's OpenAI-compatible API
+  </Card>
+  <Card title="OpenAI" icon="microchip" href="/models/openai">
+    GPT-6.1 Sol, GPT-6 Astra/Luna, and earlier GPT and o-series models
+  </Card>
+  <Card title="SambaNova" icon="microchip" href="/models/sambanova">
+    High-throughput inference on custom RDU hardware
+  </Card>
+  <Card title="Messer Auto" icon="shuffle" href="/models/messer">
+    Platform model routing per turn: `messer/auto`, `messer/auto-cost`, `messer/auto-intelligence`
+  </Card>
+  <Card title="TogetherAI" icon="microchip" href="/models/togetherai">
+    Open-source models via TogetherAI
+  </Card>
+  <Card title="xAI" icon="microchip" href="/models/xai">
+    Grok 4.7, Grok Build 0.1, and earlier Grok models
+  </Card>
+  <Card title="Xiaomi MiMo" icon="microchip" href="/models/xiaomi">
+    MiMo V2.5 and V2.5 Pro
+  </Card>
+</CardGroup>
+
+## Automatic routing: `messer/auto`
+
+Set `model="messer/auto"` (or `messer/auto-cost`, `messer/auto-intelligence`) and the Messer platform picks the model and reasoning effort for each turn, with cross-vendor fallbacks. See [Messer Auto](/models/messer).
+
+## Scoring
+
+Each model is rated on two axes using a **1-5 scale**:
+
+- **Reasoning** — depth of analytical and chain-of-thought capability
+- **Speed** — relative latency and throughput for its class
+
+Scores are **relative within the full set of models on this page**, not within a single provider. A reasoning score of 5 means frontier-class reasoning (e.g. GPT-6 Astra, Claude Fable 5.1, o3-pro, GPT-5.5, Gemini 2.5 Pro). A speed score of 5 means the fastest tier (nano/mini/flash-lite models, or Groq-hosted inference).

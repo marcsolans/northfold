@@ -1,0 +1,303 @@
+import asyncio
+
+import pytest
+from messer import Tool
+from messer.collectors.base import BaseCollector
+from messer.types.events import OutputEvent
+
+from ..conftest import Timer
+
+
+class TestRunnableBase:
+    """Test base Runnable functionality through Tool implementation."""
+    
+    def test_schema_generation(self, simple_tool):
+        """Test that schemas are generated correctly."""
+        # Should have both OpenAI and Anthropic schemas
+        assert hasattr(simple_tool, 'openai_chat_completions_schema')
+        assert hasattr(simple_tool, 'anthropic_schema')
+        
+        openai_chat_completions_schema = simple_tool.openai_chat_completions_schema
+        assert openai_chat_completions_schema['type'] == 'function'
+        assert openai_chat_completions_schema['function']['name'] == 'simple'
+        assert 'parameters' in openai_chat_completions_schema['function']
+        
+        anthropic_schema = simple_tool.anthropic_schema
+        assert anthropic_schema['name'] == 'simple'
+        assert 'input_schema' in anthropic_schema
+    
+    def test_params_filtering(self):
+        """Test parameter filtering functionality."""
+        def handler(a: int, b: str = "default", c: float = 1.0) -> str:
+            return f"{a}-{b}-{c}"
+        
+        # Test with different schema_params_mode settings
+        tool_all = Tool(handler=handler, schema_params_mode="all")
+        tool_required = Tool(handler=handler, schema_params_mode="required")
+        
+        all_props = tool_all.format_params_model_schema()['properties']
+        required_props = tool_required.format_params_model_schema()['properties']
+        
+        # All mode should include all parameters
+        assert 'a' in all_props
+        assert 'b' in all_props
+        assert 'c' in all_props
+        
+        # Required mode should only include required parameters
+        assert 'a' in required_props
+        assert len(required_props) == 1  # Only 'a' is required
+    
+    def test_include_exclude_params(self):
+        """Test schema_include_params and schema_exclude_params functionality."""
+        def handler(a: int, b: str, c: float) -> str:
+            return f"{a}-{b}-{c}"
+        
+        # Test schema_include_params
+        tool_include = Tool(
+            handler=handler, 
+            schema_params_mode="required",  # Would normally include only required
+            schema_include_params=["b", "c"]  # But we explicitly include b and c
+        )
+        
+        include_props = tool_include.format_params_model_schema()['properties']
+        assert 'a' in include_props  # Required param
+        assert 'b' in include_props  # Explicitly included
+        assert 'c' in include_props  # Explicitly included
+        
+        # Test schema_exclude_params
+        tool_exclude = Tool(
+            handler=handler,
+            schema_params_mode="all",
+            schema_exclude_params=["c"]
+        )
+        
+        exclude_props = tool_exclude.format_params_model_schema()['properties']
+        assert 'a' in exclude_props
+        assert 'b' in exclude_props
+        assert 'c' not in exclude_props  # Explicitly excluded
+    
+    def test_default_params(self):
+        """Test default_params functionality."""
+        def handler(a: str, b: str) -> str:
+            return f"{a}:{b}"
+        
+        tool = Tool(
+            handler=handler,
+            default_params={"b": "fixed_value"}
+        )
+        
+        # Should be able to call with only 'a' parameter
+        result = tool(a="test")
+        assert isinstance(result, BaseCollector)
+    
+    @pytest.mark.asyncio
+    async def test_nested_paths(self):
+        """Test that nested paths work correctly."""
+        def handler(x: str) -> str:
+            return x
+        
+        tool = Tool(name="child", handler=handler)
+        original_path = tool._path
+        
+        # Nest under a parent
+        tool.nest("parent")
+        nested_path = tool._path
+        
+        assert original_path == "child"
+        assert nested_path == "parent.child"
+        
+        # Test that the runnable has the correct nested path
+        result = await tool(x="test").collect()
+        assert result.path == "parent.child"
+    
+    @pytest.mark.asyncio
+    async def test_serialization(self, simple_tool):
+        """Test that tools can be serialized."""
+        serialized = simple_tool.serialize()
+        
+        # Should contain the anthropic schema format
+        assert 'name' in serialized
+        assert 'input_schema' in serialized
+        assert serialized['name'] == 'simple'
+
+
+class TestHookIntrospectionIsolation:
+    """Regression: hook is_coroutine flags must be per instance, not per class.
+
+    They used to be written to ``cls`` by a field validator, so two instances
+    of the same class with different sync/async hooks clobbered each other —
+    the last-constructed instance's flag won for both.
+    """
+
+    @pytest.mark.asyncio
+    async def test_sync_and_async_hooks_do_not_clobber_each_other(self):
+        calls: list[str] = []
+
+        def sync_hook():
+            calls.append("sync")
+
+        async def async_hook():
+            calls.append("async")
+
+        def handler(x: str) -> str:
+            return x
+
+        sync_tool = Tool(name="sync_hooked", handler=handler, pre_hook=sync_hook)
+        # Constructing the async-hooked tool AFTER must not flip the sync tool's flag.
+        async_tool = Tool(name="async_hooked", handler=handler, pre_hook=async_hook)
+
+        assert sync_tool._pre_hook_is_coroutine is False
+        assert async_tool._pre_hook_is_coroutine is True
+
+        result = await sync_tool(x="a").collect()
+        assert result.error is None
+        result = await async_tool(x="b").collect()
+        assert result.error is None
+        assert calls == ["sync", "async"]
+
+
+class TestBlockingHandlerWarning:
+    """Sync handlers run inline on the event loop; ones that block past the
+    threshold must be flagged once with an actionable warning."""
+
+    @pytest.mark.asyncio
+    async def test_slow_sync_handler_sets_warned_flag(self):
+        import time as _time
+
+        def slow_handler() -> str:
+            _time.sleep(0.15)  # > default 100ms threshold
+            return "done"
+
+        tool = Tool(name="slow_sync", handler=slow_handler)
+        result = await tool().collect()
+        assert result.error is None
+        assert tool._blocking_warned is True
+
+        # Warned once — the flag stays set on subsequent runs (no re-warning).
+        await tool().collect()
+        assert tool._blocking_warned is True
+
+    @pytest.mark.asyncio
+    async def test_fast_sync_handler_does_not_warn(self):
+        def fast_handler() -> str:
+            return "done"
+
+        tool = Tool(name="fast_sync", handler=fast_handler)
+        result = await tool().collect()
+        assert result.error is None
+        assert tool._blocking_warned is False
+
+    @pytest.mark.asyncio
+    async def test_offloaded_handler_does_not_warn(self):
+        import time as _time
+
+        def slow_handler() -> str:
+            _time.sleep(0.15)
+            return "done"
+
+        tool = Tool(name="slow_offloaded", handler=slow_handler, offload_blocking=True)
+        result = await tool().collect()
+        assert result.error is None
+        assert tool._blocking_warned is False
+
+
+class TestSyncGeneratorNoneYield:
+    """Regression: sync_to_async_gen used None as its end-of-stream sentinel,
+    silently truncating sync generators that legitimately yield None."""
+
+    @pytest.mark.asyncio
+    async def test_sync_generator_yielding_none_is_not_truncated(self):
+        def gen():
+            yield 1
+            yield None
+            yield 3
+
+        tool = Tool(name="none_yielder", handler=gen)
+        events = [e async for e in tool()]
+        # Chunks after the None must survive (the old sentinel ended the stream
+        # at the None, silently dropping everything behind it)...
+        deltas = [e for e in events if e.type == "DELTA"]
+        assert [d.item.data for d in deltas] == [1, 3]
+        # ...and the final output must retain the None itself. (The None chunk
+        # isn't surfaced as a streaming delta: the collector protocol treats
+        # process()->None as "skip" — a separate, purely cosmetic quirk.)
+        output_event = events[-1]
+        assert output_event.type == "OUTPUT"
+        assert output_event.status.code == "success"
+        assert output_event.output == [1, None, 3]
+
+
+class TestErrorHandling:
+    """Test error handling in Runnable execution."""
+    
+    @pytest.mark.asyncio
+    async def test_handler_exception(self, error_tool):
+        """Test that handler exceptions are captured in OutputEvent."""
+        result = error_tool(message="test error")
+        output = await result.collect()
+        
+        # Should have output event with error
+        assert isinstance(output, OutputEvent)
+        assert output.error is not None
+        assert "Test error: test error" in output.error['message']
+        assert output.error['type'] == 'ValueError'
+    
+    @pytest.mark.asyncio
+    async def test_collect_with_error(self, error_tool):
+        """Test that collect() works even when handler raises exception."""
+        result = error_tool(message="test error")
+        
+        # collect() should return the OutputEvent with error
+        output = await result.collect()
+        assert isinstance(output, OutputEvent)
+        assert output.error is not None
+
+
+class TestPerformance:
+    """Test performance characteristics of Runnable execution."""
+    
+    @pytest.mark.asyncio
+    async def test_concurrent_execution(self):
+        """Test that multiple runnables can execute concurrently.
+
+        Uses asyncio.Barrier to prove concurrency without relying on wall-clock
+        timing. All 3 tasks must simultaneously reach the barrier before any can
+        proceed. If execution were sequential, the first task would block at
+        barrier.wait() forever — caught by asyncio.wait_for.
+        """
+        barrier = asyncio.Barrier(3)
+
+        async def slow_handler(x: str) -> str:
+            await barrier.wait()
+            return f"slow:{x}"
+
+        tool = Tool(handler=slow_handler)
+
+        results = await asyncio.wait_for(
+            asyncio.gather(
+                tool(x="1").collect(),
+                tool(x="2").collect(),
+                tool(x="3").collect(),
+            ),
+            timeout=10.0,
+        )
+
+        assert len(results) == 3
+        assert all(isinstance(r, OutputEvent) for r in results)
+    
+    @pytest.mark.asyncio
+    async def test_event_caching_efficiency(self, simple_tool):
+        """Test that event caching doesn't impact performance significantly."""
+        result = simple_tool(x="test")
+        
+        # First collect
+        with Timer() as timer1:
+            output1 = await result.collect()
+        
+        # Second collect (should be cached)
+        with Timer() as timer2:
+            output2 = await result.collect()
+        
+        # Second collect should be much faster (cached)
+        assert timer2.elapsed < timer1.elapsed / 2
+        assert output1 == output2

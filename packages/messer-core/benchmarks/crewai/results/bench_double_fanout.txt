@@ -1,0 +1,174 @@
+Installed 61 packages in 123ms
+
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer vs CrewAI Flow — Double Fan-out[0m
+  Topology: root → [N×p1] → aggregator → [N×p2] → sink
+  Widths: [16, 32, 64, 128]  |  200 iters  |  100 burst
+  CrewAI Flow found + OpenInference
+  [2mFlow steps: full @listen topology + OI → 2N+3 spans/kickoff (structurally equal to Messer).[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mVerifying correctness (N=4, trivial)...[0m
+  N=4: expected=1176  Messer=1176 ✓  Flow steps=1176 ✓
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario A — Trivial branches (async, no sleep)  ← pure scheduling overhead[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mBenchmarking N=16 (35 steps)...[0m
+  [2mBenchmarking N=32 (67 steps)...[0m
+  [2mBenchmarking N=64 (131 steps)...[0m
+  [2mBenchmarking N=128 (259 steps)...[0m
+
+  [1mLatency p50  (×200 sequential runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35         1.85 ms         6.77 ms
+      32       67         3.78 ms         11.3 ms
+      64      131         8.27 ms         23.7 ms
+     128      259         20.8 ms         58.7 ms
+
+  [1mLatency p95  (×200 sequential runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35         2.13 ms         7.81 ms
+      32       67         4.60 ms         12.8 ms
+      64      131         8.89 ms         25.1 ms
+     128      259         31.4 ms         61.7 ms
+
+  [1mLatency p99  (×200 sequential runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35         2.31 ms         8.36 ms
+      32       67         4.87 ms         13.4 ms
+      64      131         74.9 ms         35.1 ms
+     128      259        103.6 ms        133.6 ms
+
+  [1mOverhead per extra branch-pair  (slope of p50 vs N, 2 branches per unit)[0m
+  [2mEach N increment adds 2 async branches (one per phase)[0m
+  Messer          +171.6 µs / branch-pair  (+85.8 µs per branch)
+  Flow steps      +471.6 µs / branch-pair  (+235.8 µs per branch)
+
+  [1mBurst p50  (100 concurrent runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35        377.4 ms        483.3 ms
+      32       67        487.1 ms       1015.3 ms
+      64      131       1156.9 ms       2270.6 ms
+     128      259       2539.8 ms       5836.5 ms
+
+  [1mBurst p95  (100 concurrent runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35        379.9 ms        567.3 ms
+      32       67        491.1 ms       1114.4 ms
+      64      131       1165.3 ms       2402.6 ms
+     128      259       2632.3 ms       6103.8 ms
+
+  [1mBurst p99  (100 concurrent runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35        380.2 ms        575.1 ms
+      32       67        491.5 ms       1124.4 ms
+      64      131       1165.9 ms       2414.1 ms
+     128      259       2633.7 ms       6120.7 ms
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario B — 1 ms async sleep per branch  ← parallelism verification[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mBenchmarking N=16 (35 steps)...[0m
+  [2mBenchmarking N=32 (67 steps)...[0m
+  [2mBenchmarking N=64 (131 steps)...[0m
+  [2mBenchmarking N=128 (259 steps)...[0m
+
+  [1mLatency p50  (×200 sequential runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35         4.00 ms         8.53 ms
+      32       67         5.54 ms         10.9 ms
+      64      131         8.58 ms         22.6 ms
+     128      259         20.3 ms         59.4 ms
+
+  [1mLatency p95  (×200 sequential runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35         4.40 ms         9.73 ms
+      32       67         9.33 ms         13.2 ms
+      64      131         9.75 ms         26.0 ms
+     128      259         86.8 ms        128.3 ms
+
+  [1mLatency p99  (×200 sequential runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35         4.61 ms         11.3 ms
+      32       67         43.7 ms         13.9 ms
+      64      131         79.0 ms         90.2 ms
+     128      259        103.8 ms        131.6 ms
+
+  [1mOverhead per extra branch-pair  (slope of p50 vs N, 2 branches per unit)[0m
+  [2mEach N increment adds 2 async branches (one per phase)[0m
+  Messer          +147.4 µs / branch-pair  (+73.7 µs per branch)
+  Flow steps      +468.6 µs / branch-pair  (+234.3 µs per branch)
+
+  [1mBurst p50  (100 concurrent runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35        335.6 ms        777.1 ms
+      32       67        622.3 ms       1196.1 ms
+      64      131       1479.6 ms       2749.1 ms
+     128      259       3339.8 ms       6925.6 ms
+
+  [1mBurst p95  (100 concurrent runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35        338.3 ms        885.5 ms
+      32       67        626.4 ms       1285.3 ms
+      64      131       1486.6 ms       2861.0 ms
+     128      259       3423.5 ms       7188.2 ms
+
+  [1mBurst p99  (100 concurrent runs)[0m
+       N    steps          Messer      Flow steps
+  ──────  ───────  ──────────────  ──────────────
+      16       35        338.6 ms        895.7 ms
+      32       67        626.8 ms       1293.8 ms
+      64      131       1487.2 ms       2871.4 ms
+     128      259       3424.8 ms       7205.3 ms
+
+  [2mEach phase: theoretical serial = N×1000 µs, parallel ≈ 1000 µs flat[0m
+  [2mTwo phases: expect ~2000 µs floor + scheduling overhead[0m
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Memory — InMemoryTracingProvider vs tracing_provider=None vs Flow steps[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mSequential: 100 runs, cleared between each  |  Burst: 100 concurrent[0m
+
+  [1mSequential peak  (per-run, cleared between)[0m
+       N    steps    T (InMemory)    T (no trace)      Flow steps
+  ──────  ───────  ──────────────  ──────────────  ──────────────
+      16       35        229.6 KB        210.2 KB        346.7 KB
+      32       67        385.0 KB        383.0 KB        345.6 KB
+      64      131        725.9 KB        724.5 KB        391.9 KB
+     128      259          1.4 MB          1.4 MB        678.2 KB
+
+  [1mBurst peak  (100 concurrent, no GC between)[0m
+       N    steps    T (InMemory)    T (no trace)      Flow steps
+  ──────  ───────  ──────────────  ──────────────  ──────────────
+      16       35         14.7 MB         14.7 MB         11.0 MB
+      32       67         27.2 MB         27.2 MB         17.7 MB
+      64      131         52.3 MB         52.3 MB         31.4 MB
+     128      259        102.8 MB        102.8 MB         58.3 MB
+
+[2m────────────────────────────────────────────────────────────────────────────────────────
+  Topology: root → [N×p1] → aggregator → [N×p2] → sink
+  Total steps: 2N + 3  |  Two full fan-out / fan-in cycles per invocation
+
+  Messer: one asyncio.Task + Span per step — full per-branch observability.
+
+  Flow steps: full @listen topology (root + N×p1 + aggregator + N×p2 + sink)
+  built dynamically via type(). OI instruments _execute_method() → 2N+3 spans
+  per kickoff. Structurally equivalent to Messer. NullExporter: full span
+  pipeline measured, no network I/O. suppress_flow_events=True on all flows.
+
+  Scenario B: parallelism floor is ~2 ms (two sequential 1 ms gather phases).
+  Latency growing beyond 2 ms means the framework is serialising branches.
+────────────────────────────────────────────────────────────────────────────────────────[0m
+

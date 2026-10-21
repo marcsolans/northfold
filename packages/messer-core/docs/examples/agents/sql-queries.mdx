@@ -1,0 +1,60 @@
+---
+title: "SQL Queries and Data Management"
+description: "Expose parameterized knowledge-base queries and explicit data operations as agent tools"
+---
+
+Use `messer.platform.knowledge_bases.query` to execute SQL against a Messer knowledge base. Configure `MESSER_API_HOST`, `MESSER_API_KEY`, `MESSER_ORG_ID`, and `MESSER_KB_ID` before creating the run context, or supply an authenticated platform configuration. See [Semantic search](/examples/agents/semantic-search) for a complete environment example.
+
+Create the `tickets` table through your database setup or migration process first. This example assumes `customer_id` and `priority` columns. The agent receives specific operations rather than a tool accepting arbitrary SQL:
+
+```python
+import asyncio
+
+from dotenv import load_dotenv
+from messer import Agent, Tool
+from messer.platform.knowledge_bases import query
+
+load_dotenv()
+
+
+async def count_high_priority_tickets(customer_id: str) -> dict:
+    """Count high-priority tickets for a customer."""
+    return await query(
+        "SELECT count(*) AS count FROM tickets WHERE customer_id = $1 AND priority = $2",
+        [customer_id, "high"],
+    )
+
+
+async def add_ticket(customer_id: str, priority: str) -> dict:
+    """Insert a support ticket into the configured tickets table."""
+    return await query(
+        "INSERT INTO tickets (customer_id, priority) VALUES ($1, $2) RETURNING *",
+        [customer_id, priority],
+    )
+
+
+agent = Agent(
+    name="support_analyst",
+    model="openai/gpt-4.1-mini",
+    system_prompt="Use the ticket tools to record support requests and answer ticket-count questions.",
+    tools=[
+        count_high_priority_tickets,
+        Tool(handler=add_ticket, requires_approval=True),
+    ],
+)
+
+
+async def main():
+    result = await agent(prompt="How many high-priority tickets does customer 103 have?").collect()
+    if result.error:
+        raise RuntimeError(result.error["message"])
+    print(result.output.collect_text())
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+`query(sql, params, org_id=..., kb_id=...)` targets the current K2 endpoint and returns parsed response JSON, typically with a `rows` list. Set `legacy=True` only for an existing legacy knowledge base. The removed `messer.platform.kbs.tables` and embedding-management helpers are not part of the current Python package.
+
+User values belong in positional parameters, while table and column identifiers stay fixed in code. The sample insert tool requires approval; handle and resume it as described in [Approval gates](/human-in-the-loop/approval-gates). Query counts depend on the records already in your database.

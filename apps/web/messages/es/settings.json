@@ -1,0 +1,68 @@
+{
+  "title": "Ajustes",
+  "sections": {
+    "profile": "Perfil y seguridad",
+    "organization": "Organización",
+    "members": "Miembros y roles",
+    "sso": "SSO y SCIM",
+    "billing": "Plan y facturación",
+    "credits": "Créditos",
+    "budgets": "Presupuestos",
+    "apiKeys": "API keys",
+    "secrets": "Secretos",
+    "models": "Modelos y precios",
+    "residency": "Residencia y retención",
+    "audit": "Auditoría",
+    "data": "Exportación y borrado"
+  },
+  "groups": {
+    "account": "Cuenta",
+    "org": "Organización",
+    "governance": "Gobierno",
+    "developers": "Desarrolladores"
+  },
+  "members": {
+    "description": "Gestiona quién accede a la organización y con qué permisos.",
+    "invite": "Invitar",
+    "inviteTitle": "Invitar a un miembro",
+    "inviteDescription": "Enviaremos un email con un enlace válido durante 7 días.",
+    "inviteSent": "Invitación enviada a {email}",
+    "pending": "Invitaciones pendientes",
+    "noPending": "No hay invitaciones pendientes.",
+    "expires": "Caduca",
+    "revoke": "Revocar",
+    "revokeConfirm": "¿Revocar la invitación a {email}?",
+    "removeConfirm": "¿Quitar a {email} de la organización?",
+    "removeDescription": "Perderá el acceso inmediatamente. Esta acción queda auditada.",
+    "you": "Tú",
+    "source": {
+      "manual": "Manual",
+      "sso": "SSO",
+      "scim": "SCIM"
+    },
+    "roleDescriptions": {
+      "owner": "Todo, incluida la facturación.",
+      "admin": "Usuarios, presupuestos, políticas y SSO.",
+      "builder": "Crea y edita proyectos, agentes, flujos y conocimiento.",
+      "viewer": "Solo lectura y uso de interfaces."
+    }
+  },
+  "profile": {
+    "description": "Tus datos y la seguridad de tu cuenta.",
+    "name": "Nombre",
+    "email": "Email",
+    "language": "Idioma",
+    "mfa": "Verificación en dos pasos (TOTP)",
+    "mfaEnabled": "Activada",
+    "mfaDisabled": "Desactivada",
+    "mfaEnable": "Activar",
+    "mfaDisable": "Desactivar",
+    "mfaScan": "Escanea este código con tu app de autenticación (o introduce la clave) y escribe el código de 6 dígitos.",
+    "mfaSecret": "Clave",
+    "mfaRecovery": "Guarda estos códigos de recuperación en un lugar seguro. Solo se muestran una vez.",
+    "mfaCodePrompt": "Código actual de tu app",
+    "emailUnverified": "Tu email no está verificado.",
+    "resendVerification": "Reenviar verificación",
+    "verificationSent": "Te hemos enviado un nuevo enlace."
+  }
+}

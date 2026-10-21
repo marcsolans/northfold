@@ -1,0 +1,548 @@
+---
+title: "OpenAI"
+description: "GPT-6, GPT-5, GPT-4, and o-series models with specs, pricing, and capabilities"
+---
+
+<Note>Source: [OpenAI model docs](https://platform.openai.com/docs/models) · [API pricing](https://developers.openai.com/api/docs/pricing). Prices are USD per million tokens at Standard tier, checked October 3, 2026. Published post-promotion rates take precedence; promotional rates are retained when no post-promotion rates are published. Processing discounts and premiums are model-specific; see the GPT-6 notes below.</Note>
+
+## GPT-6 Series
+
+<CardGroup cols={2}>
+  <Card title="gpt-6-astra">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-6-astra`
+
+  OpenAI's most capable model, built for the hardest end-to-end work: complex reasoning, agentic coding, computer use, research, and document creation. Successor to GPT-5.6 Sol. `reasoning.effort` accepts `low`, `medium`, `high`, `xhigh`, and `max` (API default `low`).
+
+  - &#36;10 / &#36;50 per 1M tokens (input / output); cached input &#36;1 / 1M; cache writes &#36;12.50 / 1M
+  - <Icon icon="triangle-exclamation" size={14} /> Prompts over 272K input tokens bill the **full request** at long-context rates: &#36;20 / &#36;75, cached &#36;2, cache writes &#36;25
+  - <Icon icon="triangle-exclamation" size={14} /> Function tools require the Responses API (Messer's default). With `MESSER_OPENAI_API=chat_completions`, tool calls return 400 and `reasoning_effort: "none"` is rejected
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Apr 30, 2026
+  </Card>
+
+  <Card title="gpt-6.1-sol">
+  `openai/gpt-6.1-sol`
+
+  Complex coding, computer use, and professional work. Released September 29, 2026.
+
+  - &#36;2 input / &#36;10 output per 1M tokens; cached input &#36;0.10; cache writes &#36;2.50
+  - Above 272K input tokens, the full request costs &#36;4 / &#36;15; cached input &#36;0.20; cache writes &#36;5
+  - 1.05M context; 128K max output; text and image input, text output
+  - Reasoning: `low`, `medium` (default), `high`, `xhigh`, `max`; `none` and `minimal` are unsupported
+  - Function tools require Responses. Chat Completions supports requests without tools
+  - [Model reference](https://developers.openai.com/api/docs/models/gpt-6.1-sol), crosschecked against [API pricing](https://developers.openai.com/api/docs/pricing) and [release notes](https://developers.openai.com/api/docs/changelog)
+  </Card>
+
+  <Card title="gpt-6-sol">
+  `openai/gpt-6-sol`
+
+  For complex coding and agentic workflows.
+
+  - &#36;2 / &#36;10 per 1M tokens (input / output); cached input &#36;0.20; cache writes &#36;2.50
+  - Over 272K input tokens: &#36;4 / &#36;15; cached input &#36;0.40; cache writes &#36;5, applied to the full request
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text and Image input; Text output
+  - Streaming, function calling, and structured outputs
+  - <Icon icon="brain" size={14} /> Reasoning: `none`, `low`, `medium` (default), `high`, `xhigh`, `max`
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Apr 20, 2026
+  </Card>
+
+  <Card title="gpt-6-luna">
+  `openai/gpt-6-luna`
+
+  For focused tasks and high-volume workloads at low cost.
+
+  - &#36;0.10 / &#36;0.50 per 1M tokens (input / output); cached input &#36;0.01; cache writes &#36;0.125
+  - Over 272K input tokens: &#36;0.20 / &#36;0.75; cached input &#36;0.02; cache writes &#36;0.25, applied to the full request
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text and Image input; Text output
+  - Streaming, function calling, and structured outputs
+  - <Icon icon="brain" size={14} /> Reasoning: `none`, `low`, `medium` (default), `high`, `xhigh`, `max`
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff May 18, 2026
+  </Card>
+</CardGroup>
+
+### Using GPT-6.1 Sol and GPT-6
+
+Set `OPENAI_API_KEY` and choose `openai/gpt-6.1-sol`:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="assistant",
+    model="openai/gpt-6.1-sol",
+    max_tokens=4096,
+    model_params={"reasoning": {"effort": "medium"}},
+)
+```
+
+Use the Responses API (Messer's default) for reasoning with tools. With `MESSER_OPENAI_API=chat_completions`, function calling on the older GPT-6 Sol and GPT-6 Luna requires `model_params={"reasoning_effort": "none"}`. GPT-6.1 Sol and Astra require Responses for tool calling.
+
+Astra and GPT-6.1 Sol offer [Ultrafast](https://developers.openai.com/api/docs/guides/ultrafast-mode) at **6x** Standard, including cache and long-context rates, using `model_params={"service_tier": "ultrafast"}`. Usage uses `_ultrafast` units.
+Sol's Ultrafast input / output / cached input / cache writes cost **&#36;12 / &#36;60 / &#36;0.60 / &#36;15** per 1M tokens;
+above 272K input tokens they cost **&#36;24 / &#36;90 / &#36;1.20 / &#36;30** for the full request.
+Availability and [rates](https://developers.openai.com/api/docs/pricing) rechecked October 17, 2026.
+
+All GPT-6 prices shown are Standard rates. Batch and Flex cost half the applicable rates; Fast mode costs twice as much, including cache and long-context rates. Opt into Flex or Fast with `model_params={"service_tier": "flex"}` or `{"service_tier": "fast"}`; metering follows the tier reported by the provider. Regional processing adds 10% where eligible. GPT-6 Sol and Luna support EU data residency with Standard, Flex, and Batch; Fast is unavailable there. GPT-6.1 Sol also supports EU residency without Fast. Regional premiums are not included in the catalog token rates.
+
+Sol and Luna launched September 22, 2026. Specs and prices verified September 23, 2026 against [Sol's model reference](https://developers.openai.com/api/docs/models/gpt-6-sol), [Luna's model reference](https://developers.openai.com/api/docs/models/gpt-6-luna), and [OpenAI pricing](https://developers.openai.com/api/docs/pricing).
+
+### How long-context and cache pricing is tracked
+
+GPT-6.1 Sol, GPT-6 Astra/Sol/Luna, GPT-5.6 Sol/Terra/Luna, GPT-5.5/Pro, GPT-5.4 and GPT-5.4 Pro bill the **entire request** at long-context rates once the prompt exceeds **272K input tokens** — including cache reads, cache writes, and output. (GPT-5.5 Pro also has a long-context tier in the pricing table, although its model card omits it; no cache discount is published.) Messer's collectors decide the tier from the raw prompt size reported by OpenAI (cache hits included; exactly 272K is still short context) and emit distinct usage units so each tier can be priced separately:
+
+| Request | Usage keys on `OutputEvent.usage` |
+| --- | --- |
+| ≤ 272K input | `input_text_tokens`, `input_cached_tokens`, `input_cache_write_tokens`, `output_text_tokens` |
+| > 272K input | the same units suffixed `_long_context`, e.g. `openai/gpt-6-astra:output_text_tokens_long_context` |
+
+`input_cache_write_tokens` is split out only for models whose catalog entry has a `cache_write_price` (OpenAI bills prompt-cache writes at 1.25x the input rate); on any other model those tokens stay in `input_text_tokens` so they are still billed. Reasoning tokens are folded into `output_text_tokens` (they are billed as output). GPT-6 responses served by Flex or Fast processing additionally use `_flex` or `_fast` (for example, `output_text_tokens_long_context_fast`) so the processing multiplier is preserved. Eval usage assertions treat all pricing tiers as the same underlying tokens. The per-model thresholds and tier rates live in `python/messer/models.yaml` (`cached_input_price`, `cache_write_price`, `long_context`, `service_tiers`).
+
+---
+
+## GPT-5 Series
+
+<CardGroup cols={2}>
+  <Card title="gpt-5.5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.5`
+
+  OpenAI's latest flagship for coding, knowledge work, and research—positioned above GPT-5.4 with a 1.05M-token API context (per OpenAI model table) and higher per-token pricing.
+
+  - &#36;5 / &#36;30 per 1M tokens (input / output); cached input &#36;0.50 / 1M
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  </Card>
+
+  <Card title="gpt-5.5-pro">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.5-pro`
+
+  GPT-5.5 Pro tier for the hardest coding, agentic, and research workloads via the Responses API.
+
+  - &#36;30 / &#36;180 per 1M tokens (input / output)
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - Above 272K input: &#36;60 / &#36;270 per 1M tokens for the full request, per the [pricing table](https://developers.openai.com/api/docs/pricing)
+  </Card>
+
+  <Card title="gpt-5.5-2026-04-23">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.5-2026-04-23`
+
+  Dated snapshot of GPT-5.5 for reproducible runs; same capabilities and pricing as the rolling `gpt-5.5` slug.
+
+  - &#36;5 / &#36;30 per 1M tokens (input / output); cached input &#36;0.50 / 1M
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  </Card>
+
+  <Card title="gpt-5.6-sol">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.6-sol`
+
+  GPT-5.6 flagship tier for the hardest coding, agentic, and long-horizon tasks. Supports programmatic tool calling and multi-agent flows in the Responses API.
+
+  - &#36;4 input / &#36;20 output per 1M tokens; cached input &#36;0.40; cache writes &#36;5
+  - Above 272K input: &#36;8 / &#36;30; cached input &#36;0.80; cache writes &#36;10 for the full request
+  - Promotional rates, available at least through November 21, 2026, retained because post-promotion rates are not published. Sources: [model card](https://developers.openai.com/api/docs/models/gpt-5.6-sol), [pricing table](https://developers.openai.com/api/docs/pricing).
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  </Card>
+
+  <Card title="gpt-5.6-terra">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.6-terra`
+
+  GPT-5.6 balanced tier for everyday production work—competitive with GPT-5.5 at roughly half the cost of Sol.
+
+  - &#36;2 / &#36;12 per 1M tokens (input / output); cached input &#36;0.20 / 1M
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  </Card>
+
+  <Card title="gpt-5.6-luna">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.6-luna`
+
+  GPT-5.6 fast, cost-efficient tier for high-volume, latency-sensitive, and budget-conscious workloads.
+
+  - &#36;0.20 / &#36;1.20 per 1M tokens (input / output); cached input &#36;0.02 / 1M
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  </Card>
+
+  <Card title="gpt-5.4">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.4`
+
+  OpenAI's most capable and efficient frontier model for professional work, combining industry-leading coding, reasoning, and agentic workflows with native computer-use capabilities.
+
+  - &#36;2.50 / &#36;15
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Aug 2025
+  - Cached input: &#36;0.25 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5.4-pro">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.4-pro`
+
+  GPT-5.4 Pro tier for maximum capability coding and agent workloads via the Responses API.
+
+  - &#36;30 / &#36;180 per 1M tokens (input / output)
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Extended thinking
+  </Card>
+
+  <Card title="gpt-5.4-mini">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.4-mini`
+
+  OpenAI's most capable small model, significantly improving over GPT-5 mini across coding, reasoning, multimodal understanding, and tool use while running more than 2x faster.
+
+  - &#36;0.75 / &#36;4.50
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Aug 2025
+  - Cached input: &#36;0.075 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5.4-nano">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.4-nano`
+
+  Deprecated October 1, 2026; scheduled retirement April 1, 2027. Migrate before that date.
+
+  The smallest, cheapest version of GPT-5.4 for tasks where speed and cost matter most. Ideal for classification, data extraction, ranking, and coding subagents.
+
+  - &#36;0.20 / &#36;1.25
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Aug 2025
+  - Cached input: &#36;0.02 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5.2">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.2`
+
+  The most capable model series for professional knowledge work, with significant improvements in general intelligence, long-context understanding, agentic tool-calling, and vision.
+
+  - &#36;1.75 / &#36;14
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Aug 2025
+  - Cached input: &#36;0.175 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5.2-pro">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.2-pro`
+
+  A version of GPT-5.2 that uses more compute to think harder and provide consistently better answers for complex tasks.
+
+  - &#36;21 / &#36;168
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Aug 2025
+  </Card>
+
+  <Card title="gpt-5.1">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5.1`
+
+  Deprecated October 1, 2026; scheduled retirement April 1, 2027. Migrate before that date.
+
+  Improves meaningfully on both intelligence and communication style; the first model to use adaptive reasoning to decide when to think before responding.
+
+  - &#36;1.25 / &#36;10
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Sep 2024
+  - Cached input: &#36;0.125 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5`
+
+  OpenAI's unified AI system representing a significant leap in intelligence, with a smart efficient model for most questions and a deeper reasoning model for harder problems.
+
+  - &#36;1.25 / &#36;10
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image, Audio, Video input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Sep 2024
+  - Cached input: &#36;0.125 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5-mini">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5-mini`
+
+  A smaller, faster variant of GPT-5's thinking model optimized for developer use, balancing strong reasoning with lower cost and latency.
+
+  - &#36;0.25 / &#36;2
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff May 2024
+  - Cached input: &#36;0.025 per 1M tokens
+  </Card>
+
+  <Card title="gpt-5-nano">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-5-nano`
+
+  The smallest and fastest variant in the GPT-5 family, made for developers needing maximum speed at minimal cost.
+
+  - &#36;0.05 / &#36;0.40
+  - <Icon icon="window-maximize" size={14} /> 400K context
+  - <Icon icon="right-from-bracket" size={14} /> 128K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff May 2024
+  - Cached input: &#36;0.005 per 1M tokens
+  </Card>
+</CardGroup>
+
+---
+
+## GPT-4 Series
+
+<CardGroup cols={2}>
+  <Card title="gpt-4.1">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-4.1`
+
+  Excels at instruction following and tool calling with broad knowledge, featuring a 1M token context window and low latency without a reasoning step.
+
+  - &#36;2 / &#36;8
+  - <Icon icon="window-maximize" size={14} /> 1.05M context
+  - <Icon icon="right-from-bracket" size={14} /> 32K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  - Cached input: &#36;0.5 per 1M tokens
+  </Card>
+
+  <Card title="gpt-4.1-mini">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-4.1-mini`
+
+  A significant leap in small model performance that matches or exceeds GPT-4o in intelligence evals while reducing latency by nearly half and cost by 83%.
+
+  - &#36;0.40 / &#36;1.60
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 32K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  - Cached input: &#36;0.1 per 1M tokens
+  </Card>
+
+  <Card title="gpt-4.1-nano">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-4.1-nano`
+
+  OpenAI's fastest and cheapest model with a 1M token context window, ideal for classification and autocompletion tasks.
+
+  - &#36;0.10 / &#36;0.40
+  - <Icon icon="window-maximize" size={14} /> 1M context
+  - <Icon icon="right-from-bracket" size={14} /> 32K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  - Cached input: &#36;0.025 per 1M tokens
+  </Card>
+
+  <Card title="gpt-4o">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-4o`
+
+  An autoregressive omni model that accepts any combination of text, audio, image, and video inputs, trained end-to-end across modalities.
+
+  - &#36;2.50 / &#36;10
+  - <Icon icon="window-maximize" size={14} /> 128K context
+  - <Icon icon="right-from-bracket" size={14} /> 16K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image, Audio input
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  - Cached input: &#36;1.25 per 1M tokens
+  </Card>
+
+  <Card title="gpt-4o-mini">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/gpt-4o-mini`
+
+  A fast, affordable small model for focused tasks that accepts text and image inputs at a fraction of the cost of frontier models.
+
+  - &#36;0.15 / &#36;0.60
+  - <Icon icon="window-maximize" size={14} /> 128K context
+  - <Icon icon="right-from-bracket" size={14} /> 16K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Oct 2023
+  - Cached input: &#36;0.075 per 1M tokens
+  </Card>
+</CardGroup>
+
+---
+
+## o-Series (Reasoning)
+
+<CardGroup cols={2}>
+  <Card title="o4-mini">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/o4-mini`
+
+  A smaller reasoning model optimized for fast, cost-efficient reasoning with exceptional performance in math, coding, and visual tasks.
+
+  - &#36;1.10 / &#36;4.40
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 100K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  - Cached input: &#36;0.275 per 1M tokens
+  </Card>
+
+  <Card title="o3">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/o3`
+
+  OpenAI's most powerful reasoning model that pushes the frontier across coding, math, science, and visual perception, ideal for complex queries requiring multi-faceted analysis.
+
+  - &#36;2 / &#36;8
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 100K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  - Cached input: &#36;0.5 per 1M tokens
+  </Card>
+
+  <Card title="o3-mini">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/o3-mini`
+
+  The most cost-efficient model in OpenAI's reasoning series, delivering o1-level STEM performance with lower cost and faster speed.
+
+  - &#36;1.10 / &#36;4.40
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 100K max output
+  - <Icon icon="keyboard" size={14} /> Text input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Oct 2023
+  - Cached input: &#36;0.55 per 1M tokens
+  </Card>
+
+  <Card title="o3-pro">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> Speed
+
+  `openai/o3-pro`
+
+  A version of o3 designed to think longer and provide the most reliable, thoroughly reasoned responses for maximum performance on complex tasks.
+
+  - &#36;20 / &#36;80
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 100K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="globe" size={14} /> Web search
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Jun 2024
+  </Card>
+
+  <Card title="o1">
+  <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> <Icon icon="lightbulb" size={14} /> Reasoning · <Icon icon="bolt" size={14} /> <Icon icon="bolt" size={14} /> Speed
+
+  `openai/o1`
+
+  OpenAI's first reasoning model, trained to think before answering by producing a long internal chain of thought, with strong performance in science, coding, and math.
+
+  - &#36;15 / &#36;60
+  - <Icon icon="window-maximize" size={14} /> 200K context
+  - <Icon icon="right-from-bracket" size={14} /> 100K max output
+  - <Icon icon="keyboard" size={14} /> Text, Image input
+  - <Icon icon="brain" size={14} /> Thinking
+  - <Icon icon="calendar" size={14} /> Knowledge cutoff Oct 2023
+  - Cached input: &#36;7.5 per 1M tokens
+  </Card>
+</CardGroup>
+
+<Note>Reasoning tokens are billed as output tokens on all o-series models.</Note>
+
+## Retirement review — October 3, 2026
+
+The active catalog no longer includes `gpt-5.1-codex`, `o3-deep-research`, or `o4-mini-deep-research`: their aliases and snapshots shut down July 23, 2026. OpenAI recommends GPT-5.6 Sol as the replacement. GPT-4.1 Nano, o1, o3 Mini, and o4 Mini remain listed until their October 23, 2026 shutdown. GPT-5.1 and GPT-5.4 Nano remain available until April 1, 2027. A newer generation alone is not a retirement notice. See [OpenAI deprecations](https://developers.openai.com/api/docs/deprecations).
+
+Specialized audio, image, Live, and restricted-access research models need their own endpoints and billing units; they are not general `Agent` text-model additions. Availability here reflects public documentation, not an authenticated access check for your account.

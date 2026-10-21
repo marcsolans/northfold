@@ -1,0 +1,62 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache
+.coverage
+coverage.json
+htmlcov/
+.tool_cache/
+_version.py
+
+.zig-cache
+zig-out
+version.zig
+
+.venv
+.env
+.env.test*
+*.log*
+.DS_Store
+
+# State savers artifacts
+*.jsonl
+!python/tests/types/files/examples/test.jsonl
+
+*.dump
+*.wav
+*.mp3
+*.bin
+
+# Safe testing during development
+sandbox/
+
+# Docs
+node_modules/
+.docusaurus/
+
+**/ace/
+!/tui/src/screens/ace/
+!/docs/api-reference/ace/
+!/docs/api-reference/ace/**
+
+**/target/
+
+**/*lancedb*/
+
+**/socials/
+**/NOTES.md
+
+
+# Internal planning docs
+planning/
+
+# Local rust WIP — do not ship in the Python package
+/rust/
+/benchmarks/rust/
+
+.claude/
+.cursor/

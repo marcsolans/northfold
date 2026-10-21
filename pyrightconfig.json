@@ -1,0 +1,11 @@
+{
+  "include": ["packages/messer-common/src", "apps/api/src", "services", "packages/connectors/src", "packages/messer-sdk-py/src"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/.venv", "packages/messer-core"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "standard",
+  "reportMissingImports": "error",
+  "reportUnusedImport": "warning",
+  "reportPrivateImportUsage": "none"
+}

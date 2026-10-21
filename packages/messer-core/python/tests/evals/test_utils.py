@@ -1,0 +1,280 @@
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+from messer.evals.models import EvalSummary
+from messer.evals.runner import run_eval
+from messer.evals.utils import (
+    _resolve_usage_key,
+    discover_config,
+    discover_eval_files,
+    dump_summary,
+    parse_eval_file,
+)
+
+AGENT_MODULE = """\
+from messer import Agent
+from messer.core.test_model import TestModel
+
+agent = Agent(name="agent", model=TestModel(responses=["ok"]), tools=[])
+"""
+
+EVAL_FILE = """\
+- name: greeting_test
+  runnable: agent.py::agent
+  params:
+    prompt: "Hi there!"
+  output:
+    not_null!: true
+"""
+
+
+def touch(path: Path, contents: str = "") -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(contents)
+    return path
+
+
+class TestDiscoverEvalFiles:
+    def test_missing_path_returns_empty(self, tmp_path):
+        assert discover_eval_files(tmp_path / "nope") == []
+
+    def test_file_path_returned_as_is(self, tmp_path):
+        f = touch(tmp_path / "anything.yaml")
+        assert discover_eval_files(f) == [f]
+
+    def test_non_yaml_file_raises(self, tmp_path):
+        f = touch(tmp_path / "evals.json")
+        with pytest.raises(ValueError, match="Invalid evals path"):
+            discover_eval_files(f)
+
+    def test_matches_eval_prefix_and_suffix(self, tmp_path):
+        prefix = touch(tmp_path / "evals_simple.yaml")
+        suffix = touch(tmp_path / "smoke_eval.yaml")
+        touch(tmp_path / "config.yaml")
+        touch(tmp_path / "evalconf.txt")
+        assert discover_eval_files(tmp_path) == sorted([prefix, suffix])
+
+    def test_recurses_into_subdirectories(self, tmp_path):
+        nested = touch(tmp_path / "evals" / "nested" / "eval_agent.yaml")
+        assert discover_eval_files(tmp_path) == [nested]
+
+    def test_skips_hidden_directories(self, tmp_path):
+        touch(tmp_path / ".venv" / "lib" / "site-packages" / "messer" / "evals" / "fixtures" / "eval_examples.yaml")
+        touch(tmp_path / ".git" / "eval_leftover.yaml")
+        visible = touch(tmp_path / "eval_mine.yaml")
+        assert discover_eval_files(tmp_path) == [visible]
+
+    def test_skips_non_hidden_virtualenvs(self, tmp_path):
+        touch(tmp_path / "venv" / "pyvenv.cfg")
+        touch(tmp_path / "venv" / "lib" / "eval_examples.yaml")
+        visible = touch(tmp_path / "eval_mine.yaml")
+        assert discover_eval_files(tmp_path) == [visible]
+
+    def test_skips_node_modules_pycache_and_site_packages(self, tmp_path):
+        touch(tmp_path / "node_modules" / "some-pkg" / "eval_examples.yaml")
+        touch(tmp_path / "__pycache__" / "eval_cached.yaml")
+        touch(tmp_path / "site-packages" / "messer" / "eval_fixtures.yaml")
+        visible = touch(tmp_path / "eval_mine.yaml")
+        assert discover_eval_files(tmp_path) == [visible]
+
+    def test_regular_subdirectories_are_still_scanned(self, tmp_path):
+        a = touch(tmp_path / "evals" / "eval_a.yaml")
+        b = touch(tmp_path / "more_evals" / "deep" / "b_eval.yaml")
+        assert discover_eval_files(tmp_path) == sorted([a, b])
+
+    def test_skips_evalconf(self, tmp_path):
+        """evalconf.yaml matches the eval* glob but is the shared config, not a suite."""
+        touch(tmp_path / "evalconf.yaml", "runnable: ../agent.py::agent\n")
+        eval_file = touch(tmp_path / "eval_smoke.yaml")
+        assert discover_eval_files(tmp_path) == [eval_file]
+
+
+class TestParseEvalFileRunnableResolution:
+    def test_runnable_relative_to_eval_file_dir(self, tmp_path):
+        touch(tmp_path / "agent.py", AGENT_MODULE)
+        eval_file = touch(tmp_path / "evals_simple.yaml", EVAL_FILE)
+
+        evals = parse_eval_file(eval_file)
+
+        assert len(evals) == 1
+        assert evals[0].name == "greeting_test"
+
+    def test_runnable_falls_back_to_cwd(self, tmp_path, monkeypatch):
+        """Eval files in an evals/ subdirectory can reference project-root modules."""
+        touch(tmp_path / "agent.py", AGENT_MODULE)
+        eval_file = touch(tmp_path / "evals" / "evals_simple.yaml", EVAL_FILE)
+        monkeypatch.chdir(tmp_path)
+
+        evals = parse_eval_file(eval_file)
+
+        assert len(evals) == 1
+        assert evals[0].name == "greeting_test"
+
+    def test_missing_runnable_raises(self, tmp_path):
+        eval_file = touch(tmp_path / "evals" / "evals_simple.yaml", EVAL_FILE)
+
+        with pytest.raises(ValueError, match="Failed to load runnable"):
+            parse_eval_file(eval_file)
+
+    def test_no_runnable_anywhere_raises(self, tmp_path):
+        eval_file = touch(
+            tmp_path / "evals_simple.yaml",
+            "- name: greeting_test\n  params:\n    prompt: hi\n",
+        )
+
+        with pytest.raises(ValueError, match="No runnable specified"):
+            parse_eval_file(eval_file)
+
+
+class TestDumpSummary:
+    async def test_dump_summary_is_json_serializable(self, tmp_path):
+        touch(tmp_path / "agent.py", AGENT_MODULE)
+        eval_file = touch(tmp_path / "evals_simple.yaml", EVAL_FILE)
+        evals = parse_eval_file(eval_file)
+
+        result = await run_eval(evals[0], capture=True)
+        summary = EvalSummary(results=[result])
+
+        data = await dump_summary(summary)
+        json.dumps(data)  # must not raise
+
+        assert data["total"] == 1
+        assert data["passed"] == 1
+        assert data["failed"] == 0
+        r = data["results"][0]
+        assert r["name"] == "greeting_test"
+        assert r["passed"] is True
+        assert r["error"] is None
+        assert r["output"] is not None
+        assert len(r["validators"]) == 1
+        assert r["validators"][0]["name"] == "not_null!"
+        assert r["validators"][0]["passed"] is True
+
+
+class TestCliJsonOutput:
+    def test_stdout_is_pure_json_with_dash_output(self, tmp_path):
+        """With `-o -`, stdout must contain only the JSON document; human output goes to stderr."""
+        touch(tmp_path / "agent.py", AGENT_MODULE)
+        touch(tmp_path / "evals_simple.yaml", EVAL_FILE)
+
+        proc = subprocess.run(
+            [sys.executable, "-m", "messer.evals.cli", str(tmp_path), "-o", "-"],
+            capture_output=True,
+            text=True,
+            cwd=tmp_path,
+            timeout=60,
+        )
+
+        assert proc.returncode == 0, proc.stderr
+        data = json.loads(proc.stdout)  # must parse without any surrounding noise
+        assert data["total"] == 1
+        assert data["passed"] == 1
+        assert "Messer Evals" in proc.stderr
+
+
+class TestDiscoverConfig:
+    def test_walks_up_to_find_config(self, tmp_path):
+        touch(tmp_path / "evalconf.yaml", "runnable: agent.py::agent\n")
+        nested = tmp_path / "evals" / "nested"
+        nested.mkdir(parents=True)
+
+        assert discover_config(nested) == {"runnable": "agent.py::agent"}
+
+    def test_returns_empty_when_missing(self, tmp_path):
+        assert discover_config(tmp_path) == {}
+
+
+class TestResolveUsageKey:
+    def test_exact_key(self):
+        usage = {"openai/gpt-4o:input_text_tokens": 100}
+        assert _resolve_usage_key(usage, "openai/gpt-4o:input_text_tokens") == 100
+
+    def test_metric_only_sums_across_models(self):
+        usage = {"openai/gpt-4o:output_text_tokens": 10, "openai/gpt-5.5:output_text_tokens": 5}
+        assert _resolve_usage_key(usage, "output_text_tokens") == 15
+
+    def test_model_prefix_sums_snapshots(self):
+        usage = {"anthropic/claude-haiku-4-5-20251001:input_tokens": 100, "anthropic/claude-haiku-4-5-20241120:input_tokens": 50}
+        assert _resolve_usage_key(usage, "anthropic/claude-haiku-4-5:input_tokens") == 150
+
+    def test_unsuffixed_metric_matches_long_context_tier(self):
+        """A request billed at the long-context tier is still the same tokens for an eval assertion."""
+        usage = {
+            "openai/gpt-6-astra:input_text_tokens_long_context": 300_000,
+            "openai/gpt-6-astra:output_text_tokens_long_context": 40,
+        }
+        assert _resolve_usage_key(usage, "output_text_tokens") == 40
+        assert _resolve_usage_key(usage, "input_text_tokens") == 300_000
+        assert _resolve_usage_key(usage, "openai/gpt-6-astra:output_text_tokens") == 40
+
+    def test_unsuffixed_metric_sums_both_tiers(self):
+        """Multi-step runs can cross the threshold mid-run: short and long buckets add up."""
+        usage = {
+            "openai/gpt-6-astra:output_text_tokens": 10,
+            "openai/gpt-6-astra:output_text_tokens_long_context": 40,
+        }
+        assert _resolve_usage_key(usage, "output_text_tokens") == 50
+
+    def test_explicit_long_context_metric_matches_only_that_tier(self):
+        usage = {
+            "openai/gpt-6-astra:output_text_tokens": 10,
+            "openai/gpt-6-astra:output_text_tokens_long_context": 40,
+        }
+        assert _resolve_usage_key(usage, "output_text_tokens_long_context") == 40
+        assert _resolve_usage_key(usage, "openai/gpt-6-astra:output_text_tokens_long_context") == 40
+
+    def test_exact_model_key_sums_long_context_sibling(self):
+        """Exact `model:metric` hit must still add the `_long_context` bucket from the same run."""
+        usage = {
+            "openai/gpt-6-astra:output_text_tokens": 10,
+            "openai/gpt-6-astra:output_text_tokens_long_context": 40,
+            "openai/gpt-6-astra-other:output_text_tokens": 999,  # exact match must NOT widen to prefix
+        }
+        assert _resolve_usage_key(usage, "openai/gpt-6-astra:output_text_tokens") == 50
+
+    def test_exact_model_key_sums_all_pricing_tiers(self):
+        usage = {
+            "openai/gpt-6-astra:output_text_tokens": 10,
+            "openai/gpt-6-astra:output_text_tokens_fast": 20,
+            "openai/gpt-6-astra:output_text_tokens_flex": 30,
+            "openai/gpt-6-astra:output_text_tokens_long_context_fast": 40,
+            "openai/gpt-6-astra-other:output_text_tokens_fast": 999,
+        }
+        assert _resolve_usage_key(usage, "openai/gpt-6-astra:output_text_tokens") == 100
+        assert _resolve_usage_key(usage, "output_text_tokens") == 1099
+        assert _resolve_usage_key(usage, "openai/gpt-6-astra:output_text_tokens_fast") == 20
+
+    def test_exact_key_without_sibling_is_unchanged(self):
+        usage = {"openai/gpt-6-astra:output_text_tokens": 10}
+        assert _resolve_usage_key(usage, "openai/gpt-6-astra:output_text_tokens") == 10
+
+    def test_resolve_target_uses_resolver_even_when_exact_key_exists(self):
+        """The `usage.<key>` path in resolve_target must not bypass the resolver on an exact hit."""
+        from messer.evals.utils import resolve_target
+        from messer.state.tracing.span import Span
+        from messer.state.tracing.trace import Trace
+
+        span = Span(
+            path="agent.llm",
+            call_id="c1",
+            t0=0,
+            t1=1,
+            usage={
+                "openai/gpt-6-astra:output_text_tokens": 10,
+                "openai/gpt-6-astra:output_text_tokens_long_context": 40,
+            },
+        )
+        trace = Trace()
+        trace["c1"] = span
+        _, value = resolve_target(trace, "agent.llm.usage.openai/gpt-6-astra:output_text_tokens")
+        assert value == 50
+        _, value = resolve_target(trace, "agent.llm.usage.output_text_tokens")
+        assert value == 50
+        _, value = resolve_target(trace, "agent.llm.usage.openai/gpt-6-astra:output_text_tokens_long_context")
+        assert value == 40
+
+    def test_missing_returns_none(self):
+        assert _resolve_usage_key({"openai/gpt-4o:input_text_tokens": 1}, "output_text_tokens") is None

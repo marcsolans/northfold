@@ -1,0 +1,398 @@
+---
+title: "Memory Compaction"
+description: "Keep agent memory within context window limits with tool result offloading and built-in compaction strategies"
+---
+
+As conversations grow longer, the accumulated message history can exceed a model's context window. Messer keeps memory bounded with two complementary layers, both configured on the agent and applied without changing how you call it:
+
+1. **[Tool result offloading](#tool-result-offloading)** — oversized tool results are moved out of the window *the moment they are produced*, losslessly: the payload goes to a store, and the model keeps a preview plus a handle it can page back on demand.
+2. **[Compaction strategies](#how-compaction-works)** — when context utilization crosses a threshold, the history already inside the window is trimmed or condensed (drop old tool results, keep the last N turns, summarize with an LLM).
+
+Most long-running agents want both: offloading prevents the bloat at the source; compaction handles everything else.
+
+## Tool Result Offloading
+
+A single tool call can return hundreds of kilobytes — a big file read, a verbose log, a large API response. Because tool results persist in conversation memory, an oversized result is re-sent on **every subsequent LLM call**, paying its token cost for the rest of the run.
+
+Tool result offloading intercepts a result when it is produced. If it exceeds a size threshold, the full payload is persisted to an offload store and the model sees a short placeholder instead:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    tools=[search_docs, run_query],
+    tool_result_limit=20_000,  # offload results over 20,000 chars
+)
+```
+
+Results under the threshold pass through untouched. Oversized ones are replaced with a placeholder like:
+
+```text
+[Tool result offloaded: 184,203 chars from 'search_docs'. The full content was saved and
+can be read with read_offloaded(handle="06a7.../t1") — page with offset/limit or filter
+with pattern.]
+Shape: {"results": list[92], "total": int}
+Preview (first 1,000 of 184,203 chars):
+...
+```
+
+The reduction happens **once**, before the result ever enters memory, the serialized trace, or a provider request:
+
+- **Lossless** — unlike truncation or summarization, the full payload stays retrievable. The model decides whether it needs line 500 of that output.
+- **Prompt-cache friendly** — history stays append-only. The oversized payload never occupies a cached prefix that would later be rewritten (rewriting old messages invalidates provider prompt caches from that point on).
+- **Persistent** — the placeholder is what gets traced and what seeds the next turn's memory. The reduction is never recomputed per request.
+
+### Configuration
+
+`tool_result_limit` accepts an int (threshold shorthand) or a `ToolResultLimit`:
+
+```python
+from messer.core import LocalOffloadStore, Spill, ToolResultLimit, Truncate
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    tool_result_limit=ToolResultLimit(
+        threshold=20_000,                  # chars of text content (default 20,000)
+        action=Spill(preview_chars=1_000), # what to do when the threshold is reached
+        store=LocalOffloadStore(),         # where spilled payloads live
+    ),
+)
+```
+
+**`Spill`** (default) — persist the full payload, keep a preview + handle inline. Lossless. If the store write fails, `fallback` (default `Truncate()`) applies so an oversized result never slips through:
+
+```python
+Spill(preview_chars=1_000, fallback=Truncate(max_chars=2_000))
+```
+
+**`Truncate`** — clamp to a character budget. Lossy, zero-cost, no store needed:
+
+```python
+Truncate(strategy="head")       # keep the start — headers, schemas
+Truncate(strategy="tail")       # keep the end — build/test output where errors land last
+Truncate(strategy="head_tail")  # keep both ends, elide the middle (default)
+```
+
+### Per-tool overrides
+
+`Tool(result_limit=...)` overrides the agent default. `None` exempts a tool entirely:
+
+```python
+from messer.core import Tool, ToolResultLimit, Truncate
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    tool_result_limit=20_000,  # agent-wide default: spill over 20k
+    tools=[
+        Tool(name="run_tests", handler=run_tests,
+             result_limit=ToolResultLimit(threshold=8_000, action=Truncate(strategy="tail"))),
+        Tool(name="load_policy", handler=load_policy, result_limit=None),  # never reduced
+    ],
+)
+```
+
+Some results are never reduced, regardless of configuration:
+
+- **Error results** — the model needs the full error to recover.
+- **Pinned tools** (`pin_result=True`) — durable context like [skill](/agents/skills) documentation. See [Pinned results](#pinned-results).
+- **`read_offloaded`'s own output** — it is bounded by construction.
+
+### Reading content back
+
+When offloading is active, the agent auto-registers a `read_offloaded` tool. It reads everything behind a handle: offloaded tool results, [offloaded attachments](#attachments), and compacted transcripts.
+
+```python
+read_offloaded(handle, offset=0, limit=200, pattern=None)
+```
+
+- Line-numbered paging via `offset`/`limit` (hard-capped at 500 lines / 50,000 chars per call, so a read can never blow the window back up). Lines over 10,000 chars, such as minified JSON, are split into consecutive numbered segments so they can be paged too.
+- `pattern` filters to lines containing a **literal substring** (not a regex). A match spanning a segment boundary returns both segments; real newline boundaries are preserved.
+- Unknown or expired handles return a clean tool error the model can react to.
+- Earlier versions named it `read_tool_result`. Placeholders already stored in memory still say so, and calls to that name reach the same tool; it is not advertised to the model.
+
+The model uses it on its own — the placeholder tells it how.
+
+### The offload store
+
+Spilled payloads go through a narrow protocol, so the backend is swappable:
+
+```python
+from typing import Protocol
+
+class OffloadStore(Protocol):
+    async def write(self, key: str, data: bytes) -> str: ...  # returns a handle
+    async def read(self, handle: str) -> bytes: ...
+```
+
+The default `LocalOffloadStore` writes one file per result under `~/.messer/offload/` (owner-only permissions; reads are hardened against path traversal and symlink escapes). Handles are store-relative keys, not absolute paths, so a different backend can resolve the same handle in another process.
+
+A handle is only readable while its payload exists, so the store must outlive the run that wrote it: later turns of the conversation still hold the handle. Set `MESSER_OFFLOAD_DIR` to move the default root wherever that holds. This matters when the home directory is thrown away with the process, as in containers and sandboxes. Messer platform runs set it to the workforce's persistent directory. An explicit `LocalOffloadStore(root=...)` takes precedence. When a payload is gone anyway, `read_offloaded` returns an error telling the model not to retry the handle.
+
+Payloads are kept **forever by default** — deleting on run end would break a resumed or chained session that still holds handles. Bound disk usage with opt-in age-based pruning:
+
+```python
+from datetime import timedelta
+from messer.core import LocalOffloadStore, ToolResultLimit
+
+store = LocalOffloadStore(cleanup_after=timedelta(days=7))
+agent = Agent(..., tool_result_limit=ToolResultLimit(store=store))
+```
+
+Pruning runs off the hot path and never fails a run.
+
+### Attachments
+
+Files in a user message reach the model in one of two ways. Images, PDFs and audio are sent natively. Everything else (plain text, JSON, CSV, logs, code, HAR captures, and `.xlsx`/`.docx` after text extraction) is pasted into the prompt whole. One large upload can overflow the context window, and because the message stays in memory, every later turn of that conversation fails the same way.
+
+`attachment_limit` bounds those pasted attachments with the same `ToolResultLimit` config:
+
+```python
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    tool_result_limit=20_000,
+    attachment_limit=20_000,  # attachments whose text reaches 20,000 chars are offloaded
+)
+```
+
+The model sees a stand-in instead of the file, and reads the full text back with `read_offloaded`:
+
+```text
+[Attached file offloaded: "export.json" (application/json), 3,754,724 chars. The full text was saved
+and can be read with read_offloaded(handle="attachments/ae87...") — page with offset/limit or filter
+with pattern.]
+Shape: {"log": object}
+Preview (first 1,000 of 3,754,724 chars):
+...
+```
+
+Unlike tool results, attachments are reduced in **each request**, not when they enter memory:
+
+- **Memory and traces keep the file.** The `FileContent` the caller sent is what gets stored and replayed; only the request to the model differs.
+- **Existing conversations are fixed on their next call.** A chat that already holds an oversized upload is bounded as soon as the limit is configured, without rewriting stored history.
+- **Prompt-cache friendly.** The stand-in depends only on the file's text and the limit. The text is saved under a content hash and reused while its payload exists. If cleanup removes it, the next request restores it from the original attachment. With `LocalOffloadStore`, the restored handle and stand-in stay identical.
+
+`Spill` (default) shares the offload store with `tool_result_limit` and registers `read_offloaded` if it isn't already there. `Truncate` needs no store. If no store is available, the attachment is truncated rather than pasted whole. Images, PDFs, audio, `.eml` files and attachments under the threshold are always sent as before.
+
+Without `attachment_limit` (the default), a text attachment estimated to exceed the model's context window on its own (more than 4 characters per token of the window) is replaced by its first 20,000 chars and a note on every model call, and a warning is logged. This is a character-based heuristic: token density varies, so it can also shorten files that would fit, and it does not account for the combined size of other attachments, history, or output tokens. Use `attachment_limit` to explicitly bound attachments. Models with an unknown context window are left alone.
+
+## How Compaction Works
+
+Compaction is triggered automatically when context-window utilization exceeds `memory_compaction_ratio` (default `0.75`, i.e. 75%), at two points:
+
+- **Turn start** — before the first LLM call of a turn, utilization is read from the previous run's **context measurement** — the usage of its last LLM call that reported context tokens — plus an estimate of the messages added after that call's request and output (the new prompt, and any tool results a failed call never sent). The configured compactors are applied to the resolved memory before it reaches the LLM.
+- **Mid-loop** — between iterations *within* a turn (after each tool round), utilization is read from the same **context measurement**, plus an estimate of the tool results appended since. This bounds a single turn that makes many or large tool calls instead of letting it grow until it overflows. Mid-loop compaction always protects the most recent, still-unconsumed assistant tool batch (the results the next model call must read), so it never sends the agent back to re-plan the same step.
+
+Both use the same strategies and the same ratio; you don't configure them separately. Utilization is measured against the context window of the model the run calls: a per-run `model` input when given, otherwise the agent's `model`.
+
+For traces saved before context measurements were recorded, the first continuation uses the previous run's recorded token usage plus a content estimate of the full memory. This conservative fallback may compact early, but preserves file-token usage and counts content that was never measured. The next LLM call that reports context tokens replaces it with a measurement and its request boundary. Traces without any usable token usage use the content estimate alone.
+
+```python
+from messer import Agent
+from messer.core.memory_compaction import keep_last_n_turns
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    memory_compaction=keep_last_n_turns(10),
+    memory_compaction_ratio=0.75,  # trigger when the context passes 75% of the window
+)
+```
+
+Set `memory_compaction_ratio=0.0` to always compact, or `1.0` to effectively disable auto-triggering.
+
+Offloading and compaction compose cleanly: offloaded placeholders are small, so they push utilization down and compaction triggers later or never; `compact_tool_results` keeps offloaded placeholders intact by default so their handles stay dereferenceable; and `summarize` writes its canonical record to the same store, readable back through the same `read_offloaded` tool.
+
+## Built-in Strategies
+
+Import strategies from `messer.core.memory_compaction`.
+
+### `keep_last_n_turns(n)`
+
+Keeps only the last `n` user/assistant turn pairs. Structure-aware: never leaves orphaned tool calls or results.
+
+```python
+from messer.core.memory_compaction import keep_last_n_turns
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    memory_compaction=keep_last_n_turns(5),
+)
+```
+
+### `keep_last_n_messages(n)`
+
+Keeps only the last `n` messages regardless of role. Also structure-aware.
+
+```python
+from messer.core.memory_compaction import keep_last_n_messages
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    memory_compaction=keep_last_n_messages(20),
+)
+```
+
+### `compact_tool_results(...)`
+
+Reduces the size of tool call history. Useful when tools return large payloads that are no longer needed verbatim.
+
+```python
+from messer.core.memory_compaction import compact_tool_results
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    memory_compaction=compact_tool_results(
+        keep_last_n=2,       # keep last 2 tool call pairs intact
+        threshold=10,        # only apply when memory exceeds 10 messages
+        replacement="[Tool '{tool_name}' result truncated ({result_length} chars)]",
+    ),
+)
+```
+
+**`replacement` controls what happens to compacted tool results:**
+
+- `None` (default) — drop tool results and their corresponding `tool_use` entries entirely. Assistant messages that become empty are also dropped.
+- `str` — replace each result with a template string. Supported placeholders: `{tool_name}`, `{call_id}`, `{result_length}`, and `{handle}` (the offload handle when the result was [offloaded](#tool-result-offloading), empty otherwise).
+- `callable(tool_name, call_id, result_text) -> str` — call a function per result and use the return value as the replacement.
+
+**`keep_offloaded`** (default `True`) — results already [offloaded at production time](#tool-result-offloading) are kept intact: they are small placeholders whose handle keeps the full payload reachable. Set `False` to compact them like any other result.
+
+```python
+# Drop all tool results
+compact_tool_results()
+
+# Replace with a short summary string
+compact_tool_results(replacement="[{tool_name}: {result_length} chars]")
+
+# Custom replacement logic
+def shorten(tool_name, call_id, result_text):
+    return f"[{tool_name}]: {result_text[:100]}..."
+
+compact_tool_results(replacement=shorten)
+```
+
+### `summarize(...)`
+
+Summarizes old messages into a single context message using an LLM call. Uses **incremental summarization**: on subsequent runs, only the new overflow messages are sent to the summarizer, which updates the existing summary rather than regenerating it from scratch.
+
+System messages are always preserved and never included in summarization.
+
+```python
+from messer.core.memory_compaction import summarize
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    memory_compaction=summarize(
+        threshold=20,                     # summarize when non-system messages exceed 20
+        model="openai/gpt-4o-mini",       # model used for summarization (defaults to agent's model)
+        keep_last_n=4,                    # keep last 4 messages unsummarized
+        max_summary_tokens=500,
+    ),
+)
+```
+
+<Tip>
+Use a smaller, cheaper model for summarization to reduce cost. For example, `model="openai/gpt-5.4-nano"` works well for summarization tasks.
+</Tip>
+
+The summary message is **sectioned**, and everything except the LLM summary itself is assembled mechanically — never paraphrased by the summarizer:
+
+- **Verbatim User Messages** — the user's own words from the summarized region, carried forward verbatim across passes (`preserve_user_messages=True`, default). Summaries that drop or mischaracterize user instructions are the most damaging compaction failure, so the user's words are never trusted to the LLM. Budgeted by `max_verbatim_chars` (default 10,000; oldest entries dropped first).
+- **Compacted Transcripts** — when an offload store is available, the full untruncated text of every summarized region is persisted and its handle listed, readable via `read_offloaded` (`canonical_record=True`, default). Summarization becomes recoverable instead of destructive. The store is shared automatically from the agent's [`tool_result_limit`](#tool-result-offloading), or passed explicitly via `store=`.
+- **Note** — conservative continuation guidance: the model is told to verify intent against the user's verbatim words rather than acting on the summary alone.
+- **Rehydrated Context** — output of an optional `rehydrate=` callable (sync or async, returning `str`, `list[str]`, or `None`), re-run on **every** compaction pass. Use it to re-inject working state that must survive summarization — the active plan, recently edited files:
+
+```python
+from pathlib import Path
+from messer.core.memory_compaction import summarize
+
+memory_compaction=summarize(
+    threshold=20,
+    rehydrate=lambda: Path("PLAN.md").read_text(),
+)
+```
+
+## Pinned results
+
+Some tool results are durable context the model must keep referencing — for example loaded
+[skill](/agents/skills) documentation. Those results are **pinned**: every compaction strategy
+preserves them verbatim (and never orphans their paired tool call), regardless of `keep_last_n`,
+turn windows, or drop/replacement mode. For `keep_last_n_messages` / `keep_last_n_turns` the
+effective behavior is "last N **plus** pinned"; for `summarize`, pinned results are kept verbatim
+and never fed to the summarizer (like system messages). Offloading skips pinned results too.
+
+You opt a tool in declaratively with `pin_result=True`:
+
+```python
+from messer.core.tool import Tool
+
+tool = Tool(
+    name="load_policy",
+    handler=load_policy,
+    pin_result=True,  # results survive compaction for the life of the conversation
+)
+```
+
+The built-in `read_skill` tool sets this automatically, so skill guidance never gets compacted
+away. Pinning is durable across pause/resume — the flag is persisted with the trace.
+
+## Composing Strategies
+
+Pass a list of compactors to apply them in order. Each compactor receives the output of the previous one.
+
+```python
+from messer.core.memory_compaction import compact_tool_results, keep_last_n_turns
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-4o-mini",
+    memory_compaction=[
+        compact_tool_results(keep_last_n=2),  # first: shrink tool results
+        keep_last_n_turns(10),                # then: trim to last 10 turns
+    ],
+)
+```
+
+## Observability
+
+When compaction fires, the agent span records a `compaction` key in its metadata:
+
+```json
+{
+  "triggered": true,
+  "utilization": 0.91,
+  "steps": [
+    { "compactor": "compact_tool_results", "before": 42, "after": 28 },
+    { "compactor": "keep_last_n_turns",    "before": 28, "after": 12 }
+  ],
+  "passes": 1
+}
+```
+
+- `utilization` — the context window fraction that triggered the most recent pass (`null` when `memory_compaction_ratio=0.0`).
+- `steps` — one entry per compactor with message counts before and after (for the most recent pass).
+- `passes` — how many times compaction fired on this span (turn start plus each mid-loop pass).
+
+Every offload is recorded separately, in an `offload` key:
+
+```json
+{
+  "offload": [
+    { "tool": "search_docs", "call_id": "t1", "original_chars": 184203,
+      "action": "spill", "handle": "06a7.../t1" }
+  ]
+}
+```
+
+`action` is `"spill"`, `"truncate"`, or `"truncate_fallback"` (a spill that degraded because the store was unavailable). The handle also persists on the tool result itself (`ToolResultContent.offload_handle`), surviving trace serialization and reload.
+
+This data is visible in the Messer platform trace viewer alongside the other span metadata.

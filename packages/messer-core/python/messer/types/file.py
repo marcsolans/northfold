@@ -1,0 +1,571 @@
+import base64
+import io
+import mimetypes
+import tempfile
+from collections.abc import Callable, Iterator
+from pathlib import Path
+from typing import Any
+from urllib.parse import unquote, urlparse
+from urllib.request import urlopen
+
+from pydantic import (
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+    # SerializationInfo,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+)
+from pydantic_core import CoreSchema, core_schema
+from uuid_extensions import uuid7
+
+from .. import __version__
+from ..platform.types import UploadFileResponse
+from ..state import get_or_create_run_context
+
+
+def _is_local_path(source: str) -> bool:
+    """True when ``source`` is a filesystem path rather than a URL.
+
+    ``urlparse`` treats ``C:\\foo`` and ``C:/foo`` as scheme ``c``, so drive-letter
+    paths must be detected before URL parsing.
+    """
+    if source.startswith(("/", "./", "../", "~")):
+        return True
+    return len(source) >= 2 and source[0].isalpha() and source[1] == ":" and (
+        len(source) == 2 or source[2] in ("\\", "/")
+    )
+
+
+# Hosts serving platform-persisted content. URLs on these hosts are already
+# durable — re-uploading them via POST /files is wasteful and (worse) renames
+# the object using the encoded basename. `platform_config.cdn` is checked too;
+# content.messer.local is kept here so URLs minted before the usercontent.messer.local
+# move (or configs still pinning the old host) are still recognized.
+_PLATFORM_CDN_HOSTS = ("usercontent.messer.local", "content.messer.local")
+
+
+def _extract_filename(headers: dict, url: str) -> str:
+    """Extract filename from Content-Disposition header, falling back to URL path."""
+    filename = None
+    content_disposition = headers.get("Content-Disposition")
+    if content_disposition and "filename=" in content_disposition:
+        try:
+            filename = content_disposition.split("filename=")[1].strip("\"'")
+        except (IndexError, AttributeError):
+            pass
+    if not filename:
+        # Decode the basename: URL paths are percent-encoded, but the filename is
+        # used as-is for re-uploads — keeping it encoded double-encodes downstream.
+        filename = unquote(urlparse(url).path.split("/")[-1])
+    return filename
+
+
+class File(io.IOBase):
+    """A wrapper class that provides a uniform file-like interface for various file sources.
+
+    This class can handle local files, URLs, S3 URIs, and data URLs, providing a consistent
+    interface for file operations regardless of the source. It implements the io.IOBase interface
+    and provides lazy loading of file contents.
+
+    Attributes:
+        __source__: The original source identifier (path, URL, etc.)
+        __source_scheme__: The scheme of the source (local_path, url, s3, data_url, bytes)
+        __source_extension__: The file extension if available
+        __fileobj__: The actual file object once loaded
+        __fetcher__: Function to fetch/load the file content
+        __persisted__: The url of the file once persisted on the platform
+        __content_type__: The content type of the file
+    """
+
+    __slots__ = (
+        "__source__",
+        "__source_scheme__",
+        "__source_extension__",
+        "__fileobj__",
+        "__fetcher__",
+        "__persisted__",
+        "__content_type__",
+    )
+
+    _UNSET = object()
+
+    def __new__(cls, source: Any, *args, **kwargs):  # noqa: ARG004
+        if isinstance(source, cls):
+            return source  # identity shortcut — same instance, no copy
+        return super().__new__(cls)
+
+    def __init__(
+        self,
+        source: Any,
+        source_scheme: Any = _UNSET,
+        source_extension: str | None = None,
+        fetcher: Callable[[], io.IOBase] | None = None,
+        *,
+        extension: str | None = None,
+        name: str | None = None,
+    ) -> None:
+        # Guard: __new__ returned an existing File, already initialized
+        try:
+            object.__getattribute__(self, "__source__")
+            return
+        except AttributeError:
+            pass
+
+        if source_scheme is not File._UNSET:
+            # Internal direct path — preserve full backwards compat
+            self._setup(source, source_scheme, source_extension, fetcher)
+            return
+
+        # Smart routing path — what validate() used to do
+        if isinstance(source, bytes | bytearray):
+            bio = io.BytesIO(source)
+            if name is not None:
+                bio.name = name
+            self._setup(bio, "bytes", extension)
+            return
+
+        if isinstance(source, io.IOBase):
+            if name is not None:
+                source.name = name
+            self._setup(source, "bytes", extension)
+            return
+
+        if isinstance(source, Path):
+            source = source.expanduser().resolve().as_posix()
+
+        if not isinstance(source, str):
+            raise ValueError("File must be a string, path, or file-like object.")
+
+        if _is_local_path(source):
+            path = Path(source).expanduser().resolve()
+            if not path.exists() or not path.is_file():
+                raise ValueError("Invalid file path.")
+            self._setup(
+                source, "local_path", path.suffix,
+                fetcher=lambda: self._fetch_local_file(path=path),
+            )
+            return
+
+        parsed_url = urlparse(source)
+
+        # Local path
+        if parsed_url.scheme == "":
+            path = Path(source).expanduser().resolve()
+            if not path.exists() or not path.is_file():
+                raise ValueError("Invalid file path.")
+            self._setup(
+                source, "local_path", path.suffix,
+                fetcher=lambda: self._fetch_local_file(path=path),
+            )
+            return
+
+        # Data URL
+        if parsed_url.scheme == "data":
+            parsed_url_mimetype = parsed_url.path.split(";", 1)
+            if len(parsed_url_mimetype) != 2:
+                raise ValueError("Data url must specify a mimetype.")
+            parsed_url_mimetype = parsed_url_mimetype[0]
+            parsed_url_extension = mimetypes.guess_extension(parsed_url_mimetype)
+            if parsed_url_extension is None:
+                if not parsed_url_mimetype.startswith("messer/"):
+                    raise ValueError("Custom mimetypes must be specified as 'messer/<extension>'.")
+                parsed_url_extension = "." + parsed_url_mimetype[7:]
+            self._setup(
+                source, "data_url", parsed_url_extension,
+                fetcher=lambda: self._fetch_data_url_file(data_url=source),
+            )
+            return
+
+        # HTTP/HTTPS URL
+        if parsed_url.scheme in ("http", "https"):
+            parsed_url_name = parsed_url.path.split("/")[-1]
+            parsed_url_extension = f".{parsed_url_name.split('.')[-1]}" if "." in parsed_url_name else ""
+            self._setup(
+                source, "url", parsed_url_extension,
+                fetcher=lambda: self._fetch_http_file(url=source),
+            )
+            return
+
+        raise ValueError("Invalid file source. Must be a local file path, data URL, or HTTP/HTTPS url.")
+
+    def _setup(
+        self,
+        source: Any,
+        source_scheme: str,
+        source_extension: str | None = None,
+        fetcher: Callable[[], io.IOBase] | None = None,
+    ) -> None:
+        """Initialize internal slots. This is the original __init__ body."""
+        object.__setattr__(self, "__source__", source)
+        object.__setattr__(self, "__source_scheme__", source_scheme)
+        object.__setattr__(self, "__source_extension__", source_extension)
+        object.__setattr__(self, "__fetcher__", fetcher)
+        object.__setattr__(self, "__fetch_error__", None)
+        object.__setattr__(self, "__persisted__", None)
+
+        if isinstance(source, io.IOBase):
+            object.__setattr__(self, "__fileobj__", source)
+        else:
+            object.__setattr__(self, "__fileobj__", None)
+
+        if source_scheme == "bytes":
+            if self.__source_extension__:
+                content_type, _ = mimetypes.guess_type(f"tmp{self.__source_extension__}")
+                # Python 3.11 doesn't recognize .md files, add fallback
+                if content_type is None and self.__source_extension__ == ".md":
+                    content_type = "text/markdown"
+                elif content_type is None:
+                    content_type = "application/octet-stream"
+            else:
+                content_type = "application/octet-stream"
+        else:
+            content_type, _ = mimetypes.guess_type(str(self))
+            # Python 3.11 doesn't recognize .md files, add fallback
+            if content_type is None and str(self).endswith(".md"):
+                content_type = "text/markdown"
+            elif content_type is None:
+                content_type = "application/octet-stream"
+        object.__setattr__(self, "__content_type__", content_type)
+
+    def __str__(self) -> str:
+        try:
+            if self.__source_scheme__ == "bytes":
+                ext_info = f"{self.__source_extension__}" if self.__source_extension__ else ""
+                return f"io.IOBase({ext_info})"
+            return self.__source__
+        except AttributeError:
+            # Half-constructed File (e.g. __init__ raised before _setup). Keep
+            # repr() safe so finalization/unraisable-hook paths don't blow up.
+            return "File(uninitialized)"
+
+    def __repr__(self) -> str:
+        return f"File(source={str(self)})"
+
+    def __getattr__(self, name: str) -> Any:
+        """Proxy attribute access through to the wrapped file object."""
+        if name.startswith("__"):
+            # Never route a dunder / internal slot to the lazy fetcher: the
+            # private slots (__fileobj__, __source_scheme__, __wrapped__, ...) and
+            # CPython's own finalizer probes (__IOBase_closed, which starts with
+            # "__" but does not end with "__") all land here only when genuinely
+            # unset — e.g. a File whose __init__ raised before _setup() ran, being
+            # repr'd or finalized. Fetching would be wrong, and re-entering via
+            # __wrapped__ (whose getter itself raises AttributeError when
+            # __fileobj__ is unset) recurses until RecursionError. Proxied file
+            # attributes (read, name, seek, ...) never start with "__".
+            raise AttributeError(name)
+        if name == "extension":
+            return object.__getattribute__(self, "__source_extension__")
+        elif name == "persisted":
+            return object.__getattribute__(self, "__persisted__")
+        # TODO Add more aliases here
+        else:
+            return getattr(self.__wrapped__, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Proxy attribute assignment through to the wrapped file object."""
+        if name in ("__IOBase_closed", "_finalizing"):
+            # Set by io.IOBase's C finalizer/close(); keep these on this
+            # instance rather than proxying, which would trigger the lazy fetcher.
+            object.__setattr__(self, name, value)
+            return
+        if hasattr(type(self), name):
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self.__wrapped__, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        """Proxy attribute deletion through to the wrapped file object."""
+        if hasattr(type(self), name):
+            object.__delattr__(self, name)
+        else:
+            delattr(self.__wrapped__, name)
+
+    def __iter__(self) -> Iterator[bytes]:
+        """Iterate over the wrapped file object."""
+        return iter(self.__wrapped__)
+
+    def __copy__(self) -> "File":
+        """Return self for shallow copy - File objects are immutable references."""
+        return self
+
+    def __deepcopy__(self, memo: dict) -> "File":
+        """Return self for deep copy - File objects are immutable references.
+
+        File objects represent immutable references to file sources and should not
+        be deeply copied. The underlying file content and metadata remain the same,
+        so we return the same instance to avoid issues with copying file handles
+        and other system resources.
+
+        Args:
+            memo: Dictionary used by deepcopy to track already copied objects
+
+        Returns:
+            File: The same File instance
+        """
+        return self
+
+    # TODO Remove the fetching from here. Move to validation
+    @property
+    def __wrapped__(self) -> Any:
+        """Get the underlying file object, fetching it if necessary."""
+        fileobj = object.__getattribute__(self, "__fileobj__")
+        if fileobj is None:
+            # A failed fetch is cached and re-raised: every proxied attribute access
+            # lands here, so without this a broken URL is re-fetched on each access.
+            # getattr with default: an AttributeError escaping this property would
+            # send Python back through __getattr__ and recurse. Also covers Files
+            # constructed without _setup (e.g. via __new__ in tests).
+            try:
+                fetch_error = object.__getattribute__(self, "__fetch_error__")
+            except AttributeError:
+                fetch_error = None
+            if fetch_error is not None:
+                raise fetch_error
+            fetcher = object.__getattribute__(self, "__fetcher__")
+            if fetcher is None:
+                raise ValueError("File object is not properly initialized.")
+            try:
+                fileobj = fetcher()
+            except Exception as e:
+                object.__setattr__(self, "__fetch_error__", e)
+                raise
+            # Some libraries (e.g. openai) require file-like objects to have the name property defined.
+            if not hasattr(fileobj, "name"):
+                fileext = object.__getattribute__(self, "__source_extension__")
+                if fileext:
+                    fileobj.name = f"{uuid7()}{fileext}"
+            if hasattr(fileobj, "__content_type__"):
+                object.__setattr__(self, "__content_type__", fileobj.__content_type__)
+            object.__setattr__(self, "__fileobj__", fileobj)
+        return fileobj
+
+    def close(self) -> None:
+        """Close the wrapped file object if it was ever materialized.
+
+        io.IOBase.__del__ calls close() at garbage collection; this must never
+        trigger the lazy fetcher (a real network request for URL sources) just
+        to close content that was never loaded, nor raise for a File whose
+        __init__ failed before _setup() ran — an exception escaping close()
+        propagates into __del__ and becomes an unraisable exception.
+        """
+        try:
+            fileobj = object.__getattribute__(self, "__fileobj__")
+        except AttributeError:
+            return
+        if fileobj is not None:
+            fileobj.close()
+
+    # Overwrite some io.IOBase methods to proxy to the wrapped file object (explicitly).
+    def readable(self) -> bool:
+        return self.__getattr__("readable")()
+
+    def writable(self) -> bool:
+        return self.__getattr__("writable")()
+
+    def seekable(self) -> bool:
+        return self.__getattr__("seekable")()
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        return self.__getattr__("seek")(offset, whence)
+
+    async def load(self, client: Any = None) -> None:
+        """Eagerly load the file content. For URL sources this fetches async via httpx.
+
+        Args:
+            client: Optional shared httpx.AsyncClient for connection reuse.
+                    If None, a temporary client is created and closed after the request.
+        """
+        if object.__getattribute__(self, "__fileobj__") is not None:
+            return
+        if self.__source_scheme__ != "url":
+            # Local/bytes/data_url — trigger existing sync fetcher (cheap, no network I/O)
+            _ = self.__wrapped__
+            return
+        import httpx
+        url = str(self)
+        headers = {"User-Agent": f"Messer/{__version__}"}
+        own_client = client is None
+        if own_client:
+            client = httpx.AsyncClient(timeout=httpx.Timeout(30.0))
+        try:
+            res = await client.get(url, headers=headers, follow_redirects=True)
+            res.raise_for_status()
+        finally:
+            if own_client:
+                await client.aclose()
+        fileobj = io.BytesIO(res.content)
+        fileobj.name = _extract_filename(res.headers, url)
+        server_content_type = res.headers.get("Content-Type", "application/octet-stream")
+        if server_content_type not in ("application/octet-stream", "binary/octet-stream"):
+            fileobj.__content_type__ = server_content_type
+        if hasattr(fileobj, "__content_type__"):
+            object.__setattr__(self, "__content_type__", fileobj.__content_type__)
+        object.__setattr__(self, "__fileobj__", fileobj)
+
+    @classmethod
+    def validate(
+        cls,
+        value: ValidatorFunctionWrapHandler,
+        info: dict | ValidationInfo | None = None,  # noqa: ARG003
+    ) -> "File":
+        """Pydantic-compat shim. Delegates to File(source, extension=..., name=...)."""
+        extension = info.get("extension") if isinstance(info, dict) else None
+        name = info.get("name") if isinstance(info, dict) else None
+        return cls(value, extension=extension, name=name)
+
+    def to_disk(self, path: Path) -> None:
+        """Save the file to disk."""
+        # Ensure the file obj has the pointer at the start of the file.
+        self.seek(0)
+        content = self.read()
+        with open(path, "wb") as f:
+            f.write(content)
+
+    def to_data_url(self) -> str:
+        """Serialize the file to a data url string."""
+        if self.__source_scheme__ == "data_url":
+            return str(self)
+
+        # Ensure the file obj has the pointer at the start of the file.
+        self.seek(0)
+        content = self.read()
+
+        bs64_content = base64.b64encode(content).decode("utf-8")
+        return f"data:{self.__content_type__};base64,{bs64_content}"
+
+    async def persist(self) -> str | None:
+        """Persist the file to some storage.
+        If there's no run context or valid platform config, the file will be persisted to local disk.
+        If there's a platform configuration, the file will be uploaded to the platform.
+        If the file is already persisted, it will be returned as is.
+        """
+        if self.__persisted__ is not None:
+            return self.__persisted__
+
+        run_context = get_or_create_run_context()
+
+        if self.__source_scheme__ == "url":
+            url = str(self)
+            if not run_context.platform_config:
+                return url
+            # .hostname (unlike .netloc) drops port/userinfo and lowercases,
+            # so e.g. "content.messer.local:443" still matches. The configured cdn
+            # may carry a port too — strip it the same way.
+            host = urlparse(url).hostname
+            cdn_host = urlparse(f"//{run_context.platform_config.cdn}").hostname
+            if host and (host == cdn_host or host in _PLATFORM_CDN_HOSTS):
+                object.__setattr__(self, "__persisted__", url)
+                return url
+
+        if not run_context.platform_config or not run_context.platform_config.subject:
+            if self.__source_scheme__ == "local_path":
+                local_path = str(self)
+                object.__setattr__(self, "__persisted__", local_path)
+                return local_path
+
+            temp_dir = tempfile.gettempdir()
+            temp_name = str(uuid7())
+            if self.__source_extension__:
+                temp_name += self.__source_extension__
+            temp_path = Path(temp_dir) / temp_name
+            self.to_disk(temp_path)
+            temp_path = temp_path.as_posix()
+            object.__setattr__(self, "__persisted__", temp_path)
+            return temp_path
+
+        self.seek(0)
+        content = self.read()
+        self.seek(0)  # Return the pointer to the beginning of the file
+
+        path = "files"
+        files = {"file": (self.name, content, self.__content_type__)}
+
+        from ..platform.utils import _request
+        res = await _request("POST", path, files=files)
+        upload_response = UploadFileResponse.model_validate(res.json())
+        # The platform returns a fully percent-encoded URL — use it verbatim.
+        # Reconstructing it from `name` (raw, unencoded) breaks whenever the name
+        # needs encoding: removesuffix() finds no match, so the encoded name got
+        # appended to the already-complete URL, yielding a duplicated, doubly
+        # encoded path that 403s on the CDN.
+        url = upload_response.url
+        object.__setattr__(self, "__persisted__", url)
+        return url
+
+    @classmethod
+    def serialize(
+        cls,
+        value: Any,
+        *args,  # noqa: ARG003
+        **kwargs,  # noqa: ARG003
+    ) -> str:
+        """Serialize the file to a data url string. Bytes-like files are not supported will have octet-stream as content type."""
+        # When creating a model with fields with File type that are nullable,
+        # pydantic will pass None as the value to File.serialize.
+        if value is None:
+            return None
+
+        if not isinstance(value, cls):
+            raise ValueError("Cannot serialize a non-file object.")
+
+        if value.__persisted__ is not None:
+            return value.__persisted__
+        else:
+            return value.to_data_url()
+
+    @classmethod
+    def _fetch_local_file(cls, path: Path) -> io.IOBase:
+        """Fetch a local file from a valid path in the system."""
+        # We don't use path.open("rb") because it used the full path as the name,
+        # and we weren't able to et the name property after the fact.
+        fileobj = io.BytesIO(path.read_bytes())
+        fileobj.name = path.name
+        return fileobj
+
+    @classmethod
+    def _fetch_data_url_file(cls, data_url: str) -> io.IOBase:
+        """Parse a data URL and return a file-like object."""
+        res = urlopen(data_url)  # noqa: S310
+        return io.BytesIO(res.read())
+
+    @classmethod
+    def _fetch_http_file(cls, url: str) -> io.IOBase:
+        """Fetch a file from a HTTP/HTTPS URL (sync fallback)."""
+        import httpx
+        headers = {"User-Agent": f"Messer/{__version__}"}
+        res = httpx.get(url, headers=headers, follow_redirects=True, timeout=30.0)
+        res.raise_for_status()
+        fileobj = io.BytesIO(res.content)
+        fileobj.name = _extract_filename(res.headers, url)
+        # Set content type from server response
+        # NOTE: This will overwrite the File's extension-based content type detection
+        server_content_type = res.headers.get("Content-Type", "application/octet-stream")
+        # Only set __content_type__ if server provides a specific type (not generic binary)
+        if server_content_type not in ("application/octet-stream", "binary/octet-stream"):
+            fileobj.__content_type__ = server_content_type
+        # For generic types, let the File class keep its extension-based detection
+        return fileobj
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, _core_schema: CoreSchema, _handler: GetJsonSchemaHandler) -> dict[str, Any]:
+        """Defines what this type should be in openapi.json."""
+        # https://docs.pydantic.dev/2.8/errors/usage_errors/#custom-json-schema
+        json_schema = {
+            "type": "string",
+            "format": "uri",
+            "description": "A file reference which can be a local path, a URL, or a data URL.",
+        }
+        return json_schema
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, _source: type[Any], _handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        """Defines how to serialize this type in the core schema."""
+        return core_schema.with_info_plain_validator_function(
+            cls.validate,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls.serialize,
+                info_arg=False,
+                when_used="always",
+            ),
+        )

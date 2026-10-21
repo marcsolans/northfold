@@ -1,0 +1,156 @@
+---
+title: "Overview"
+description: "Automated testing framework for Messer agents and runnables"
+---
+
+## What are Evals?
+
+Evals are automated tests that validate your agent's behavior, outputs, and execution patterns. They help you ensure your agents perform correctly and consistently across different scenarios.
+
+## Why Evals Matter
+
+AI agents are non-deterministic - the same input can yield different results. Evals help you:
+
+- **Validate outputs**: Ensure agents produce correct responses
+- **Check tool usage**: Verify agents use the right tools with correct inputs
+- **Monitor performance**: Track execution time and token usage
+- **Catch regressions**: Prevent breaking changes during development
+- **Test execution patterns**: Validate sequential and parallel tool execution
+
+## How Evals Work
+
+Messer's eval system uses a YAML-based test definition format with a powerful validator system:
+
+```yaml
+- name: time_in_madrid
+  description: Test that agent returns the time in Madrid
+  runnable: agent.py::agent
+  tags: ["datetime", "smoke"]
+  
+  params:
+    prompt: "what time is it in madrid"
+  
+  output:
+    type!: "string"
+    contains!: ":"
+    pattern!: "\\d{1,2}:\\d{2}"
+  
+  elapsed:
+    lt!: 6000
+  
+  seq!:
+    - llm
+    - get_datetime
+    - llm
+```
+
+### Core Components
+
+<CardGroup cols={2}>
+  <Card title="Validators" icon="check" href="/evals/validators">
+    20+ validators for checking outputs, patterns, types, and more
+  </Card>
+  <Card title="Flow Validators" icon="arrow-right" href="/evals/validators/flow">
+    Validate execution sequences and parallel tool calls
+  </Card>
+  <Card title="LLM Validators" icon="brain" href="/evals/validators/llm">
+    AI-powered semantic validation for natural language
+  </Card>
+  <Card title="CLI" icon="terminal" href="/evals/running-evals">
+    Command-line interface for running and discovering evals
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+Install `messer[evals]` for the CLI. Configure the model provider keys used by your runnable and any LLM validators, such as `OPENAI_API_KEY`. Local evals do not require a Messer Platform account.
+
+If the runnable uses platform services, also configure `MESSER_API_KEY`, `MESSER_API_HOST` (hostname without a scheme), and the resource IDs that service needs.
+
+These can be set in your environment or in a `.env` file in your project directory.
+
+## Quick Start
+
+### 1. Create a test file
+
+Create a file named `eval_greeting.yaml`:
+
+```yaml
+- name: greeting_test
+  description: Verify the agent greets users appropriately
+  runnable: agent.py::my_agent
+  
+  params:
+    prompt: "Hi there!"
+  
+  output:
+    not_null!: true
+    type!: "string"
+    prompt!: "The response greets the user politely"
+  
+  elapsed:
+    lt!: 5000
+```
+
+### 2. Run your evals
+
+```bash
+python -m messer.evals.cli path/to/eval_greeting.yaml
+```
+
+### 3. View results
+
+The CLI displays pytest-style output with pass/fail status, duration, and detailed failure information:
+
+```
+========================= messer evals =========================
+collected 1 eval
+
+eval_greeting.yaml
+  greeting_test ......................................... PASSED (0.45s)
+    tags: greeting, basic
+    ├── output
+    │   ├── not_null! ✓
+    │   ├── type! ✓
+    │   └── prompt! ✓
+    └── elapsed
+        └── lt! ✓
+
+========================= 1 passed in 0.45s =========================
+```
+
+## Eval Structure
+
+Each eval consists of:
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `name` | Unique identifier for the eval | Yes |
+| `runnable` | Path to the runnable (`file.py::name`) | Yes |
+| `params` | Input parameters for the runnable | No |
+| `description` | Human-readable description | No |
+| `tags` | List of tags for filtering | No |
+| `timeout` | Accepted but currently not enforced; use the runnable's timeout and a CI/process deadline | No |
+| `output` | Validators for the final output | No |
+| `elapsed` | Validators for total execution time | No |
+| `seq!` | Sequence flow validator | No |
+
+<Note>
+Eval names must be unique across all eval files. The CLI will error if duplicate names are found.
+</Note>
+
+See [Writing Evals](/evals/writing-evals) for the complete syntax reference.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Writing Evals" icon="pen" href="/evals/writing-evals">
+    Learn the full eval syntax and best practices
+  </Card>
+  <Card title="Validators Reference" icon="book" href="/evals/validators">
+    Complete reference for all validators
+  </Card>
+  <Card title="Running Evals" icon="play" href="/evals/running-evals">
+    CLI options and CI/CD integration
+  </Card>
+</CardGroup>

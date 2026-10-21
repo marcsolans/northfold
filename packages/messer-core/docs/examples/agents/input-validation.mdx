@@ -1,0 +1,96 @@
+---
+title: "Input Parameters"
+description: "Pass input parameters to agents and validate the output response"
+---
+
+Parameters in `params` become part of the agent's input, and you can only validate the resulting output response.
+
+## Example
+
+This example demonstrates how to pass input parameters to the agent and validate the output. The `premium_user` parameter is passed via `params` and becomes part of the agent's input, which can be accessed in the system prompt function.
+
+### Eval Configuration
+
+```yaml evals.yaml
+- name: eval_input_has_points
+  description: Pass premium_user parameter and validate output contains points information
+  runnable: agent.py::agent
+  params:
+    prompt: "Hello, I'm a premium user"
+    premium_user: True
+  output:
+    contains!: "10"
+```
+
+### Agent Implementation
+
+```python agent.py
+from messer import Agent
+from messer.state import get_run_context
+
+
+def get_system_prompt() -> str:
+    """Build system prompt with premium_user status from input."""
+    span = get_run_context().current_span()
+    premium_user = span.input.get("premium_user", False)
+    
+    return f"""You are a points system assistant.
+Premium users have 10 points.
+Premium user: {premium_user}"""
+
+agent = Agent(
+    name="points_agent",
+    model="openai/gpt-4.1-mini",
+    system_prompt=get_system_prompt
+)
+```
+
+### Running Evaluations
+
+```bash
+python -m messer.evals.cli evals.yaml
+```
+
+## How It Works
+
+1. **Parameters**: The `premium_user: True` parameter is passed via `params` and becomes part of the agent's input.
+
+2. **System Prompt**: The `get_system_prompt()` function accesses the `premium_user` value from the input using `get_run_context()` and builds the system prompt dynamically.
+
+3. **Output Validation**: The output is validated to ensure it contains "10" (the points for premium users).
+
+## Evaluation Results
+
+The CLI displays pytest-style output with pass/fail status:
+
+```
+──────────────────── Messer Evals ────────────────────
+collected 1 evals from 1 file
+
+ PASSED  evals.yaml::eval_input_has_points [0.45s]
+└── points_agent
+    └── ✓ output.contains! ("10")
+
+============================= 1 passed in 0.45s ==============================
+```
+
+When validation fails, the CLI shows detailed error information:
+
+```
+──────────────────── Messer Evals ────────────────────
+collected 1 evals from 1 file
+
+ FAILED  evals.yaml::eval_input_has_points [0.48s]
+└── points_agent
+    └── ✗ output.contains! ("10")
+        Expected: "10"
+        Actual: "You currently have 0 points..."
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 1 failed in 1.94s !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+## Key Features
+
+- **Input Parameters**: Pass parameters directly to the agent via `params` - these become part of the agent's input
+- **Dynamic System Prompts**: Use callable functions for `system_prompt` to access input parameters and build prompts dynamically
+- **Output Validation**: Validate agent responses using output validators - input parameters cannot be validated directly

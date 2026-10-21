@@ -1,0 +1,119 @@
+---
+title: "Memory"
+description: "Understand and manage how Agent memory works"
+---
+
+Memory enables multi-turn conversations by loading history from a previous run's trace. Sequential calls in the same task can chain automatically. Across HTTP requests, processes, or explicitly separate tasks, pass `parent_id` to continue the intended conversation and use a tracing provider that can retrieve that prior run.
+
+## How Memory Works
+
+Messer implements memory through its [tracing system](/core-concepts/tracing), which captures conversation history during agent execution. When an agent runs, it automatically resolves memory from previous interactions to maintain conversational context.
+
+### Automatic Memory Resolution
+
+During each agent execution:
+
+1. The agent checks for previous conversation context
+2. If found, it retrieves conversation history from the tracing data
+3. Previous messages are automatically included in the current conversation
+4. The agent processes the new input with full conversation context
+
+When the run is linked to a prior run, history resolution happens automatically. An unrelated request does not acquire a conversation merely because it invokes the same Agent object.
+
+### Storage Options
+
+Memory storage depends on your deployment environment:
+
+- **Platform tracing**: Stores runs remotely so an authorized continuation can retrieve them across processes.
+- **In-memory tracing**: The local default; history disappears on process restart.
+- **JSONL or SQLite tracing**: Local persistence options for applications that configure them.
+
+## Nested Agent Memory
+
+When an agent is used as a tool of another agent, the **child gets an isolated context** — it does not inherit the parent's conversation history. The parent only sees what the child returns as its tool result. That keeps specialist agents focused and prevents parent history from bloating every nested call.
+
+```python
+from messer import Agent
+
+billing_agent = Agent(
+    name="billing_agent",
+    model="anthropic/claude-haiku-4-5",
+    # Fresh context per call — only the tool prompt from the parent, not the full chat
+)
+
+support_agent = Agent(
+    name="support_agent",
+    model="anthropic/claude-sonnet-4-6",
+    tools=[billing_agent],  # add more specialist agents as needed
+)
+```
+
+To hand the child specific context, put it in the tool call (the parent's prompt / args). To share state across turns of the *parent*, use the parent's own memory via `parent_id` session chaining — see [Rewind](#rewind) and [Tracing](/core-concepts/tracing).
+
+## Configuration
+
+Configure the tracing provider for your deployment and keep run IDs with the conversation. The server also supports explicit continuation:
+
+```python
+first = await agent(prompt="My name is David").collect()
+second = await agent(parent_id=first.run_id, prompt="What's my name?").collect()
+```
+
+<Tip>
+Run IDs identify continuation points; the host must authorize access to the conversation before accepting a client-supplied `parent_id`. See [Tracing](/core-concepts/tracing) and [Context](/core-concepts/context) for storage and context behavior.
+</Tip>
+
+## Rewind
+
+Messer supports conversation branching, allowing you to rewind to any previous point and explore alternative conversation paths.
+
+### How Branching Works
+
+Each agent interaction creates a unique run with its own context. You can branch from any previous run by referencing its `run_id`, creating independent conversation paths that diverge from that point.
+
+```python
+from messer import Agent
+from messer.state import RunContext, set_run_context
+
+agent = Agent(name="example", model="openai/gpt-4o-mini")
+
+# Main conversation
+step1 = await agent(prompt="Hello").collect()
+step2 = await agent(prompt="My name is David").collect() 
+step3 = await agent(prompt="What's my name?").collect()
+# Output: "Your name is David"
+
+# Branch from step 1 (before name was shared)
+context = RunContext(parent_id=step1.run_id)
+set_run_context(context)
+
+branch = await agent(prompt="What's my name?").collect()
+# Output: "I don't know your name"
+```
+
+This creates branching conversations:
+```
+"Hello"
+├── "My name is David" → "What's my name?" → "David"
+└── "What's my name?" → "I don't know"
+```
+
+### Common Use Cases
+
+- **A/B Testing**: Compare different conversation strategies
+- **Error Recovery**: Return to a state before an error occurred
+- **Debugging**: Isolate specific conversation states for testing
+- **Exploration**: Test "what if" scenarios without affecting the main conversation
+
+<Note>
+Each branch maintains independent memory from the branching point. Learn more about the underlying mechanisms in [Context](/core-concepts/context).
+</Note>
+
+## Keeping memory within the context window
+
+For long-running conversations, memory can grow large enough to exceed the model's context window. Messer has two complementary layers:
+
+1. **[Tool result offloading](/agents/memory-compaction#tool-result-offloading)** — oversized tool results are spilled to a store *when produced*, so they never dominate every later LLM call. Lossless; the model pages content back via `read_offloaded`.
+2. **[Memory compaction](/agents/memory-compaction)** — strategies (keep last N turns, shrink old tool results, LLM summarize) that fire when context utilization crosses `memory_compaction_ratio` (default 75%).
+
+Most long-running agents want both: offloading prevents the bloat at the source; compaction handles everything else. See [Memory Compaction](/agents/memory-compaction) for the full reference.

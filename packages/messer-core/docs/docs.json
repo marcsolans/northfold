@@ -1,0 +1,736 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Messer",
+  "colors": {
+    "primary": "#000000",
+    "light": "#ffffff",
+    "dark": "#000000"
+  },
+  "favicon": "/favicon.png",
+  "api": {
+    "openapi": "api-reference/openapi.json"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": ["index", "installation", "quickstart"]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "core-concepts/runnables",
+              "core-concepts/events",
+              "core-concepts/tracing",
+              "core-concepts/context"
+            ]
+          },
+          {
+            "group": "Agents",
+            "pages": [
+              "agents/index",
+              "agents/tools",
+              "agents/mcp",
+              "agents/structured-output",
+              "agents/memory",
+              "agents/memory-compaction",
+              "agents/guardrails",
+              "agents/skills",
+              "agents/dynamic",
+              "agents/background-tasks",
+              "agents/commands"
+            ]
+          },
+          {
+            "group": "Voice Agents",
+            "pages": [
+              "voice/index",
+              "voice/quickstart",
+              {
+                "group": "Conversation",
+                "pages": [
+                  "voice/greetings",
+                  "voice/tools",
+                  "voice/thinking-sounds",
+                  "voice/fillers",
+                  "voice/background-audio",
+                  "voice/turn-taking",
+                  "voice/silence"
+                ]
+              },
+              {
+                "group": "Connecting and operating",
+                "pages": ["voice/recording", "voice/transports", "voice/observability"]
+              },
+              {
+                "group": "Reference and extensions",
+                "pages": ["voice/configuration", "voice/custom-pipelines"]
+              }
+            ]
+          },
+          {
+            "group": "Workflows",
+            "pages": [
+              "workflows/index",
+              "workflows/control-flow",
+              "workflows/branching",
+              "workflows/errors-and-failure",
+              "workflows/agents-and-llms",
+              "workflows/human-in-the-loop",
+              {
+                "group": "Examples",
+                "pages": [
+                  "examples/workflows/sequential-steps",
+                  "examples/workflows/parallel-fan-out",
+                  "examples/workflows/conditional-routing",
+                  "examples/workflows/workflow-composition"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Human in the Loop",
+            "pages": [
+              "human-in-the-loop/index",
+              "human-in-the-loop/approval-gates",
+              "human-in-the-loop/suspend",
+              "human-in-the-loop/resuming",
+              "human-in-the-loop/client-integration",
+              "human-in-the-loop/observability"
+            ]
+          },
+          {
+            "group": "Evals",
+            "pages": [
+              "evals/index",
+              "evals/writing-evals",
+              {
+                "group": "Validators",
+                "pages": [
+                  "evals/validators/index",
+                  "evals/validators/comparison",
+                  "evals/validators/type",
+                  "evals/validators/length",
+                  "evals/validators/llm",
+                  "evals/validators/flow"
+                ]
+              },
+              "evals/running-evals"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/index",
+              "deployment/platform",
+              "deployment/self-hosted"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "pages": [
+          {
+            "group": "Examples",
+            "pages": ["examples/index"]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "examples/guides/mail-assistant",
+              "examples/guides/slack-bot",
+              "examples/guides/whatsapp-assistant"
+            ]
+          },
+          {
+            "group": "Agents",
+            "pages": [
+              {
+                "group": "Calling Agents",
+                "pages": [
+                  "examples/agents/images",
+                  "examples/agents/docx",
+                  "examples/agents/csv",
+                  "examples/agents/pdf",
+                  "examples/agents/emls",
+                  "examples/agents/audio"
+                ]
+              },
+              {
+                "group": "Tools",
+                "pages": [
+                  "examples/agents/search",
+                  "examples/agents/tts",
+                  "examples/agents/image-generation"
+                ]
+              },
+              {
+                "group": "Human in the Loop",
+                "pages": [
+                  "examples/agents/ask-user",
+                  "examples/agents/approval-required-tools"
+                ]
+              },
+              {
+                "group": "Knowledge Bases",
+                "pages": [
+                  "examples/agents/sql-queries",
+                  "examples/agents/semantic-search"
+                ]
+              },
+              {
+                "group": "Dynamic Agents",
+                "pages": [
+                  "examples/agents/custom-functions-system-prompts",
+                  "examples/agents/adaptive-system-prompts",
+                  "examples/agents/content-aware-tools"
+                ]
+              },
+              {
+                "group": "Evals",
+                "pages": [
+                  "examples/agents/input-validation",
+                  "examples/agents/output-validation",
+                  "examples/agents/execution-behavior",
+                  "examples/agents/multi-turn-conversation"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Workflows",
+            "pages": [
+              "examples/workflows/sequential-steps",
+              "examples/workflows/conditional-routing",
+              "examples/workflows/parallel-fan-out",
+              "examples/workflows/workflow-composition"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Documentation",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication",
+              "api-reference/errors",
+              "api-reference/pagination",
+              "api-reference/files/upload"
+            ]
+          },
+          {
+            "group": "Me",
+            "pages": [
+              "api-reference/me/list-orgs",
+              "api-reference/me/update",
+              {
+                "group": "Profile Photo",
+                "pages": [
+                  "api-reference/me/photo/upload",
+                  "api-reference/me/photo/delete"
+                ]
+              },
+              {
+                "group": "API Tokens",
+                "pages": [
+                  "api-reference/me/tokens/list",
+                  "api-reference/me/tokens/create",
+                  "api-reference/me/tokens/revoke"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Organizations",
+            "pages": [
+              "api-reference/orgs/create",
+              "api-reference/orgs/get",
+              "api-reference/orgs/update",
+              "api-reference/orgs/contacts/list",
+              "api-reference/orgs/embedding-models/list",
+              {
+                "group": "Analytics",
+                "pages": [
+                  "api-reference/orgs/analytics/costs",
+                  "api-reference/orgs/analytics/usage",
+                  "api-reference/orgs/analytics/users"
+                ]
+              },
+              {
+                "group": "Billing",
+                "pages": [
+                  "api-reference/orgs/billing/overage-summary",
+                  "api-reference/orgs/billing/overage",
+                  "api-reference/orgs/billing/budgets/get",
+                  "api-reference/orgs/billing/budgets/replace",
+                  "api-reference/orgs/billing/budgets/patch",
+                  "api-reference/orgs/billing/compute/get",
+                  "api-reference/orgs/billing/compute/put"
+                ]
+              },
+              {
+                "group": "Content",
+                "pages": ["api-reference/orgs/content/sign"]
+              },
+              {
+                "group": "Organization Logo",
+                "pages": [
+                  "api-reference/orgs/photo/upload",
+                  "api-reference/orgs/photo/delete"
+                ]
+              },
+              {
+                "group": "Credit Grants",
+                "pages": ["api-reference/orgs/credit-grants/list"]
+              },
+              {
+                "group": "Model Policies",
+                "pages": [
+                  "api-reference/orgs/models/policies/list",
+                  "api-reference/orgs/models/policies/create",
+                  "api-reference/orgs/models/policies/delete"
+                ]
+              },
+              {
+                "group": "Templates",
+                "pages": ["api-reference/orgs/templates/list"]
+              },
+              {
+                "group": "Domains",
+                "pages": [
+                  "api-reference/orgs/domains/list",
+                  "api-reference/orgs/domains/create",
+                  "api-reference/orgs/domains/get",
+                  "api-reference/orgs/domains/delete"
+                ]
+              },
+              {
+                "group": "IAM",
+                "pages": [
+                  "api-reference/orgs/iam/actions/list",
+                  "api-reference/orgs/iam/actions/users",
+                  "api-reference/orgs/iam/resources/users",
+                  "api-reference/orgs/iam/check",
+                  {
+                    "group": "Roles",
+                    "pages": [
+                      "api-reference/orgs/roles/list",
+                      "api-reference/orgs/roles/create",
+                      "api-reference/orgs/roles/get",
+                      "api-reference/orgs/roles/update",
+                      "api-reference/orgs/roles/delete"
+                    ]
+                  },
+                  {
+                    "group": "Users",
+                    "pages": [
+                      "api-reference/orgs/users/list",
+                      "api-reference/orgs/users/add",
+                      "api-reference/orgs/users/delete",
+                      "api-reference/orgs/users/update",
+                      "api-reference/orgs/iam/users/batch-roles",
+                      "api-reference/orgs/iam/users/effective-grants"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Identity Providers",
+                "pages": [
+                  "api-reference/orgs/identity-providers/list",
+                  "api-reference/orgs/identity-providers/create",
+                  "api-reference/orgs/identity-providers/get",
+                  "api-reference/orgs/identity-providers/update",
+                  "api-reference/orgs/identity-providers/delete",
+                  "api-reference/orgs/identity-providers/default-role",
+                  "api-reference/orgs/identity-providers/group-mappings/list",
+                  "api-reference/orgs/identity-providers/group-mappings/create",
+                  "api-reference/orgs/identity-providers/group-mappings/delete"
+                ]
+              },
+              {
+                "group": "SCIM",
+                "pages": [
+                  "api-reference/orgs/scim-tokens/list",
+                  "api-reference/orgs/scim-tokens/create",
+                  "api-reference/orgs/scim-tokens/revoke"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Projects",
+            "pages": [
+              "api-reference/projects/list",
+              "api-reference/projects/create",
+              "api-reference/projects/get",
+              "api-reference/projects/update",
+              "api-reference/projects/delete",
+              "api-reference/projects/duplicate",
+              "api-reference/projects/link-knowledge-base",
+              "api-reference/projects/unlink-knowledge-base",
+              {
+                "group": "App Auth",
+                "pages": [
+                  "api-reference/projects/auth/get",
+                  "api-reference/projects/auth/update",
+                  "api-reference/projects/auth/providers/update"
+                ]
+              },
+              {
+                "group": "Analytics",
+                "pages": [
+                  "api-reference/projects/analytics/credits",
+                  "api-reference/projects/analytics/usage",
+                  "api-reference/projects/analytics/users"
+                ]
+              },
+              {
+                "group": "Environments",
+                "pages": [
+                  "api-reference/projects/environments/list",
+                  "api-reference/projects/environments/create",
+                  "api-reference/projects/environments/delete",
+                  "api-reference/projects/environments/update-branch",
+                  "api-reference/projects/environments/update-config",
+                  "api-reference/projects/environments/deploy",
+                  "api-reference/projects/environments/update-domain",
+                  "api-reference/projects/environments/get-metrics",
+                  "api-reference/projects/environments/stop",
+                  "api-reference/projects/environments/deployments/list",
+                  "api-reference/projects/environments/logs"
+                ]
+              },
+              {
+                "group": "Runs",
+                "pages": [
+                  "api-reference/projects/runs/list",
+                  "api-reference/projects/runs/get",
+                  "api-reference/projects/runs/reactions-list",
+                  "api-reference/projects/runs/reactions-add"
+                ]
+              },
+              {
+                "group": "Variables",
+                "pages": [
+                  "api-reference/projects/vars/list",
+                  "api-reference/projects/vars/create",
+                  "api-reference/projects/vars/batch-create",
+                  "api-reference/projects/vars/get",
+                  "api-reference/projects/vars/delete",
+                  "api-reference/projects/vars/update"
+                ]
+              },
+              {
+                "group": "Channels",
+                "pages": [
+                  "api-reference/projects/channels/put",
+                  "api-reference/projects/channels/delete"
+                ]
+              },
+              {
+                "group": "Workforce",
+                "pages": [
+                  "api-reference/projects/workforce/list",
+                  "api-reference/projects/workforce/create",
+                  "api-reference/projects/workforce/delete",
+                  "api-reference/projects/workforce/call",
+                  "api-reference/projects/workforce/call-get",
+                  "api-reference/projects/workforce/call-put",
+                  "api-reference/projects/workforce/call-patch",
+                  "api-reference/projects/workforce/call-delete"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Knowledge Bases",
+            "pages": [
+              "api-reference/knowledge-bases/list",
+              "api-reference/knowledge-bases/create",
+              "api-reference/knowledge-bases/get",
+              "api-reference/knowledge-bases/update",
+              "api-reference/knowledge-bases/delete",
+              "api-reference/knowledge-bases/query",
+              "api-reference/knowledge-bases/schema",
+              "api-reference/knowledge-bases/upload",
+              {
+                "group": "Policies",
+                "pages": [
+                  "api-reference/knowledge-bases/policies/list",
+                  "api-reference/knowledge-bases/policies/create",
+                  "api-reference/knowledge-bases/policies/get",
+                  "api-reference/knowledge-bases/policies/update",
+                  "api-reference/knowledge-bases/policies/delete",
+                  "api-reference/knowledge-bases/policies/governance-mode",
+                  {
+                    "group": "Assignments",
+                    "pages": [
+                      "api-reference/knowledge-bases/policies/assignments/list",
+                      "api-reference/knowledge-bases/policies/assignments/create",
+                      "api-reference/knowledge-bases/policies/assignments/get",
+                      "api-reference/knowledge-bases/policies/assignments/delete"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Backups",
+                "pages": [
+                  "api-reference/knowledge-bases/backups/list",
+                  "api-reference/knowledge-bases/backups/create",
+                  "api-reference/knowledge-bases/backups/get",
+                  "api-reference/knowledge-bases/restores/list",
+                  "api-reference/knowledge-bases/restores/create",
+                  "api-reference/knowledge-bases/restores/get"
+                ]
+              },
+              {
+                "group": "Files",
+                "pages": [
+                  "api-reference/knowledge-bases/files/list",
+                  "api-reference/knowledge-bases/files/add",
+                  "api-reference/knowledge-bases/files/create-dir",
+                  "api-reference/knowledge-bases/files/get",
+                  "api-reference/knowledge-bases/files/delete",
+                  {
+                    "group": "Chunks",
+                    "pages": [
+                      "api-reference/knowledge-bases/files/chunks/list",
+                      "api-reference/knowledge-bases/files/chunks/insert",
+                      "api-reference/knowledge-bases/files/chunks/get",
+                      "api-reference/knowledge-bases/files/chunks/update",
+                      "api-reference/knowledge-bases/files/chunks/delete"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Evals",
+            "pages": [
+              "api-reference/evals/definitions",
+              {
+                "group": "Jobs",
+                "pages": [
+                  "api-reference/evals/jobs/list",
+                  "api-reference/evals/jobs/get",
+                  "api-reference/evals/jobs/create"
+                ]
+              },
+              {
+                "group": "Runs",
+                "pages": [
+                  "api-reference/evals/runs/list",
+                  "api-reference/evals/runs/get",
+                  "api-reference/evals/runs/events",
+                  "api-reference/evals/runs/create",
+                  "api-reference/evals/runs/delete"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "ACE",
+            "tag": "Pro",
+            "pages": [
+              "api-reference/ace/create-from-workforce",
+              "api-reference/ace/link",
+              "api-reference/ace/unlink",
+              "api-reference/ace/list-policies",
+              "api-reference/ace/list-context-vars",
+              "api-reference/ace/chat-completions",
+              {
+                "group": "Jobs",
+                "pages": [
+                  "api-reference/ace/jobs/list",
+                  "api-reference/ace/jobs/create",
+                  "api-reference/ace/jobs/get",
+                  "api-reference/ace/jobs/cancel",
+                  "api-reference/ace/jobs/retry"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Alarms",
+            "pages": [
+              "api-reference/alarms/list",
+              "api-reference/alarms/create",
+              "api-reference/alarms/get",
+              "api-reference/alarms/update",
+              "api-reference/alarms/delete",
+              "api-reference/alarms/health",
+              "api-reference/alarms/history",
+              "api-reference/alarms/attach-channel",
+              "api-reference/alarms/detach-channel",
+              {
+                "group": "Channels",
+                "pages": [
+                  "api-reference/alarms/channels/list",
+                  "api-reference/alarms/channels/create",
+                  "api-reference/alarms/channels/delete"
+                ]
+              },
+              {
+                "group": "Metrics",
+                "pages": [
+                  "api-reference/alarms/metrics/query",
+                  "api-reference/alarms/metrics/catalog",
+                  {
+                    "group": "Definitions",
+                    "pages": [
+                      "api-reference/alarms/metrics/definitions/list",
+                      "api-reference/alarms/metrics/definitions/create",
+                      "api-reference/alarms/metrics/definitions/preview",
+                      "api-reference/alarms/metrics/definitions/update",
+                      "api-reference/alarms/metrics/definitions/delete"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Connectors",
+            "pages": [
+              "api-reference/connectors/list",
+              "api-reference/connectors/get",
+              "api-reference/connectors/update",
+              "api-reference/connectors/local-config",
+              "api-reference/connectors/query",
+              "api-reference/connectors/rebind",
+              "api-reference/connectors/revoke",
+              "api-reference/connectors/filesystems/copy",
+              {
+                "group": "Enrollment Tokens",
+                "pages": ["api-reference/connectors/enrollment-tokens/create"]
+              },
+              {
+                "group": "Jobs",
+                "pages": [
+                  "api-reference/connectors/jobs/list",
+                  "api-reference/connectors/jobs/create",
+                  "api-reference/connectors/jobs/stop"
+                ]
+              },
+              {
+                "group": "Syncs",
+                "pages": [
+                  "api-reference/connectors/syncs/list",
+                  "api-reference/connectors/syncs/create",
+                  "api-reference/connectors/syncs/get",
+                  "api-reference/connectors/syncs/update",
+                  "api-reference/connectors/syncs/delete",
+                  "api-reference/connectors/syncs/run"
+                ]
+              },
+              {
+                "group": "Browse",
+                "pages": [
+                  "api-reference/connectors/browse/connections",
+                  "api-reference/connectors/browse/tables",
+                  "api-reference/connectors/browse/table",
+                  "api-reference/connectors/browse/columns",
+                  {
+                    "group": "Filesystems",
+                    "pages": [
+                      "api-reference/connectors/browse/filesystems/list",
+                      "api-reference/connectors/browse/filesystems/entries",
+                      "api-reference/connectors/browse/filesystems/search",
+                      "api-reference/connectors/browse/filesystems/summary"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Model Reference",
+        "groups": [
+          {
+            "group": "Model Reference",
+            "pages": [
+              "models/overview",
+              "models/anthropic",
+              "models/byteplus",
+              "models/cerebras",
+              "models/fireworks",
+              "models/google",
+              "models/groq",
+              "models/moonshot",
+              "models/openai",
+              "models/sambanova",
+              "models/messer",
+              "models/togetherai",
+              "models/xai",
+              "models/xiaomi"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "MCP Integration",
+        "pages": [
+          {
+            "group": "MCP Integration",
+            "pages": ["mcp-integration/index"]
+          },
+          {
+            "group": "Connecting Messer",
+            "pages": [
+              "mcp-integration/claude",
+              "mcp-integration/cursor",
+              "mcp-integration/vscode",
+              "mcp-integration/windsurf",
+              "mcp-integration/zed"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light-small-1.svg",
+    "dark": "/logo/dark-small-1.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/marcsolans/northfold"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "website": "https://messer.local",
+      "github": "https://github.com/messer",
+      "linkedin": "https://linkedin.com/company/messer"
+    }
+  },
+  "styling": {
+    "codeblocks": "dark"
+  }
+}

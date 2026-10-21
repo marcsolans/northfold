@@ -1,0 +1,97 @@
+---
+title: "Structured Output"
+description: "Use Pydantic models to structure and validate your agent outputs"
+---
+
+Instead of answering in natural language, the agent can return a specific output structure using Pydantic models.
+
+## Why use structured output?
+
+Using structured output ensures your agents return predictable, type-safe responses:
+
+- Automatically validates and parses responses
+- Guarantees required fields are present and correctly typed
+- Reduces ambiguity compared to natural-language answers
+
+By defining schemas upfront, `result.output` is always a validated Pydantic instance.
+
+## Usage
+
+1. Define the desired output schema using a [Pydantic model](https://docs.pydantic.dev/latest/api/base_model/).
+2. Pass that model to the agent's `output_model` parameter.
+3. Call the agent — `result.output` is the validated model, not a `Message`.
+
+<Warning>
+Using `tools` and `output_model` together may produce unexpected behavior — the agent can call tools instead of returning structured output. Prefer one or the other unless you have a deliberate multi-step flow.
+</Warning>
+
+```python
+from pydantic import BaseModel, Field
+
+from messer import Agent
+
+class Ingredient(BaseModel):
+    name: str = Field(..., description="Name of the ingredient")
+    amount: float = Field(..., description="Amount of the ingredient")
+    unit: str = Field(..., description="Unit of the ingredient")
+
+class Recipe(BaseModel):
+    ingredients: list[Ingredient] = Field(..., description="List of ingredients")
+    total_time: float = Field(..., description="Total time in minutes")
+    steps: list[str] = Field(..., description="Steps to follow")
+
+agent = Agent(
+    name="chef_agent",
+    model="openai/gpt-4o-mini",
+    output_model=Recipe,
+)
+
+result = await agent(prompt="I want to make lasagna").collect()
+recipe: Recipe = result.output
+
+print(recipe.total_time)       # float
+print(recipe.ingredients[0].name)
+```
+
+`agent.return_model` reflects the expected output type — `Message` by default, your Pydantic class when `output_model` is set.
+
+## Validation and retries
+
+If the model returns JSON that fails validation, the agent feeds the error back and retries (up to `max_iter` times) before raising. Field descriptions in your Pydantic model are sent to the LLM and strongly influence output quality — use them.
+
+Pass extra validation context with `output_model_context` when your model's validators need runtime data:
+
+```python
+agent = Agent(
+    name="chef_agent",
+    model="openai/gpt-4o-mini",
+    output_model=Recipe,
+    output_model_context={"locale": "en-US"},
+)
+```
+
+## Output example
+
+`result.output` is a `Recipe` instance. Serialized:
+
+```json
+{
+  "ingredients": [
+    { "name": "Lasagna sheets", "amount": 12, "unit": "pieces" },
+    { "name": "Ground beef", "amount": 500, "unit": "grams" },
+    { "name": "Ricotta cheese", "amount": 400, "unit": "grams" },
+    { "name": "Mozzarella", "amount": 200, "unit": "grams" },
+    { "name": "Marinara sauce", "amount": 600, "unit": "ml" },
+    { "name": "Parmesan", "amount": 50, "unit": "grams" }
+  ],
+  "total_time": 90,
+  "steps": [
+    "Brown the ground beef and season with salt and pepper.",
+    "Spread a thin layer of marinara in a baking dish.",
+    "Layer lasagna sheets, ricotta, beef, mozzarella, and sauce. Repeat.",
+    "Finish with sauce and parmesan on top.",
+    "Bake at 180°C for 45 minutes until bubbling.",
+    "Rest 10 minutes before serving."
+  ]
+}
+```

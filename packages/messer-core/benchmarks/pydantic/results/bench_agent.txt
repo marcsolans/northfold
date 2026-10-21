@@ -1,0 +1,236 @@
+
+[1m══════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer vs PydanticAI — agent loop benchmark[0m
+  100 iters · burst {1: 50, 2: 30, 3: 40} · 100 mem · 200 throughput ops
+  Messer: TestModel (offline) · PydanticAI: FunctionModel (offline)
+  PydanticAI found — will measure bare + Logfire (+obs)
+  [2mBoth frameworks run fully async and dispatch parallel tool calls concurrently.[0m
+[1m══════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mSpot-checking correctness (Scenario 1)...[0m
+  Messer: ✓  |  PAI: ✓
+
+  [2m[Phase 1 · Scenario 1][0m
+    Messer latency... p50=278.6 µs
+    Messer memory... 42 KB peak
+    Messer burst (50 concurrent)... p50=230.6 µs
+    Messer burst memory (50 concurrent)... 768 KB peak
+    Messer throughput conc=1... 2865/s
+    Messer throughput conc=10... 2693/s
+    Messer throughput conc=50... 2604/s
+    PAI bare latency... p50=3.05 ms
+    PAI bare memory... 3681 KB peak
+    PAI bare burst (50 concurrent)... p50=213.24 ms
+    PAI bare burst memory (50 concurrent)... 5507 KB peak
+    PAI bare throughput conc=1... 277/s
+    PAI bare throughput conc=10... 361/s
+    PAI bare throughput conc=50... 433/s
+
+  [2m[Phase 1 · Scenario 2][0m
+    Messer latency... p50=285.4 µs
+    Messer memory... 70 KB peak
+    Messer burst (30 concurrent)... p50=491.7 µs
+    Messer burst memory (30 concurrent)... 1123 KB peak
+    Messer throughput conc=1... 1572/s
+    Messer throughput conc=10... 1514/s
+    Messer throughput conc=50... 1556/s
+    PAI bare latency... p50=6.87 ms
+    PAI bare memory... 5353 KB peak
+    PAI bare burst (30 concurrent)... p50=115.26 ms
+    PAI bare burst memory (30 concurrent)... 3386 KB peak
+    PAI bare throughput conc=1... 162/s
+    PAI bare throughput conc=10... 227/s
+    PAI bare throughput conc=50... 248/s
+
+  [2m[Phase 1 · Scenario 3][0m
+    Messer latency... p50=304.9 µs
+    Messer memory... 61 KB peak
+    Messer burst (40 concurrent)... p50=9.44 ms
+    Messer burst memory (40 concurrent)... 1292 KB peak
+    Messer throughput conc=1... 1666/s
+    Messer throughput conc=10... 1827/s
+    Messer throughput conc=50... 2021/s
+    PAI bare latency... p50=3.85 ms
+    PAI bare memory... 4087 KB peak
+    PAI bare burst (40 concurrent)... p50=84.71 ms
+    PAI bare burst memory (40 concurrent)... 5717 KB peak
+    PAI bare throughput conc=1... 165/s
+    PAI bare throughput conc=10... 336/s
+    PAI bare throughput conc=50... 368/s
+
+  [2mActivating Logfire instrumentation (send_to_logfire=False)...[0m
+  Logfire instrumented.
+
+  [2m[Phase 2 · Scenario 1][0m
+    PAI+Logfire latency... p50=5.35 ms
+    PAI+Logfire memory... 3935 KB peak
+    PAI+Logfire burst (50 concurrent)... p50=146.92 ms
+    PAI+Logfire burst memory (50 concurrent)... 6840 KB peak
+    PAI+Logfire throughput conc=1... 189/s
+    PAI+Logfire throughput conc=10... 239/s
+    PAI+Logfire throughput conc=50... 299/s
+
+  [2m[Phase 2 · Scenario 2][0m
+    PAI+Logfire latency... p50=10.17 ms
+    PAI+Logfire memory... 5761 KB peak
+    PAI+Logfire burst (30 concurrent)... p50=169.49 ms
+    PAI+Logfire burst memory (30 concurrent)... 4437 KB peak
+    PAI+Logfire throughput conc=1... 99/s
+    PAI+Logfire throughput conc=10... 125/s
+    PAI+Logfire throughput conc=50... 162/s
+
+  [2m[Phase 2 · Scenario 3][0m
+    PAI+Logfire latency... p50=6.41 ms
+    PAI+Logfire memory... 4432 KB peak
+    PAI+Logfire burst (40 concurrent)... p50=135.35 ms
+    PAI+Logfire burst memory (40 concurrent)... 7634 KB peak
+    PAI+Logfire throughput conc=1... 151/s
+    PAI+Logfire throughput conc=10... 202/s
+    PAI+Logfire throughput conc=50... 235/s
+
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 1: Single tool  (LLM → add → LLM → answer)[0m
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100 sequential runs)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+          mean        491.9 µs         3.48 ms         5.61 ms
+           p50        278.6 µs         3.05 ms         5.35 ms
+           p95        383.4 µs         4.43 ms         6.58 ms
+           p99        22.51 ms        26.47 ms        29.47 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          42.3 KB         434  B
+  PAI (bare)                    3680.9 KB       37692  B
+  PAI+Logfire                   3934.7 KB       40291  B
+
+  [1mBurst  (50 concurrent — fully async on both frameworks)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+           p50        230.6 µs       213.24 ms       146.92 ms
+           p75        237.4 µs       217.03 ms       152.26 ms
+           p95        400.0 µs       247.03 ms       171.79 ms
+           p99        21.83 ms       253.56 ms       176.37 ms
+           max        21.83 ms       253.56 ms       176.37 ms
+
+  [2mwall: Messer: 21.8 ms | PAI (bare): 253.6 ms | PAI+Logfire: 176.4 ms[0m
+
+  [1mBurst memory  (50 concurrent — peak during full burst, no GC between)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         767.7 KB       15723  B
+  PAI (bare)                    5507.1 KB      112786  B
+  PAI+Logfire                   6840.1 KB      140086  B
+
+  [1mThroughput  (200 loops)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+             1          2865/s           277/s           189/s
+            10          2693/s           361/s           239/s
+            50          2604/s           433/s           299/s
+
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 2: Multi-step  (LLM → add → LLM → mul → LLM → sub → LLM → answer)[0m
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100 sequential runs)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+          mean        536.5 µs         7.08 ms        11.06 ms
+           p50        285.4 µs         6.87 ms        10.17 ms
+           p95        556.0 µs         7.79 ms        14.46 ms
+           p99        23.88 ms        31.01 ms        34.52 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          69.9 KB         716  B
+  PAI (bare)                    5353.2 KB       54817  B
+  PAI+Logfire                   5760.5 KB       58988  B
+
+  [1mBurst  (30 concurrent — fully async on both frameworks)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+           p50        491.7 µs       115.26 ms       169.49 ms
+           p75        525.5 µs       140.98 ms       186.87 ms
+           p95        805.9 µs       143.72 ms       195.00 ms
+           p99        24.64 ms       145.58 ms       197.45 ms
+           max        24.64 ms       145.58 ms       197.45 ms
+
+  [2mwall: Messer: 24.6 ms | PAI (bare): 145.6 ms | PAI+Logfire: 197.4 ms[0m
+
+  [1mBurst memory  (30 concurrent — peak during full burst, no GC between)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                        1123.1 KB       38337  B
+  PAI (bare)                    3386.0 KB      115575  B
+  PAI+Logfire                   4436.9 KB      151447  B
+
+  [1mThroughput  (200 loops)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+             1          1572/s           162/s            99/s
+            10          1514/s           227/s           125/s
+            50          1556/s           248/s           162/s
+
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 3: Parallel tools  (LLM → [add, mul, neg] concurrent → LLM → answer)[0m
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100 sequential runs)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+          mean        561.2 µs         4.12 ms         6.72 ms
+           p50        304.9 µs         3.85 ms         6.41 ms
+           p95        574.0 µs         4.50 ms         7.88 ms
+           p99        23.59 ms        26.77 ms        33.04 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          60.7 KB         621  B
+  PAI (bare)                    4087.0 KB       41851  B
+  PAI+Logfire                   4432.3 KB       45387  B
+
+  [1mBurst  (40 concurrent — fully async on both frameworks)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+           p50         9.44 ms        84.71 ms       135.35 ms
+           p75        32.96 ms       106.34 ms       156.87 ms
+           p95        33.36 ms       114.82 ms       167.15 ms
+           p99        33.60 ms       115.99 ms       172.26 ms
+           max        33.60 ms       115.99 ms       172.26 ms
+
+  [2mwall: Messer: 33.6 ms | PAI (bare): 116.0 ms | PAI+Logfire: 172.3 ms[0m
+
+  [1mBurst memory  (40 concurrent — peak during full burst, no GC between)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                        1291.9 KB       33073  B
+  PAI (bare)                    5716.9 KB      146353  B
+  PAI+Logfire                   7633.8 KB      195426  B
+
+  [1mThroughput  (200 loops)[0m
+                        Messer      PAI (bare)     PAI+Logfire
+  ────────────  ──────────────  ──────────────  ──────────────
+             1          1666/s           165/s           151/s
+            10          1827/s           336/s           202/s
+            50          2021/s           368/s           235/s
+
+[2m──────────────────────────────────────────────────────────────────────────────────────────
+  Messer: TestModel (sync handler, stateless). Built-in InMemory tracing always on.
+
+  PAI bare:    PydanticAI with FunctionModel (sync handler, stateless).
+               No observability instrumentation.
+
+  PAI+Logfire: Logfire instrumented via logfire.instrument_pydantic_ai().
+               send_to_logfire=False — span-creation overhead only, no HTTP calls.
+               Logfire patches PydanticAI globally; bare pass must run first.
+
+  Scenario 3: both Messer and PydanticAI dispatch all 3 tools concurrently
+  (PydanticAI uses asyncio.gather for multiple ToolCallParts in one response).
+──────────────────────────────────────────────────────────────────────────────────────────[0m
+

@@ -1,0 +1,36 @@
+---
+title: "Overview"
+description: "Learn how to integrate Messer with MCP on supported servers."
+---
+
+## What is MCP?
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) is an open standard that enables communication between AI models and external tools and services.
+
+By exposing **Messer as an MCP server**, AI-powered editors and applications can interact with Messer’s functionality directly.
+
+<Note>
+Looking for the other direction — connecting MCP servers **to your Messer agents** as tool sources? See [MCP Servers](/agents/mcp).
+</Note>
+
+## Connecting Messer via MCP
+
+To use Messer with MCP, you first need to configure your editor or client to connect to Messer’s MCP endpoint:
+
+```
+https://api.messer.local/mcp
+```
+
+<Note>
+Each editor or client handles MCP connections differently. The following sections inside **Connecting Messer** provide detailed, step-by-step instructions for connecting Messer to specific editors and tools.
+</Note>
+
+Once the connection is configured, authentication is required to access Messer’s features. An **active Messer account** on the [Messer Platform](https://app.messer.local) <Icon icon="arrow-up-right-from-square" size="10" /> is needed.
+
+**Authentication** can be performed using one of the following methods:
+- **OAuth** (Google, Microsoft, GitHub, or Messer OAuth)
+- **API Key**
+
+<Info>
+See the [Authentication documentation](https://docs.messer.local/api-reference/authentication#authentication) for instructions on generating an API Key.
+</Info>

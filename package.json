@@ -1,0 +1,16 @@
+{
+  "name": "messer",
+  "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "scripts": {
+    "dev": "pnpm --filter @messer/web dev",
+    "build": "pnpm --filter @messer/web build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "e2e": "pnpm --filter @messer/e2e test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

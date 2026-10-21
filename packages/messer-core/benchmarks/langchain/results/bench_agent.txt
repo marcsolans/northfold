@@ -1,0 +1,194 @@
+
+[1m════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer vs LangGraph — agent loop benchmark[0m
+  100 iters · burst {1: 20, 2: 10, 3: 15} · 100 mem · 200 throughput
+  LangGraph + LangSmith
+  [2mAgent/graph creation excluded. Traces cleared between batches.[0m
+  [2mBoth frameworks: 1 shared instance, native async (ainvoke / .collect()).[0m
+  [2mLLMs faked; step detected from message history — no shared counter state.[0m
+[1m════════════════════════════════════════════════════════════════════════════[0m
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 1: Single tool call  (LLM → add → LLM → answer)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+          mean     450.6 µs      3.66 ms      6.59 ms
+           p50     269.8 µs      3.64 ms      6.38 ms
+           p95     512.8 µs      4.60 ms      8.09 ms
+           p99     17.12 ms      5.16 ms     26.22 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         192.3 KB        1969  B
+  LG (bare)                      397.6 KB        4072  B
+  LG + LangSmith               23054.2 KB      236075  B
+
+  [1mBurst  (20 concurrent loops)[0m
+  [2mBoth use 1 shared instance. LangGraph uses native ainvoke().[0m
+
+  burst [ 1/20]  last    515.0 µs
+  burst [ 2/20]  last    352.5 µs
+  burst [ 3/20]  last    288.0 µs
+  burst [ 4/20]  last    281.8 µs
+  burst [ 5/20]  last    266.8 µs
+  burst [ 6/20]  last    257.0 µs
+  burst [ 7/20]  last    265.6 µs
+  burst [ 8/20]  last    229.7 µs
+  burst [ 9/20]  last    242.2 µs
+  burst [10/20]  last    489.6 µs
+  burst [11/20]  last    281.7 µs
+  burst [12/20]  last    246.1 µs
+  burst [13/20]  last    251.4 µs
+  burst [14/20]  last    240.9 µs
+  burst [15/20]  last    232.6 µs
+  burst [16/20]  last    235.2 µs
+  burst [17/20]  last    235.0 µs
+  burst [18/20]  last    227.2 µs
+  burst [19/20]  last    224.6 µs
+  burst [20/20]  last    16.39 ms
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+           p50     257.0 µs     27.46 ms     71.58 ms
+           p75     288.0 µs     45.96 ms     89.67 ms
+           p95     16.39 ms     47.30 ms     91.66 ms
+           p99     16.39 ms     47.30 ms     91.66 ms
+           max     16.39 ms     47.30 ms     91.66 ms
+
+  [2mwall: Messer 16.4 ms  |  LG bare 47.3 ms  |  LG+Smith 91.7 ms[0m
+
+  [1mThroughput  (200 loops)[0m
+  [2mBoth use 1 shared instance, semaphore-bounded async.[0m
+   concurrency        Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+             1        2698/s         313/s         147/s
+            10        2545/s         529/s         211/s
+            50        2267/s         640/s         254/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 2: Multi-step  (LLM → add → LLM → mul → LLM → sub → LLM → answer)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+          mean     514.1 µs      6.43 ms     13.16 ms
+           p50     305.5 µs      6.52 ms     12.84 ms
+           p95     827.0 µs      7.12 ms     16.16 ms
+           p99     17.26 ms      7.93 ms     33.98 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          92.9 KB         952  B
+  LG (bare)                      405.4 KB        4151  B
+  LG + LangSmith               36974.8 KB      378622  B
+
+  [1mBurst  (10 concurrent loops)[0m
+  [2mBoth use 1 shared instance. LangGraph uses native ainvoke().[0m
+
+  burst [ 1/10]  last    903.4 µs
+  burst [ 2/10]  last    705.5 µs
+  burst [ 3/10]  last    566.8 µs
+  burst [ 4/10]  last    521.8 µs
+  burst [ 5/10]  last    514.1 µs
+  burst [ 6/10]  last    691.9 µs
+  burst [ 7/10]  last    792.0 µs
+  burst [ 8/10]  last    533.1 µs
+  burst [ 9/10]  last    16.68 ms
+  burst [10/10]  last    526.0 µs
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+           p50     691.9 µs     54.45 ms    151.59 ms
+           p75     792.0 µs     55.00 ms    154.67 ms
+           p95     16.68 ms     55.74 ms    156.79 ms
+           p99     16.68 ms     55.74 ms    156.79 ms
+           max     16.68 ms     55.74 ms    156.79 ms
+
+  [2mwall: Messer 16.7 ms  |  LG bare 55.7 ms  |  LG+Smith 156.8 ms[0m
+
+  [1mThroughput  (200 loops)[0m
+  [2mBoth use 1 shared instance, semaphore-bounded async.[0m
+   concurrency        Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+             1        1494/s         129/s          72/s
+            10        1500/s         193/s          97/s
+            50        1195/s         315/s         105/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 3: Parallel tools  (LLM → [add, mul, neg] → LLM → answer)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100)[0m
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+          mean     528.2 µs      4.67 ms      8.88 ms
+           p50     328.2 µs      4.62 ms      8.54 ms
+           p95     569.4 µs      5.71 ms     11.03 ms
+           p99     17.96 ms      7.38 ms     25.89 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         272.0 KB        2786  B
+  LG (bare)                      439.0 KB        4495  B
+  LG + LangSmith               26844.6 KB      274889  B
+
+  [1mBurst  (15 concurrent loops)[0m
+  [2mBoth use 1 shared instance. LangGraph uses native ainvoke().[0m
+
+  burst [ 1/15]  last    21.11 ms
+  burst [ 2/15]  last    21.02 ms
+  burst [ 3/15]  last    21.01 ms
+  burst [ 4/15]  last    21.01 ms
+  burst [ 5/15]  last    21.01 ms
+  burst [ 6/15]  last    21.02 ms
+  burst [ 7/15]  last    21.03 ms
+  burst [ 8/15]  last    21.03 ms
+  burst [ 9/15]  last    21.06 ms
+  burst [10/15]  last    21.08 ms
+  burst [11/15]  last    21.09 ms
+  burst [12/15]  last    21.11 ms
+  burst [13/15]  last    21.14 ms
+  burst [14/15]  last     4.08 ms
+  burst [15/15]  last     4.07 ms
+                      Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+           p50     21.03 ms     48.15 ms    270.97 ms
+           p75     21.09 ms     48.81 ms    272.30 ms
+           p95     21.14 ms     49.68 ms    274.29 ms
+           p99     21.14 ms     49.68 ms    274.29 ms
+           max     21.14 ms     49.68 ms    274.29 ms
+
+  [2mwall: Messer 21.1 ms  |  LG bare 49.7 ms  |  LG+Smith 274.3 ms[0m
+
+  [1mThroughput  (200 loops)[0m
+  [2mBoth use 1 shared instance, semaphore-bounded async.[0m
+   concurrency        Messer     LG (bare)      LG+Smith
+  ────────────  ────────────  ────────────  ────────────
+             1        1686/s         223/s         127/s
+            10        1648/s         363/s         157/s
+            50        1677/s         469/s         179/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  AgentExecutor vs create_react_agent vs Messer  (Scenario 2: 3-tool chain)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────[0m
+
+  [2mAgentExecutor was removed in LangChain 1.x.[0m
+  [2mLangChain fully deprecated the LCEL agent pattern (AgentExecutor +[0m
+  [2mcreate_tool_calling_agent) and committed to LangGraph as the sole[0m
+  [2magent runtime. create_react_agent (langgraph.prebuilt) IS the[0m
+  [2mcurrent official agent API — the benchmark already covers it.[0m
+
+  [2mTo test AgentExecutor: install langchain==0.3.x (conflicts with[0m
+  [2mlangchain-core>=1.x which langgraph requires).[0m
+
+[2m────────────────────────────────────────────────────────────────────────────
+  All measurements reuse 1 pre-built agent/graph (creation excluded).
+  LLMs faked via message inspection. Messer traces cleared between batches.
+  Both frameworks run natively async on a single shared instance.
+────────────────────────────────────────────────────────────────────────────[0m
+

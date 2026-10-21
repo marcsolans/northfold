@@ -1,0 +1,2368 @@
+"""Tests for ChatCompletionCollector and ResponseCollector."""
+import time
+
+import pytest
+from openai.types.chat import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import (
+    Choice,
+    ChoiceDelta,
+    ChoiceDeltaToolCall,
+    ChoiceDeltaToolCallFunction,
+)
+from openai.types.responses import (
+    Response,
+    ResponseCompletedEvent,
+    ResponseContentPartAddedEvent,
+    ResponseContentPartDoneEvent,
+    ResponseCreatedEvent,
+    ResponseFunctionCallArgumentsDeltaEvent,
+    ResponseFunctionCallArgumentsDoneEvent,
+    ResponseFunctionToolCall,
+    ResponseIncompleteEvent,
+    ResponseInProgressEvent,
+    ResponseOutputItemAddedEvent,
+    ResponseOutputItemDoneEvent,
+    ResponseOutputMessage,
+    ResponseOutputText,
+    ResponseReasoningItem,
+    ResponseReasoningSummaryPartAddedEvent,
+    ResponseReasoningSummaryTextDeltaEvent,
+    ResponseTextDeltaEvent,
+    ResponseTextDoneEvent,
+)
+from openai.types.responses.response_usage import InputTokensDetails, OutputTokensDetails, ResponseUsage
+
+from messer.collectors.impl.openai import ChatCompletionCollector, ResponseCollector
+from messer.state import set_billing_id, set_call_id, set_run_context
+from messer.state.context import RunContext
+from messer.state.tracing.span import Span
+from messer.types.content.text import TextContent
+from messer.types.content.thinking import ThinkingContent
+from messer.types.content.tool_use import ToolUseContent
+from messer.types.events.delta import (
+    ContentBlockStop,
+    Text,
+    TextDelta as MesserTextDelta,
+    Thinking,
+    ThinkingDelta as MesserThinkingDelta,
+    ToolUse,
+    ToolUseDelta,
+)
+
+
+async def _empty_gen():
+    return
+    yield
+
+
+@pytest.fixture(autouse=True)
+def clean_context():
+    """Reset context vars after each test to avoid state pollution."""
+    from messer.state import _run_context_var, _call_id, _billing_id
+    token_ctx = _run_context_var.set(None)
+    token_cid = _call_id.set(None)
+    token_bid = _billing_id.set(None)
+    yield
+    _run_context_var.reset(token_ctx)
+    _call_id.reset(token_cid)
+    _billing_id.reset(token_bid)
+
+
+def _make_context():
+    ctx = RunContext(tracing_provider=None)
+    call_id = "test_call"
+    span = Span(path="test", call_id=call_id, parent_call_id=None, t0=int(time.time() * 1000))
+    ctx._trace[call_id] = span
+    set_run_context(ctx)
+    set_call_id(call_id)
+    return ctx
+
+
+def _make_cc_chunk(
+    content=None,
+    tool_calls=None,
+    finish_reason=None,
+    usage=None,
+    model="gpt-4o",
+    reasoning_content=None,
+):
+    delta_kwargs = {"content": content, "tool_calls": tool_calls, "role": "assistant"}
+    if reasoning_content is not None:
+        # Providers stream this as an extra field (not on the typed ChoiceDelta schema).
+        delta_kwargs["reasoning_content"] = reasoning_content
+    delta = ChoiceDelta(**delta_kwargs)
+    choice = Choice(index=0, delta=delta, finish_reason=finish_reason, logprobs=None)
+    return ChatCompletionChunk(
+        id="chatcmpl_123",
+        choices=[choice],
+        created=int(time.time()),
+        model=model,
+        object="chat.completion.chunk",
+        usage=usage,
+    )
+
+
+def _make_response(model="gpt-4o", status="in_progress"):
+    return Response(
+        id="resp_001",
+        created_at=1234567890,
+        model=model,
+        object="response",
+        output=[],
+        parallel_tool_calls=True,
+        tool_choice="auto",
+        tools=[],
+        status=status,
+        usage=None,
+        incomplete_details=None,
+        instructions=None,
+        metadata={},
+        error=None,
+        temperature=1.0,
+        top_p=1.0,
+        max_output_tokens=None,
+        text=None,
+        truncation="disabled",
+    )
+
+
+def _make_response_usage(input_tokens=10, output_tokens=5, cached_tokens=0):
+    return ResponseUsage(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=input_tokens + output_tokens,
+        input_tokens_details=InputTokensDetails(cached_tokens=cached_tokens),
+        output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+    )
+
+
+class TestChatCompletionCollectorCanHandle:
+    def test_handles_chat_completion_chunk(self):
+        chunk = _make_cc_chunk(content="hi")
+        assert ChatCompletionCollector.can_handle(chunk) is True
+
+    def test_does_not_handle_other(self):
+        assert ChatCompletionCollector.can_handle("str") is False
+        assert ChatCompletionCollector.can_handle(None) is False
+
+
+class TestChatCompletionCollectorText:
+    def test_first_chunk_returns_text(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        item = collector.process(_make_cc_chunk(content="Hello"))
+        assert isinstance(item, Text)
+        assert item.text == "Hello"
+        assert item.id == ChatCompletionCollector.TEXT_BLOCK_ID
+
+    def test_subsequent_chunks_return_text_delta(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        collector.process(_make_cc_chunk(content="Hello"))
+        item = collector.process(_make_cc_chunk(content=" world"))
+        assert isinstance(item, MesserTextDelta)
+        assert item.text_delta == " world"
+
+    def test_stop_reason_captured(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(content="hi"))
+        collector.process(_make_cc_chunk(content=None, finish_reason="stop"))
+        assert collector._stop_reason == "stop"
+
+    def test_result_builds_message(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(content="Hello"))
+        collector.process(_make_cc_chunk(content=" world"))
+        collector.process(_make_cc_chunk(content=None, finish_reason="stop"))
+
+        msg = collector.result()
+        assert msg.role == "assistant"
+        assert len(msg.content) == 1
+        assert isinstance(msg.content[0], TextContent)
+        assert msg.content[0].text == "Hello world"
+        assert msg.stop_reason == "stop"
+
+    def test_empty_choices_returns_none(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        chunk = ChatCompletionChunk(
+            id="chatcmpl_456",
+            choices=[],
+            created=int(time.time()),
+            model="gpt-4o",
+            object="chat.completion.chunk",
+            usage=None,
+        )
+        # Before any tokens, _first_token is None so early-return happens
+        result = collector.process(chunk)
+        assert result is None
+
+    def test_no_content_no_tool_calls_returns_none(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        item = collector.process(_make_cc_chunk(content=None, tool_calls=None))
+        assert item is None
+
+
+class TestChatCompletionCollectorReasoning:
+    """Fireworks / DeepSeek-style ``delta.reasoning_content`` → ThinkingContent."""
+
+    def test_first_reasoning_chunk_returns_thinking(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        item = collector.process(_make_cc_chunk(reasoning_content="Let me think"))
+        assert isinstance(item, Thinking)
+        assert item.thinking == "Let me think"
+        assert item.id == ChatCompletionCollector.THINKING_BLOCK_ID
+
+    def test_subsequent_reasoning_chunks_return_thinking_delta(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        collector.process(_make_cc_chunk(reasoning_content="Let me"))
+        item = collector.process(_make_cc_chunk(reasoning_content=" think"))
+        assert isinstance(item, MesserThinkingDelta)
+        assert item.thinking_delta == " think"
+
+    def test_result_includes_thinking_then_text(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(reasoning_content="plan"))
+        collector.process(_make_cc_chunk(content="ok"))
+        collector.process(_make_cc_chunk(content=None, finish_reason="stop"))
+
+        msg = collector.result()
+        assert len(msg.content) == 2
+        assert isinstance(msg.content[0], ThinkingContent)
+        assert msg.content[0].thinking == "plan"
+        assert isinstance(msg.content[1], TextContent)
+        assert msg.content[1].text == "ok"
+        # Visible text only — collect_text ignores thinking (by design).
+        assert msg.collect_text() == "ok"
+
+    def test_reasoning_only_result(self):
+        """max_tokens exhausted on reasoning still yields ThinkingContent, not an empty message."""
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(reasoning_content="still thinking…"))
+        collector.process(_make_cc_chunk(content=None, finish_reason="length"))
+
+        msg = collector.result()
+        assert msg.stop_reason == "length"
+        assert len(msg.content) == 1
+        assert isinstance(msg.content[0], ThinkingContent)
+        assert msg.content[0].thinking == "still thinking…"
+        assert msg.collect_text() == ""
+
+    def test_same_chunk_reasoning_and_text_emits_both_stream_items(self):
+        """Dual-field chunks must not drop the text DeltaEvent."""
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        first = collector.process(
+            _make_cc_chunk(reasoning_content="plan", content="answer")
+        )
+        second = collector.pop_pending_stream_item()
+        assert collector.pop_pending_stream_item() is None
+
+        assert isinstance(first, Thinking)
+        assert first.thinking == "plan"
+        assert isinstance(second, Text)
+        assert second.text == "answer"
+
+        msg = collector.result()
+        assert msg.content[0].thinking == "plan"
+        assert msg.content[1].text == "answer"
+
+    def test_same_chunk_reasoning_and_tool_call_emits_both(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        tc_start = ChoiceDeltaToolCall(
+            index=0,
+            id="call_001",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name="get_weather", arguments=""),
+        )
+
+        first = collector.process(
+            _make_cc_chunk(reasoning_content="need tool", tool_calls=[tc_start])
+        )
+        second = collector.pop_pending_stream_item()
+
+        assert isinstance(first, Thinking)
+        assert first.thinking == "need tool"
+        assert isinstance(second, ToolUse)
+        assert second.name == "get_weather"
+
+
+class TestChatCompletionCollectorToolCalls:
+    def test_tool_call_start(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        tc_start = ChoiceDeltaToolCall(
+            index=0,
+            id="call_001",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name="get_weather", arguments=""),
+        )
+        item = collector.process(_make_cc_chunk(tool_calls=[tc_start]))
+        assert isinstance(item, ToolUse)
+        assert item.name == "get_weather"
+        assert item.is_server_tool_use is False
+
+    def test_tool_call_delta(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        tc_start = ChoiceDeltaToolCall(
+            index=0,
+            id="call_001",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name="get_weather", arguments=""),
+        )
+        collector.process(_make_cc_chunk(tool_calls=[tc_start]))
+
+        tc_delta = ChoiceDeltaToolCall(
+            index=0,
+            id=None,
+            type=None,
+            function=ChoiceDeltaToolCallFunction(name=None, arguments='{"city": "NYC"}'),
+        )
+        item = collector.process(_make_cc_chunk(tool_calls=[tc_delta]))
+        assert isinstance(item, ToolUseDelta)
+        assert item.input_delta == '{"city": "NYC"}'
+
+    def test_result_has_tool_use_content(self):
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        tc_start = ChoiceDeltaToolCall(
+            index=0,
+            id="call_001",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name="get_weather", arguments=""),
+        )
+        collector.process(_make_cc_chunk(tool_calls=[tc_start]))
+        tc_delta = ChoiceDeltaToolCall(
+            index=0, id=None, type=None,
+            function=ChoiceDeltaToolCallFunction(name=None, arguments='{"city": "NYC"}'),
+        )
+        collector.process(_make_cc_chunk(tool_calls=[tc_delta]))
+        collector.process(_make_cc_chunk(finish_reason="tool_calls"))
+
+        msg = collector.result()
+        assert len(msg.content) == 1
+        tc = msg.content[0]
+        assert isinstance(tc, ToolUseContent)
+        assert tc.name == "get_weather"
+        assert tc.input == {"city": "NYC"}
+
+    def test_tool_call_name_arrives_in_chunk_after_id(self):
+        """Fireworks / Kimi can stream tool_call.id before function.name is set."""
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        tc_id_only = ChoiceDeltaToolCall(
+            index=0,
+            id="call_fw_1",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name=None, arguments=""),
+        )
+        assert collector.process(_make_cc_chunk(tool_calls=[tc_id_only])) is None
+
+        tc_name_args = ChoiceDeltaToolCall(
+            index=0,
+            id=None,
+            type=None,
+            function=ChoiceDeltaToolCallFunction(name="get_user", arguments='{"id": 5}'),
+        )
+        item = collector.process(_make_cc_chunk(tool_calls=[tc_name_args]))
+        assert isinstance(item, ToolUse)
+        assert item.name == "get_user"
+        assert item.id == "call_fw_1"
+
+        collector.process(_make_cc_chunk(finish_reason="tool_calls"))
+        msg = collector.result()
+        assert len(msg.content) == 1
+        tc = msg.content[0]
+        assert isinstance(tc, ToolUseContent)
+        assert tc.name == "get_user"
+        assert tc.input == {"id": 5}
+
+    def test_tool_call_same_id_then_arguments(self):
+        """Fireworks/Kimi may resend the same tool_call id with arguments after name+empty args."""
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        tc1 = ChoiceDeltaToolCall(
+            index=0,
+            id="call_fw_repeat",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name="get_user", arguments=""),
+        )
+        first = collector.process(_make_cc_chunk(tool_calls=[tc1]))
+        assert isinstance(first, ToolUse)
+
+        tc2 = ChoiceDeltaToolCall(
+            index=0,
+            id="call_fw_repeat",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name=None, arguments='{"id": 5}'),
+        )
+        second = collector.process(_make_cc_chunk(tool_calls=[tc2]))
+        assert isinstance(second, ToolUseDelta)
+
+        collector.process(_make_cc_chunk(finish_reason="tool_calls"))
+        msg = collector.result()
+        tc = msg.content[0]
+        assert isinstance(tc, ToolUseContent)
+        assert tc.input == {"id": 5}
+
+
+class TestResponseCollectorCanHandle:
+    def test_handles_response_in_progress_event(self):
+        event = ResponseInProgressEvent(
+            type="response.in_progress",
+            response=_make_response(),
+            sequence_number=0,
+        )
+        assert ResponseCollector.can_handle(event) is True
+
+    def test_does_not_handle_chat_completion_chunk(self):
+        chunk = _make_cc_chunk(content="hi")
+        assert ResponseCollector.can_handle(chunk) is False
+
+
+class TestResponseCollectorText:
+    def test_created_event_sets_model(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created",
+            response=_make_response(model="gpt-4o"),
+            sequence_number=0,
+        ))
+        assert collector.model == "gpt-4o"
+
+    def test_in_progress_returns_none(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        result = collector.process(ResponseInProgressEvent(
+            type="response.in_progress",
+            response=_make_response(),
+            sequence_number=0,
+        ))
+        assert result is None
+
+    def test_text_message_flow(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        item_id = "item_001"
+        text_part = ResponseOutputText(type="output_text", text="", annotations=[])
+
+        item = collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id,
+            output_index=0,
+            content_index=0,
+            part=text_part,
+            sequence_number=1,
+        ))
+        # An empty part is held until the first characters show it is prose, not a
+        # leaked `to=functions.…` call (see TestResponseCollectorLeakedToolCalls).
+        assert item is None
+
+        item = collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id,
+            output_index=0,
+            content_index=0,
+            delta="Hello",
+            logprobs=[],
+            sequence_number=2,
+        ))
+        assert isinstance(item, Text)
+        assert item.id == item_id
+        assert item.text == "Hello"
+
+        item = collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id,
+            output_index=0,
+            content_index=0,
+            delta=" there",
+            logprobs=[],
+            sequence_number=2,
+        ))
+        assert isinstance(item, MesserTextDelta)
+        assert item.text_delta == " there"
+
+        result = collector.process(ResponseTextDoneEvent(
+            type="response.output_text.done",
+            item_id=item_id,
+            output_index=0,
+            content_index=0,
+            text="Hello",
+            logprobs=[],
+            sequence_number=3,
+        ))
+        assert result is None
+
+        result = collector.process(ResponseContentPartDoneEvent(
+            type="response.content_part.done",
+            item_id=item_id,
+            output_index=0,
+            content_index=0,
+            part=text_part,
+            sequence_number=4,
+        ))
+        assert result is None
+
+    def test_completed_event_sets_stop_reason(self):
+        ctx = _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        item_id = "item_002"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]),
+            sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="done", logprobs=[],
+            sequence_number=2,
+        ))
+
+        completed_response = _make_response(status="completed")
+        completed_response = completed_response.model_copy(update={"usage": _make_response_usage()})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=1,
+        ))
+        assert collector._stop_reason == "completed"
+
+        msg = collector.result()
+        assert msg.stop_reason == "completed"
+        assert isinstance(msg.content[0], TextContent)
+        assert msg.content[0].text == "done"
+
+    def test_incomplete_event_sets_max_tokens_reason(self):
+        ctx = _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        item_id = "item_003"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]),
+            sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="truncated", logprobs=[],
+            sequence_number=2,
+        ))
+
+        from openai.types.responses.response import IncompleteDetails as ResponseIncompleteDetails
+        incomplete_response = _make_response(status="incomplete")
+        incomplete_details = ResponseIncompleteDetails(reason="max_output_tokens")
+        incomplete_response = incomplete_response.model_copy(update={
+            "incomplete_details": incomplete_details,
+            "usage": _make_response_usage(output_tokens=100),
+        })
+        collector.process(ResponseIncompleteEvent(
+            type="response.incomplete", response=incomplete_response, sequence_number=1,
+        ))
+        assert collector._stop_reason == "max_output_tokens"
+
+
+class TestResponseCollectorToolCalls:
+    def test_function_tool_call_start(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        fn_tool = ResponseFunctionToolCall(
+            type="function_call",
+            id="item_fn_001",
+            call_id="call_001",
+            name="search",
+            arguments="",
+            status="in_progress",
+        )
+        item = collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=fn_tool, sequence_number=1,
+        ))
+        assert isinstance(item, ToolUse)
+        assert item.name == "search"
+        assert item.is_server_tool_use is False
+
+    def test_function_call_arguments_delta(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        fn_tool = ResponseFunctionToolCall(
+            type="function_call", id="item_fn_001", call_id="call_001",
+            name="search", arguments="", status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=fn_tool, sequence_number=1,
+        ))
+
+        item = collector.process(ResponseFunctionCallArgumentsDeltaEvent(
+            type="response.function_call_arguments.delta",
+            item_id="item_fn_001", output_index=0, delta='{"q": "test"}', sequence_number=2,
+        ))
+        assert isinstance(item, ToolUseDelta)
+        assert item.input_delta == '{"q": "test"}'
+
+    def test_function_call_arguments_done_returns_none(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        fn_tool = ResponseFunctionToolCall(
+            type="function_call", id="item_fn_001", call_id="call_001",
+            name="search", arguments="", status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=fn_tool, sequence_number=1,
+        ))
+        result = collector.process(ResponseFunctionCallArgumentsDoneEvent(
+            type="response.function_call_arguments.done",
+            item_id="item_fn_001", output_index=0, arguments='{"q": "test"}', name="search", sequence_number=3,
+        ))
+        assert result is None
+
+    def test_output_item_done_returns_content_block_stop(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        fn_tool = ResponseFunctionToolCall(
+            type="function_call", id="item_fn_001", call_id="call_001",
+            name="search", arguments="", status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=fn_tool, sequence_number=1,
+        ))
+        fn_tool_done = ResponseFunctionToolCall(
+            type="function_call", id="item_fn_001", call_id="call_001",
+            name="search", arguments='{"q": "test"}', status="completed",
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=fn_tool_done, sequence_number=2,
+        ))
+        assert isinstance(item, ContentBlockStop)
+
+
+class TestResponseCollectorReasoning:
+    def test_reasoning_summary_part_added(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="o3"), sequence_number=0,
+        ))
+
+        reasoning_item = ResponseReasoningItem(
+            type="reasoning", id="item_r_001", status="in_progress", summary=[],
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=reasoning_item, sequence_number=1,
+        ))
+
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+        part = ReasoningSummaryPart(type="summary_text", text="")
+        item = collector.process(ResponseReasoningSummaryPartAddedEvent(
+            type="response.reasoning_summary_part.added",
+            item_id="item_r_001", output_index=0, summary_index=0, part=part, sequence_number=2,
+        ))
+        assert isinstance(item, Thinking)
+
+    def test_reasoning_summary_text_delta(self):
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="o3"), sequence_number=0,
+        ))
+
+        reasoning_item = ResponseReasoningItem(
+            type="reasoning", id="item_r_002", status="in_progress", summary=[],
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=reasoning_item, sequence_number=1,
+        ))
+
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+        part = ReasoningSummaryPart(type="summary_text", text="")
+        collector.process(ResponseReasoningSummaryPartAddedEvent(
+            type="response.reasoning_summary_part.added",
+            item_id="item_r_002", output_index=0, summary_index=0, part=part, sequence_number=2,
+        ))
+
+        item = collector.process(ResponseReasoningSummaryTextDeltaEvent(
+            type="response.reasoning_summary_text.delta",
+            item_id="item_r_002", output_index=0, summary_index=0, delta="reasoning step", sequence_number=3,
+        ))
+        assert isinstance(item, MesserThinkingDelta)
+        assert item.thinking_delta == "reasoning step"
+
+
+# ---------------------------------------------------------------------------
+# New tests to cover remaining gaps
+# ---------------------------------------------------------------------------
+
+class TestChatCompletionCollectorEarlyReturn:
+    """Line 134: early return when _first_token is None and choices is empty after usage chunk."""
+
+    def test_empty_choices_after_usage_chunk_returns_none(self):
+        """Sending a usage-only chunk (no choices) before any text should return None."""
+        from openai.types.completion_usage import CompletionUsage
+
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        # Build a usage-carrying chunk with no choices
+        usage = CompletionUsage(
+            completion_tokens=5,
+            prompt_tokens=10,
+            total_tokens=15,
+        )
+        chunk = ChatCompletionChunk(
+            id="chatcmpl_usage",
+            choices=[],
+            created=int(time.time()),
+            model="gpt-4o",
+            object="chat.completion.chunk",
+            usage=usage,
+        )
+        # _first_token is None because no text/tool chunk has been seen yet
+        assert collector._first_token is None
+        result = collector.process(chunk)
+        assert result is None
+        # usage was stashed
+        assert collector._pending_usage is chunk
+
+
+class TestChatCompletionCollectorHandleUsage:
+    """Lines 154-178: _handle_usage with cached and audio tokens deduction."""
+
+    def test_usage_with_cached_input_tokens(self):
+        """Cached input tokens are deducted from plain input and tracked separately."""
+        from openai.types.completion_usage import CompletionUsage, PromptTokensDetails, CompletionTokensDetails
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        # Fire a text chunk so _first_token is set (needed for result())
+        collector.process(_make_cc_chunk(content="hi"))
+
+        usage = CompletionUsage(
+            completion_tokens=5,
+            prompt_tokens=20,
+            total_tokens=25,
+            prompt_tokens_details=PromptTokensDetails(cached_tokens=8, audio_tokens=None),
+            completion_tokens_details=CompletionTokensDetails(audio_tokens=None, reasoning_tokens=0),
+        )
+        chunk = ChatCompletionChunk(
+            id="chatcmpl_usage2",
+            choices=[],
+            created=int(time.time()),
+            model="gpt-4o",
+            object="chat.completion.chunk",
+            usage=usage,
+        )
+        collector.process(chunk)
+
+        # Trigger _handle_usage via result()
+        msg = collector.result()
+
+        span = ctx._trace["test_call"]
+        # cached tokens should be tracked, plain input should be 20-8=12
+        assert span.usage.get("openai/gpt-4o:input_cached_tokens") == 8
+        assert span.usage.get("openai/gpt-4o:input_text_tokens") == 12
+
+    def test_usage_with_audio_input_tokens(self):
+        """Audio input tokens are deducted from plain input and tracked separately."""
+        from openai.types.completion_usage import CompletionUsage, PromptTokensDetails, CompletionTokensDetails
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(content="hi"))
+
+        usage = CompletionUsage(
+            completion_tokens=5,
+            prompt_tokens=20,
+            total_tokens=25,
+            prompt_tokens_details=PromptTokensDetails(cached_tokens=None, audio_tokens=6),
+            completion_tokens_details=CompletionTokensDetails(audio_tokens=None, reasoning_tokens=0),
+        )
+        chunk = ChatCompletionChunk(
+            id="chatcmpl_audio",
+            choices=[],
+            created=int(time.time()),
+            model="gpt-4o",
+            object="chat.completion.chunk",
+            usage=usage,
+        )
+        collector.process(chunk)
+        collector.result()
+
+        span = ctx._trace["test_call"]
+        assert span.usage.get("openai/gpt-4o:input_audio_tokens") == 6
+        assert span.usage.get("openai/gpt-4o:input_text_tokens") == 14  # 20 - 6
+
+    def test_usage_with_audio_output_tokens(self):
+        """Audio output tokens are deducted from plain output and tracked separately."""
+        from openai.types.completion_usage import CompletionUsage, PromptTokensDetails, CompletionTokensDetails
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(content="hi"))
+
+        usage = CompletionUsage(
+            completion_tokens=10,
+            prompt_tokens=20,
+            total_tokens=30,
+            prompt_tokens_details=PromptTokensDetails(cached_tokens=None, audio_tokens=None),
+            completion_tokens_details=CompletionTokensDetails(audio_tokens=4, reasoning_tokens=0),
+        )
+        chunk = ChatCompletionChunk(
+            id="chatcmpl_audio_out",
+            choices=[],
+            created=int(time.time()),
+            model="gpt-4o",
+            object="chat.completion.chunk",
+            usage=usage,
+        )
+        collector.process(chunk)
+        collector.result()
+
+        span = ctx._trace["test_call"]
+        assert span.usage.get("openai/gpt-4o:output_audio_tokens") == 4
+        assert span.usage.get("openai/gpt-4o:output_text_tokens") == 6  # 10 - 4
+
+
+def _cc_usage_chunk(
+    *,
+    model: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+    cached: int = 0,
+    cache_write: object = 0,
+    service_tier: str | None = None,
+):
+    """Build a usage-only chunk; ``cache_write_tokens`` is a pydantic extra (SDK does not declare it yet)."""
+    from openai.types.completion_usage import CompletionTokensDetails, CompletionUsage, PromptTokensDetails
+
+    usage = CompletionUsage(
+        completion_tokens=completion_tokens,
+        prompt_tokens=prompt_tokens,
+        total_tokens=prompt_tokens + completion_tokens,
+        prompt_tokens_details=PromptTokensDetails(cached_tokens=cached, audio_tokens=None, cache_write_tokens=cache_write),
+        completion_tokens_details=CompletionTokensDetails(audio_tokens=None, reasoning_tokens=0),
+    )
+    # Match SDK response parsing, which accepts new provider values such as "fast"
+    # before they appear in the SDK's service_tier Literal.
+    return ChatCompletionChunk(
+        id="chatcmpl_usage_tier",
+        choices=[],
+        created=int(time.time()),
+        model=model,
+        object="chat.completion.chunk",
+        usage=usage,
+    ).model_copy(update={"service_tier": service_tier})
+
+
+class TestChatCompletionCollectorPricingTiers:
+    """Cache-write accounting and long-context repricing on the chat-completions path."""
+
+    def _run(self, billing_id: str, **usage_kwargs):
+        ctx = _make_context()
+        set_billing_id(billing_id)
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(content="hi"))
+        collector.process(_cc_usage_chunk(model=billing_id.split("/", 1)[1], **usage_kwargs))
+        collector.result()
+        return ctx._trace["test_call"].usage
+
+    def test_cache_write_tokens_are_split_out_of_input(self):
+        """Cache writes bill at 1.25x input on OpenAI — they must not be folded into plain input."""
+        usage = self._run("openai/gpt-6-astra", prompt_tokens=100, completion_tokens=5, cached=20, cache_write=30)
+        assert usage["openai/gpt-6-astra:input_cache_write_tokens"] == 30
+        assert usage["openai/gpt-6-astra:input_cached_tokens"] == 20
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 50  # 100 - 20 - 30
+        assert usage["openai/gpt-6-astra:output_text_tokens"] == 5
+
+    def test_cache_writes_stay_in_input_when_catalog_cannot_price_them(self):
+        """gpt-5.5 has no cache_write_price: splitting would leave the tokens in a unit with no cost
+        row (unbilled). They must stay in input_text_tokens and bill at the input rate instead."""
+        usage = self._run("openai/gpt-5.5", prompt_tokens=100, completion_tokens=5, cached=20, cache_write=30)
+        assert "openai/gpt-5.5:input_cache_write_tokens" not in usage
+        assert usage["openai/gpt-5.5:input_cached_tokens"] == 20
+        assert usage["openai/gpt-5.5:input_text_tokens"] == 80  # 100 - 20; cache writes NOT removed
+
+    def test_missing_cache_write_field_is_tolerated(self):
+        """Older SDK payloads / other providers do not send cache_write_tokens at all."""
+        from openai.types.completion_usage import CompletionTokensDetails, CompletionUsage, PromptTokensDetails
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(_make_cc_chunk(content="hi"))
+        usage = CompletionUsage(
+            completion_tokens=5,
+            prompt_tokens=20,
+            total_tokens=25,
+            prompt_tokens_details=PromptTokensDetails(cached_tokens=None, audio_tokens=None),
+            completion_tokens_details=CompletionTokensDetails(audio_tokens=None, reasoning_tokens=0),
+        )
+        collector.process(
+            ChatCompletionChunk(
+                id="chatcmpl_plain", choices=[], created=int(time.time()), model="gpt-4o",
+                object="chat.completion.chunk", usage=usage,
+            )
+        )
+        collector.result()
+        span_usage = ctx._trace["test_call"].usage
+        assert "openai/gpt-4o:input_cache_write_tokens" not in span_usage
+        assert span_usage["openai/gpt-4o:input_text_tokens"] == 20
+
+    @pytest.mark.parametrize("cache_write", ["bad", -5, None])
+    def test_malformed_cache_write_tokens_stay_in_plain_input(self, cache_write):
+        usage = self._run(
+            "openai/gpt-6-astra",
+            prompt_tokens=100,
+            completion_tokens=5,
+            cache_write=cache_write,
+        )
+        assert "openai/gpt-6-astra:input_cache_write_tokens" not in usage
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 100
+
+    def test_usage_details_cannot_make_plain_input_negative(self):
+        usage = self._run(
+            "openai/gpt-6-astra",
+            prompt_tokens=100,
+            completion_tokens=5,
+            cached=80,
+            cache_write=80,
+        )
+        assert usage["openai/gpt-6-astra:input_cached_tokens"] == 80
+        assert usage["openai/gpt-6-astra:input_cache_write_tokens"] == 20
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 0
+
+    @pytest.mark.parametrize("prompt_tokens,suffix", [(199_999, ""), (200_000, "_long_context"), (200_001, "_long_context")])
+    def test_grok_47_cache_hits_count_toward_long_context(self, prompt_tokens, suffix):
+        usage = self._run("xai/grok-4.7", prompt_tokens=prompt_tokens, completion_tokens=10, cached=50_000)
+        assert usage == {
+            f"xai/grok-4.7:input_text_tokens{suffix}": prompt_tokens - 50_000,
+            f"xai/grok-4.7:input_cached_tokens{suffix}": 50_000,
+            f"xai/grok-4.7:output_text_tokens{suffix}": 10,
+        }
+
+    @pytest.mark.parametrize("model", ["openai/gpt-6.1-sol", "openai/gpt-6-sol", "openai/gpt-6-luna"])
+    @pytest.mark.parametrize("tokens,context_suffix", [(272_000, ""), (272_001, "_long_context")])
+    @pytest.mark.parametrize(
+        "tier,tier_suffix", [("default", ""), ("flex", "_flex"), ("fast", "_fast"), ("priority", "_fast")],
+    )
+    def test_gpt6_sol_luna_pricing_buckets(self, model, tokens, context_suffix, tier, tier_suffix):
+        usage = self._run(
+            model, prompt_tokens=tokens, completion_tokens=10, cached=1_000, cache_write=2_000, service_tier=tier,
+        )
+        suffix = context_suffix + tier_suffix
+        assert usage == {
+            f"{model}:input_text_tokens{suffix}": tokens - 3_000,
+            f"{model}:input_cached_tokens{suffix}": 1_000,
+            f"{model}:input_cache_write_tokens{suffix}": 2_000,
+            f"{model}:output_text_tokens{suffix}": 10,
+        }
+
+    def test_short_context_uses_base_units(self):
+        usage = self._run("openai/gpt-6-astra", prompt_tokens=200_000, completion_tokens=10)
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 200_000
+        assert usage["openai/gpt-6-astra:output_text_tokens"] == 10
+        assert not any(k.endswith("_long_context") for k in usage)
+
+    def test_exactly_at_threshold_is_still_short_context(self):
+        """OpenAI reprices prompts *over* 272K — 272K itself is short context."""
+        usage = self._run("openai/gpt-6-astra", prompt_tokens=272_000, completion_tokens=10)
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 272_000
+        assert not any(k.endswith("_long_context") for k in usage)
+
+    def test_over_threshold_reprices_every_bucket(self):
+        """One token over the threshold moves input, cache reads, cache writes AND output to the long tier."""
+        usage = self._run(
+            "openai/gpt-6-astra", prompt_tokens=272_001, completion_tokens=500, cached=1_000, cache_write=2_000
+        )
+        assert usage["openai/gpt-6-astra:input_text_tokens_long_context"] == 272_001 - 1_000 - 2_000
+        assert usage["openai/gpt-6-astra:input_cached_tokens_long_context"] == 1_000
+        assert usage["openai/gpt-6-astra:input_cache_write_tokens_long_context"] == 2_000
+        assert usage["openai/gpt-6-astra:output_text_tokens_long_context"] == 500
+        assert "openai/gpt-6-astra:input_text_tokens" not in usage
+        assert "openai/gpt-6-astra:output_text_tokens" not in usage
+
+    def test_threshold_is_measured_on_raw_prompt_including_cache_hits(self):
+        """A 300K prompt that is 290K cached is still a 300K prompt to the provider."""
+        usage = self._run("openai/gpt-6-astra", prompt_tokens=300_000, completion_tokens=1, cached=290_000)
+        assert usage["openai/gpt-6-astra:input_cached_tokens_long_context"] == 290_000
+        assert usage["openai/gpt-6-astra:input_text_tokens_long_context"] == 10_000
+
+    def test_models_without_a_tier_never_reprice(self):
+        usage = self._run("openai/gpt-4o", prompt_tokens=120_000, completion_tokens=10)
+        assert usage["openai/gpt-4o:input_text_tokens"] == 120_000
+        assert not any(k.endswith("_long_context") for k in usage)
+
+    def test_xai_threshold_is_inclusive(self):
+        usage = self._run("xai/grok-4.6", prompt_tokens=200_000, completion_tokens=10, cached=50_000)
+        assert usage["xai/grok-4.6:input_cached_tokens_long_context"] == 50_000
+        assert usage["xai/grok-4.6:input_text_tokens_long_context"] == 150_000
+
+    @pytest.mark.parametrize(
+        "service_tier,suffix",
+        [("priority", "_fast"), ("flex", "_flex")],
+    )
+    def test_astra_service_tier_uses_priced_units(self, service_tier, suffix):
+        usage = self._run(
+            "openai/gpt-6-astra",
+            prompt_tokens=100,
+            completion_tokens=5,
+            service_tier=service_tier,
+        )
+        assert usage[f"openai/gpt-6-astra:input_text_tokens{suffix}"] == 100
+        assert usage[f"openai/gpt-6-astra:output_text_tokens{suffix}"] == 5
+
+    def test_service_tier_combines_with_long_context(self):
+        usage = self._run(
+            "openai/gpt-6-astra",
+            prompt_tokens=300_000,
+            completion_tokens=5,
+            service_tier="priority",
+        )
+        assert usage["openai/gpt-6-astra:input_text_tokens_long_context_fast"] == 300_000
+        assert usage["openai/gpt-6-astra:output_text_tokens_long_context_fast"] == 5
+
+    def test_byteplus_tier_via_chat_completions(self):
+        """BytePlus (OpenAI-compatible) surcharges above 128K and flows through this collector."""
+        usage = self._run("byteplus/seed-2-0-pro-260328", prompt_tokens=130_000, completion_tokens=10)
+        assert usage["byteplus/seed-2-0-pro-260328:input_text_tokens_long_context"] == 130_000
+        assert usage["byteplus/seed-2-0-pro-260328:output_text_tokens_long_context"] == 10
+
+
+class TestChatCompletionCollectorGoogleThoughtSignature:
+    """Lines 196-198: Google Gemini thought_signature stored in tool call extra_content."""
+
+    def test_thought_signature_captured_in_tool_call(self):
+        """extra_content with google.thought_signature is stored on the tool call dict."""
+        _make_context()
+        collector = ChatCompletionCollector(async_gen=_empty_gen(), start=time.perf_counter())
+
+        from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall, ChoiceDeltaToolCallFunction
+
+        tc = ChoiceDeltaToolCall.model_construct(
+            index=0,
+            id="call_gemini_001",
+            type="function",
+            function=ChoiceDeltaToolCallFunction(name="my_tool", arguments=""),
+            extra_content={"google": {"thought_signature": "sig_abc123"}},
+        )
+        item = collector.process(_make_cc_chunk(tool_calls=[tc]))
+        assert isinstance(item, ToolUse)
+        # The tool call dict should carry the thought_signature
+        assert collector._tool_calls[0]["thought_signature"] == "sig_abc123"
+
+
+class TestResponseCollectorWebSearch:
+    """Lines 305,307,309,315,320-331: web search call events return None; web search output_item_added."""
+
+    def test_web_search_in_progress_returns_none(self):
+        from openai.types.responses import ResponseWebSearchCallInProgressEvent
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        result = collector.process(ResponseWebSearchCallInProgressEvent(
+            type="response.web_search_call.in_progress",
+            item_id="ws_001", output_index=0, sequence_number=1,
+        ))
+        assert result is None
+
+    def test_web_search_searching_returns_none(self):
+        from openai.types.responses import ResponseWebSearchCallSearchingEvent
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        result = collector.process(ResponseWebSearchCallSearchingEvent(
+            type="response.web_search_call.searching",
+            item_id="ws_001", output_index=0, sequence_number=1,
+        ))
+        assert result is None
+
+    def test_web_search_completed_returns_none(self):
+        from openai.types.responses import ResponseWebSearchCallCompletedEvent
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        result = collector.process(ResponseWebSearchCallCompletedEvent(
+            type="response.web_search_call.completed",
+            item_id="ws_001", output_index=0, sequence_number=1,
+        ))
+        assert result is None
+
+    def test_web_search_output_item_added_returns_tool_use(self):
+        """ResponseFunctionWebSearch in output_item_added emits a server ToolUse."""
+        from openai.types.responses import ResponseFunctionWebSearch
+        from openai.types.responses.response_function_web_search import ActionSearch
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        ws_item = ResponseFunctionWebSearch(
+            id="ws_item_001",
+            type="web_search_call",
+            action=ActionSearch(type="search", query="latest news"),
+            status="in_progress",
+        )
+        item = collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=ws_item, sequence_number=1,
+        ))
+        assert isinstance(item, ToolUse)
+        assert item.name == "web_search"
+        assert item.is_server_tool_use is True
+        assert "ws_item_001" in collector.content_blocks
+
+    def test_output_message_item_added_returns_none(self):
+        """ResponseOutputMessage in output_item_added returns None."""
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        out_msg = ResponseOutputMessage(
+            id="msg_001", type="message", role="assistant", content=[], status="in_progress",
+        )
+        result = collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=out_msg, sequence_number=1,
+        ))
+        assert result is None
+
+
+class TestResponseCollectorAnnotationAndReasoning:
+    """Lines 355,358-360: output text annotation added; reasoning summary part/text done."""
+
+    def test_output_text_annotation_added_returns_none(self):
+        """ResponseOutputTextAnnotationAddedEvent appends annotation and returns None."""
+        from openai.types.responses import ResponseOutputTextAnnotationAddedEvent
+        from openai.types.responses.response_output_text import AnnotationURLCitation
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+
+        item_id = "ann_item_001"
+        text_part = ResponseOutputText(type="output_text", text="", annotations=[])
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0, part=text_part, sequence_number=1,
+        ))
+
+        annotation = AnnotationURLCitation(
+            type="url_citation", url="https://example.com", title="Example", start_index=0, end_index=5,
+        )
+        result = collector.process(ResponseOutputTextAnnotationAddedEvent(
+            type="response.output_text.annotation.added",
+            item_id=item_id, output_index=0, content_index=0,
+            annotation_index=0, annotation=annotation, sequence_number=2,
+        ))
+        assert result is None
+        assert len(collector.content[item_id]["citations"]) == 1
+
+    def test_reasoning_summary_part_done_returns_none(self):
+        """ResponseReasoningSummaryPartDoneEvent returns None."""
+        from openai.types.responses import ResponseReasoningSummaryPartDoneEvent
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="o3"), sequence_number=0,
+        ))
+        reasoning_item = ResponseReasoningItem(
+            type="reasoning", id="item_r_done_001", status="in_progress", summary=[],
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=reasoning_item, sequence_number=1,
+        ))
+        part_added = ReasoningSummaryPart(type="summary_text", text="")
+        collector.process(ResponseReasoningSummaryPartAddedEvent(
+            type="response.reasoning_summary_part.added",
+            item_id="item_r_done_001", output_index=0, summary_index=0, part=part_added, sequence_number=2,
+        ))
+
+        from openai.types.responses.response_reasoning_summary_part_done_event import Part as ReasoningSummaryPartDone
+        part_done = ReasoningSummaryPartDone(type="summary_text", text="full text")
+        result = collector.process(ResponseReasoningSummaryPartDoneEvent(
+            type="response.reasoning_summary_part.done",
+            item_id="item_r_done_001", output_index=0, summary_index=0, part=part_done, sequence_number=3,
+        ))
+        assert result is None
+
+    def test_reasoning_summary_text_done_returns_none(self):
+        """ResponseReasoningSummaryTextDoneEvent returns None."""
+        from openai.types.responses import ResponseReasoningSummaryTextDoneEvent
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="o3"), sequence_number=0,
+        ))
+        reasoning_item = ResponseReasoningItem(
+            type="reasoning", id="item_r_done_002", status="in_progress", summary=[],
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=reasoning_item, sequence_number=1,
+        ))
+        part = ReasoningSummaryPart(type="summary_text", text="")
+        collector.process(ResponseReasoningSummaryPartAddedEvent(
+            type="response.reasoning_summary_part.added",
+            item_id="item_r_done_002", output_index=0, summary_index=0, part=part, sequence_number=2,
+        ))
+        result = collector.process(ResponseReasoningSummaryTextDoneEvent(
+            type="response.reasoning_summary_text.done",
+            item_id="item_r_done_002", output_index=0, summary_index=0, text="full reasoning", sequence_number=3,
+        ))
+        assert result is None
+
+
+class TestResponseCollectorCustomToolCall:
+    """Lines 373-385: ResponseCustomToolCall in output_item_added."""
+
+    def test_custom_tool_call_output_item_added_returns_server_tool_use(self):
+        """ResponseCustomToolCall emits a server ToolUse and is tracked."""
+        from openai.types.responses import ResponseCustomToolCall
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="xai/grok-3"), sequence_number=0,
+        ))
+
+        custom_tool = ResponseCustomToolCall(
+            id="custom_001",
+            call_id="ccall_001",
+            name="x_keyword_search",
+            input='{"query": "ai news"}',
+            type="custom_tool_call",
+        )
+        item = collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=custom_tool, sequence_number=1,
+        ))
+        assert isinstance(item, ToolUse)
+        assert item.name == "x_keyword_search"
+        assert item.is_server_tool_use is True
+        assert item.input == '{"query": "ai news"}'
+        assert "custom_001" in collector.content_blocks
+
+
+class TestResponseCollectorOutputItemDone:
+    """Lines 402,416,478-503: output item done for web search, reasoning, and custom tool call."""
+
+    def test_web_search_done_with_content_block_tracks_usage_and_returns_stop(self):
+        """Web search done tracks usage and returns ContentBlockStop when block registered."""
+        from openai.types.responses import ResponseFunctionWebSearch
+        from openai.types.responses.response_function_web_search import ActionSearch
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-4o"), sequence_number=0,
+        ))
+
+        ws_item = ResponseFunctionWebSearch(
+            id="ws_done_001",
+            type="web_search_call",
+            action=ActionSearch(type="search", query="test"),
+            status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=ws_item, sequence_number=1,
+        ))
+
+        ws_done = ResponseFunctionWebSearch(
+            id="ws_done_001",
+            type="web_search_call",
+            action=ActionSearch(type="search", query="test"),
+            status="completed",
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=ws_done, sequence_number=2,
+        ))
+        assert isinstance(item, ContentBlockStop)
+        assert item.id == "ws_done_001"
+        span = ctx._trace["test_call"]
+        assert span.usage.get("openai/gpt-4o:web_search_requests") == 1
+
+    def test_web_search_done_without_content_block_returns_none(self):
+        """Web search done returns None when content_block_id was never registered."""
+        from openai.types.responses import ResponseFunctionWebSearch
+        from openai.types.responses.response_function_web_search import ActionSearch
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-4o"), sequence_number=0,
+        ))
+        # Don't add an output_item_added for this ID — block never registered
+        ws_done = ResponseFunctionWebSearch(
+            id="ws_orphan_001",
+            type="web_search_call",
+            action=ActionSearch(type="search", query="test"),
+            status="completed",
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=ws_done, sequence_number=1,
+        ))
+        assert item is None
+
+    def test_reasoning_item_done_returns_content_block_stop(self):
+        """ResponseReasoningItem done returns ContentBlockStop."""
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="o3"), sequence_number=0,
+        ))
+        reasoning_item = ResponseReasoningItem(
+            type="reasoning", id="item_r_stop_001", status="in_progress", summary=[],
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=reasoning_item, sequence_number=1,
+        ))
+        reasoning_done = ResponseReasoningItem(
+            type="reasoning", id="item_r_stop_001", status="completed", summary=[],
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=reasoning_done, sequence_number=2,
+        ))
+        assert isinstance(item, ContentBlockStop)
+        assert item.id == "item_r_stop_001"
+
+    def test_output_message_done_without_content_block_returns_none(self):
+        """ResponseOutputMessage done returns None when block not registered."""
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        # output_item_added for OutputMessage returns None and doesn't register in content_blocks
+        out_msg = ResponseOutputMessage(
+            id="msg_orphan_001", type="message", role="assistant", content=[], status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=out_msg, sequence_number=1,
+        ))
+        out_msg_done = ResponseOutputMessage(
+            id="msg_orphan_001", type="message", role="assistant", content=[], status="completed",
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=out_msg_done, sequence_number=2,
+        ))
+        assert item is None
+
+    def test_custom_tool_call_done_tracks_usage_and_returns_stop(self):
+        """ResponseCustomToolCall done tracks usage and returns ContentBlockStop."""
+        from openai.types.responses import ResponseCustomToolCall
+
+        ctx = _make_context()
+        set_billing_id("xai/grok-3")
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="xai/grok-3"), sequence_number=0,
+        ))
+        custom_tool = ResponseCustomToolCall(
+            id="custom_done_001",
+            call_id="ccall_done_001",
+            name="x_keyword_search",
+            input='{"query": "ai"}',
+            type="custom_tool_call",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=custom_tool, sequence_number=1,
+        ))
+        custom_tool_done = ResponseCustomToolCall(
+            id="custom_done_001",
+            call_id="ccall_done_001",
+            name="x_keyword_search",
+            input='{"query": "ai"}',
+            type="custom_tool_call",
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=custom_tool_done, sequence_number=2,
+        ))
+        assert isinstance(item, ContentBlockStop)
+        assert item.id == "custom_done_001"
+        span = ctx._trace["test_call"]
+        assert span.usage.get("xai/grok-3:x_keyword_search_requests") == 1
+
+    def test_custom_tool_call_done_without_content_block_returns_none(self):
+        """ResponseCustomToolCall done returns None when block not registered."""
+        from openai.types.responses import ResponseCustomToolCall
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="xai/grok-3"), sequence_number=0,
+        ))
+        # Don't call output_item_added — block never registered
+        custom_tool_done = ResponseCustomToolCall(
+            id="custom_orphan_001",
+            call_id="ccall_orphan_001",
+            name="x_keyword_search",
+            input='{"query": "ai"}',
+            type="custom_tool_call",
+        )
+        item = collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=custom_tool_done, sequence_number=1,
+        ))
+        assert item is None
+
+
+class TestResponseCollectorReasoningTextDelta:
+    """Line 513: _handle_reasoning_text_delta first-delta path (item_id not yet in content)."""
+
+    def test_reasoning_text_delta_first_delta_creates_block(self):
+        """First raw reasoning text delta creates a new thinking block and returns Thinking."""
+        from openai.types.responses import ResponseReasoningTextDeltaEvent
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="xai/grok-3"), sequence_number=0,
+        ))
+        # Send delta without any output_item_added — raw xAI reasoning path
+        item = collector.process(ResponseReasoningTextDeltaEvent(
+            type="response.reasoning_text.delta",
+            item_id="raw_r_001", output_index=0, content_index=0, delta="step one", sequence_number=1,
+        ))
+        assert isinstance(item, Thinking)
+        assert item.id == "raw_r_001"
+        assert item.thinking == "step one"
+        assert "raw_r_001" in collector.content_blocks
+
+    def test_reasoning_text_delta_subsequent_returns_thinking_delta(self):
+        """Subsequent raw reasoning text deltas return ThinkingDelta."""
+        from openai.types.responses import ResponseReasoningTextDeltaEvent
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="xai/grok-3"), sequence_number=0,
+        ))
+        collector.process(ResponseReasoningTextDeltaEvent(
+            type="response.reasoning_text.delta",
+            item_id="raw_r_002", output_index=0, content_index=0, delta="first", sequence_number=1,
+        ))
+        item = collector.process(ResponseReasoningTextDeltaEvent(
+            type="response.reasoning_text.delta",
+            item_id="raw_r_002", output_index=0, content_index=0, delta=" second", sequence_number=2,
+        ))
+        assert isinstance(item, MesserThinkingDelta)
+        assert item.thinking_delta == " second"
+
+
+class TestResponseCollectorHandleCompleted:
+    """Lines 522-537: _handle_completed with cached tokens, audio input/output tokens."""
+
+    def test_completed_with_cached_input_tokens(self):
+        """Cached tokens are tracked and deducted from plain input tokens."""
+        from openai.types.responses.response_usage import InputTokensDetails, OutputTokensDetails, ResponseUsage
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-4o"), sequence_number=0,
+        ))
+        item_id = "cached_item_001"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="hi", logprobs=[], sequence_number=2,
+        ))
+
+        completed_response = _make_response(model="gpt-4o", status="completed")
+        input_details = InputTokensDetails(cached_tokens=7)
+        output_details = OutputTokensDetails(reasoning_tokens=0)
+        usage = ResponseUsage(
+            input_tokens=20,
+            output_tokens=5,
+            total_tokens=25,
+            input_tokens_details=input_details,
+            output_tokens_details=output_details,
+        )
+        completed_response = completed_response.model_copy(update={"usage": usage})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=3,
+        ))
+
+        span = ctx._trace["test_call"]
+        assert span.usage.get("openai/gpt-4o:input_cached_tokens") == 7
+        assert span.usage.get("openai/gpt-4o:input_text_tokens") == 13  # 20 - 7
+
+    def test_completed_with_audio_input_tokens(self):
+        """Audio input tokens are tracked and deducted from plain input tokens."""
+        from openai.types.responses.response_usage import InputTokensDetails, OutputTokensDetails, ResponseUsage
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-4o"), sequence_number=0,
+        ))
+        item_id = "audio_in_item_001"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="hi", logprobs=[], sequence_number=2,
+        ))
+
+        completed_response = _make_response(model="gpt-4o", status="completed")
+        input_details = InputTokensDetails.model_construct(cached_tokens=0, audio_tokens=5)
+        output_details = OutputTokensDetails(reasoning_tokens=0)
+        usage = ResponseUsage(
+            input_tokens=20,
+            output_tokens=5,
+            total_tokens=25,
+            input_tokens_details=input_details,
+            output_tokens_details=output_details,
+        )
+        completed_response = completed_response.model_copy(update={"usage": usage})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=3,
+        ))
+
+        span = ctx._trace["test_call"]
+        assert span.usage.get("openai/gpt-4o:input_audio_tokens") == 5
+        assert span.usage.get("openai/gpt-4o:input_text_tokens") == 15  # 20 - 5
+
+    def test_completed_with_audio_output_tokens(self):
+        """Audio output tokens are tracked and deducted from plain output tokens."""
+        from openai.types.responses.response_usage import InputTokensDetails, OutputTokensDetails, ResponseUsage
+
+        ctx = _make_context()
+        set_billing_id("openai/gpt-4o")
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-4o"), sequence_number=0,
+        ))
+        item_id = "audio_out_item_001"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="hi", logprobs=[], sequence_number=2,
+        ))
+
+        completed_response = _make_response(model="gpt-4o", status="completed")
+        input_details = InputTokensDetails(cached_tokens=0)
+        output_details = OutputTokensDetails.model_construct(reasoning_tokens=0, audio_tokens=3)
+        usage = ResponseUsage(
+            input_tokens=20,
+            output_tokens=10,
+            total_tokens=30,
+            input_tokens_details=input_details,
+            output_tokens_details=output_details,
+        )
+        completed_response = completed_response.model_copy(update={"usage": usage})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=3,
+        ))
+
+        span = ctx._trace["test_call"]
+        assert span.usage.get("openai/gpt-4o:output_audio_tokens") == 3
+        assert span.usage.get("openai/gpt-4o:output_text_tokens") == 7  # 10 - 3
+
+
+class TestResponseCollectorPricingTiers:
+    """Cache-write accounting and long-context repricing on the Responses path."""
+
+    @pytest.mark.parametrize("prompt_tokens,suffix", [(199_999, ""), (200_000, "_long_context"), (200_001, "_long_context")])
+    def test_grok_47_cache_hits_count_toward_long_context(self, prompt_tokens, suffix):
+        usage = self._run("xai/grok-4.7", input_tokens=prompt_tokens, output_tokens=10, cached=50_000)
+        assert usage == {
+            f"xai/grok-4.7:input_text_tokens{suffix}": prompt_tokens - 50_000,
+            f"xai/grok-4.7:input_cached_tokens{suffix}": 50_000,
+            f"xai/grok-4.7:output_text_tokens{suffix}": 10,
+        }
+
+    @pytest.mark.parametrize("model", ["openai/gpt-6.1-sol", "openai/gpt-6-sol", "openai/gpt-6-luna"])
+    @pytest.mark.parametrize("tokens,context_suffix", [(272_000, ""), (272_001, "_long_context")])
+    @pytest.mark.parametrize(
+        "tier,tier_suffix", [("default", ""), ("flex", "_flex"), ("fast", "_fast"), ("priority", "_fast")],
+    )
+    def test_gpt6_sol_luna_pricing_buckets(self, model, tokens, context_suffix, tier, tier_suffix):
+        usage = self._run(
+            model, input_tokens=tokens, output_tokens=10, cached=1_000, cache_write=2_000, service_tier=tier,
+        )
+        suffix = context_suffix + tier_suffix
+        assert usage == {
+            f"{model}:input_text_tokens{suffix}": tokens - 3_000,
+            f"{model}:input_cached_tokens{suffix}": 1_000,
+            f"{model}:input_cache_write_tokens{suffix}": 2_000,
+            f"{model}:output_text_tokens{suffix}": 10,
+        }
+
+    def _run(
+        self,
+        billing_id: str,
+        *,
+        input_tokens: int,
+        output_tokens: int,
+        cached: int = 0,
+        cache_write: object = 0,
+        service_tier: str | None = None,
+    ):
+        api_model = billing_id.split("/", 1)[1]
+        ctx = _make_context()
+        set_billing_id(billing_id)
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model=api_model), sequence_number=0,
+        ))
+        item_id = "tier_item_001"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="hi", logprobs=[], sequence_number=2,
+        ))
+        usage = ResponseUsage(
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=input_tokens + output_tokens,
+            # cache_write_tokens is a pydantic extra — the SDK does not declare it yet.
+            input_tokens_details=InputTokensDetails(cached_tokens=cached, cache_write_tokens=cache_write),
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+        )
+        completed = _make_response(model=api_model, status="completed").model_copy(
+            update={"usage": usage, "service_tier": service_tier}
+        )
+        collector.process(ResponseCompletedEvent(type="response.completed", response=completed, sequence_number=3))
+        return ctx._trace["test_call"].usage
+
+    def test_cache_write_tokens_are_split_out_of_input(self):
+        usage = self._run("openai/gpt-6-astra", input_tokens=100, output_tokens=5, cached=20, cache_write=30)
+        assert usage["openai/gpt-6-astra:input_cache_write_tokens"] == 30
+        assert usage["openai/gpt-6-astra:input_cached_tokens"] == 20
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 50
+        assert usage["openai/gpt-6-astra:output_text_tokens"] == 5
+
+    def test_cache_writes_stay_in_input_when_catalog_cannot_price_them(self):
+        usage = self._run("openai/gpt-5.4", input_tokens=100, output_tokens=5, cache_write=30)
+        assert "openai/gpt-5.4:input_cache_write_tokens" not in usage
+        assert usage["openai/gpt-5.4:input_text_tokens"] == 100
+
+    def test_exactly_at_threshold_is_still_short_context(self):
+        usage = self._run("openai/gpt-6-astra", input_tokens=272_000, output_tokens=10)
+        assert usage["openai/gpt-6-astra:input_text_tokens"] == 272_000
+        assert not any(k.endswith("_long_context") for k in usage)
+
+    def test_over_threshold_reprices_every_bucket(self):
+        usage = self._run("openai/gpt-6-astra", input_tokens=272_001, output_tokens=500, cached=1_000, cache_write=2_000)
+        assert usage["openai/gpt-6-astra:input_text_tokens_long_context"] == 272_001 - 1_000 - 2_000
+        assert usage["openai/gpt-6-astra:input_cached_tokens_long_context"] == 1_000
+        assert usage["openai/gpt-6-astra:input_cache_write_tokens_long_context"] == 2_000
+        assert usage["openai/gpt-6-astra:output_text_tokens_long_context"] == 500
+        assert "openai/gpt-6-astra:input_text_tokens" not in usage
+
+    def test_xai_tier_via_responses(self):
+        """xAI runs through the Responses collector and surcharges at 200K."""
+        usage = self._run("xai/grok-4.6", input_tokens=200_001, output_tokens=10)
+        assert usage["xai/grok-4.6:input_text_tokens_long_context"] == 200_001
+        assert usage["xai/grok-4.6:output_text_tokens_long_context"] == 10
+        usage = self._run("xai/grok-4.6", input_tokens=200_000, output_tokens=10)
+        assert usage["xai/grok-4.6:input_text_tokens_long_context"] == 200_000
+
+    def test_service_tier_via_responses(self):
+        usage = self._run(
+            "openai/gpt-6-astra",
+            input_tokens=300_000,
+            output_tokens=10,
+            service_tier="priority",
+        )
+        assert usage["openai/gpt-6-astra:input_text_tokens_long_context_fast"] == 300_000
+        assert usage["openai/gpt-6-astra:output_text_tokens_long_context_fast"] == 10
+
+    def test_reasoning_tokens_follow_output_into_long_tier(self):
+        """Hidden reasoning is billed as output; it must move tiers with the rest of the request."""
+        ctx = _make_context()
+        set_billing_id("openai/gpt-6-astra")
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-6-astra"), sequence_number=0,
+        ))
+        item_id = "tier_reasoning_001"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="hi", logprobs=[], sequence_number=2,
+        ))
+        usage = ResponseUsage(
+            input_tokens=300_000,
+            output_tokens=1_200,  # 200 visible + 1_000 reasoning, all billed as output
+            total_tokens=301_200,
+            input_tokens_details=InputTokensDetails(cached_tokens=0),
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=1_000),
+        )
+        completed = _make_response(model="gpt-6-astra", status="completed").model_copy(update={"usage": usage})
+        collector.process(ResponseCompletedEvent(type="response.completed", response=completed, sequence_number=3))
+        span_usage = ctx._trace["test_call"].usage
+        assert span_usage["openai/gpt-6-astra:output_text_tokens_long_context"] == 1_200
+        assert span_usage["openai/gpt-6-astra:input_text_tokens_long_context"] == 300_000
+
+
+class TestResponseCollectorResult:
+    """Lines 457-470, 552,560,562,564,572: result() branches for all content block types."""
+
+    def test_result_with_tool_use_content_block(self):
+        """result() builds ToolUseContent for function_call blocks."""
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        fn_tool = ResponseFunctionToolCall(
+            type="function_call", id="item_fn_res_001", call_id="call_res_001",
+            name="do_thing", arguments="", status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=fn_tool, sequence_number=1,
+        ))
+        collector.process(ResponseFunctionCallArgumentsDeltaEvent(
+            type="response.function_call_arguments.delta",
+            item_id="item_fn_res_001", output_index=0, delta='{"x": 1}', sequence_number=2,
+        ))
+        fn_tool_done = ResponseFunctionToolCall(
+            type="function_call", id="item_fn_res_001", call_id="call_res_001",
+            name="do_thing", arguments='{"x": 1}', status="completed",
+        )
+        collector.process(ResponseOutputItemDoneEvent(
+            type="response.output_item.done", output_index=0, item=fn_tool_done, sequence_number=3,
+        ))
+
+        completed_response = _make_response(status="completed")
+        completed_response = completed_response.model_copy(update={"usage": _make_response_usage()})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=4,
+        ))
+
+        msg = collector.result()
+        assert len(msg.content) == 1
+        assert isinstance(msg.content[0], ToolUseContent)
+        assert msg.content[0].name == "do_thing"
+
+    def test_result_with_thinking_content_block(self):
+        """result() builds ThinkingContent for reasoning blocks."""
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="o3"), sequence_number=0,
+        ))
+        reasoning_item = ResponseReasoningItem(
+            type="reasoning", id="item_r_res_001", status="in_progress", summary=[],
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=reasoning_item, sequence_number=1,
+        ))
+
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+        part = ReasoningSummaryPart(type="summary_text", text="")
+        collector.process(ResponseReasoningSummaryPartAddedEvent(
+            type="response.reasoning_summary_part.added",
+            item_id="item_r_res_001", output_index=0, summary_index=0, part=part, sequence_number=2,
+        ))
+        collector.process(ResponseReasoningSummaryTextDeltaEvent(
+            type="response.reasoning_summary_text.delta",
+            item_id="item_r_res_001", output_index=0, summary_index=0, delta="my thoughts", sequence_number=3,
+        ))
+
+        completed_response = _make_response(model="o3", status="completed")
+        completed_response = completed_response.model_copy(update={"usage": _make_response_usage()})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=4,
+        ))
+
+        msg = collector.result()
+        thinking_blocks = [c for c in msg.content if isinstance(c, ThinkingContent)]
+        assert len(thinking_blocks) == 1
+        assert thinking_blocks[0].thinking == "my thoughts"
+
+    def test_result_with_text_content_block(self):
+        """result() builds TextContent for text blocks."""
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(), sequence_number=0,
+        ))
+        item_id = "text_res_001"
+        collector.process(ResponseContentPartAddedEvent(
+            type="response.content_part.added",
+            item_id=item_id, output_index=0, content_index=0,
+            part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=1,
+        ))
+        collector.process(ResponseTextDeltaEvent(
+            type="response.output_text.delta",
+            item_id=item_id, output_index=0, content_index=0, delta="hello world", logprobs=[], sequence_number=2,
+        ))
+
+        completed_response = _make_response(status="completed")
+        completed_response = completed_response.model_copy(update={"usage": _make_response_usage()})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=3,
+        ))
+
+        msg = collector.result()
+        text_blocks = [c for c in msg.content if isinstance(c, TextContent)]
+        assert len(text_blocks) == 1
+        assert text_blocks[0].text == "hello world"
+
+    def test_result_skips_server_tool_use_blocks(self):
+        """result() skips server_tool_use content blocks (web search)."""
+        from openai.types.responses import ResponseFunctionWebSearch
+        from openai.types.responses.response_function_web_search import ActionSearch
+
+        _make_context()
+        collector = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        collector.process(ResponseCreatedEvent(
+            type="response.created", response=_make_response(model="gpt-4o"), sequence_number=0,
+        ))
+
+        ws_item = ResponseFunctionWebSearch(
+            id="ws_res_001",
+            type="web_search_call",
+            action=ActionSearch(type="search", query="test"),
+            status="in_progress",
+        )
+        collector.process(ResponseOutputItemAddedEvent(
+            type="response.output_item.added", output_index=0, item=ws_item, sequence_number=1,
+        ))
+        # Manually inject server_tool_use block to test result() skip branch
+        collector.content["ws_res_001"] = {"type": "server_tool_use", "name": "web_search"}
+
+        completed_response = _make_response(model="gpt-4o", status="completed")
+        completed_response = completed_response.model_copy(update={"usage": _make_response_usage()})
+        collector.process(ResponseCompletedEvent(
+            type="response.completed", response=completed_response, sequence_number=2,
+        ))
+
+        msg = collector.result()
+        assert len(msg.content) == 0  # server_tool_use skipped
+
+
+# ---------------------------------------------------------------------------
+# OpenAI Responses: reasoning items carry `id` + `encrypted_content` into memory
+# ---------------------------------------------------------------------------
+
+def _reasoning(item_id: str, *, status: str = "in_progress", encrypted: str | None = None, summary: list[str] | None = None):
+    from openai.types.responses.response_reasoning_item import Summary
+
+    return ResponseReasoningItem(
+        type="reasoning",
+        id=item_id,
+        status=status,
+        summary=[Summary(type="summary_text", text=t) for t in (summary or [])],
+        encrypted_content=encrypted,
+    )
+
+
+def _fn_call(item_id: str, call_id: str, name: str = "search", arguments: str = "", status: str = "in_progress"):
+    return ResponseFunctionToolCall(
+        type="function_call", id=item_id, call_id=call_id, name=name, arguments=arguments, status=status,
+    )
+
+
+def _added(item, index: int, seq: int):
+    return ResponseOutputItemAddedEvent(type="response.output_item.added", output_index=index, item=item, sequence_number=seq)
+
+
+def _done(item, index: int, seq: int):
+    return ResponseOutputItemDoneEvent(type="response.output_item.done", output_index=index, item=item, sequence_number=seq)
+
+
+def _completed(seq: int):
+    resp = _make_response(model="gpt-5.6-luna", status="completed")
+    resp.usage = _make_response_usage()
+    return ResponseCompletedEvent(type="response.completed", response=resp, sequence_number=seq)
+
+
+class TestResponseCollectorEncryptedReasoning:
+    """The chain of thought a reasoning model needs back on the next call of a tool loop."""
+
+    def _collector(self):
+        _make_context()
+        c = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        c.process(ResponseCreatedEvent(type="response.created", response=_make_response(model="gpt-5.6-luna"), sequence_number=0))
+        return c
+
+    def test_encrypted_content_from_done_lands_on_thinking_content(self):
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1"), 0, 2))
+        c.process(_completed(3))
+
+        msg = c.result()
+        assert len(msg.content) == 1
+        block = msg.content[0]
+        assert isinstance(block, ThinkingContent)
+        assert block.id == "rs_1"
+        assert block.encrypted_content == "enc-1"
+        assert block.thinking == ""
+        assert block.is_openai_reasoning_item
+
+    def test_reasoning_precedes_the_function_call_it_produced(self):
+        """Order in memory is order on the wire: reasoning item, then its function_call."""
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1"), 0, 2))
+        c.process(_added(_fn_call("fc_1", "call_1"), 1, 3))
+        c.process(ResponseFunctionCallArgumentsDeltaEvent(
+            type="response.function_call_arguments.delta", item_id="fc_1", output_index=1, delta='{"q":"x"}', sequence_number=4,
+        ))
+        c.process(_done(_fn_call("fc_1", "call_1", arguments='{"q":"x"}', status="completed"), 1, 5))
+        c.process(_completed(6))
+
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["ThinkingContent", "ToolUseContent"]
+        assert msg.content[0].encrypted_content == "enc-1"
+        assert msg.content[1].id == "call_1"
+        # …and that message replays as [reasoning, function_call] with the same ids.
+        items = msg.to_openai_responses_input()
+        assert [i["type"] for i in items] == ["reasoning", "function_call"]
+        assert items[0]["id"] == "rs_1" and items[0]["encrypted_content"] == "enc-1"
+        assert items[1]["call_id"] == "call_1"
+
+    def test_reasoning_without_payload_or_summary_is_not_kept(self):
+        """`include` not requested (or a non-reasoning model): nothing to replay, no empty block."""
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(_done(_reasoning("rs_1", status="completed"), 0, 2))
+        c.process(_added(_fn_call("fc_1", "call_1"), 1, 3))
+        c.process(_done(_fn_call("fc_1", "call_1", arguments="{}", status="completed"), 1, 4))
+        c.process(_completed(5))
+
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["ToolUseContent"]
+        assert msg.to_openai_responses_input()[0]["type"] == "function_call"
+
+    def test_streamed_summary_and_encrypted_content_both_kept(self):
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(ResponseReasoningSummaryPartAddedEvent(
+            type="response.reasoning_summary_part.added", item_id="rs_1", output_index=0, summary_index=0,
+            part=ReasoningSummaryPart(type="summary_text", text=""), sequence_number=2,
+        ))
+        c.process(ResponseReasoningSummaryTextDeltaEvent(
+            type="response.reasoning_summary_text.delta", item_id="rs_1", output_index=0, summary_index=0,
+            delta="Need the schema first.", sequence_number=3,
+        ))
+        c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1", summary=["Need the schema first."]), 0, 4))
+        c.process(_completed(5))
+
+        block = c.result().content[0]
+        assert block.thinking == "Need the schema first."
+        assert block.encrypted_content == "enc-1"
+        assert block.to_openai_responses_input(role="assistant")["summary"] == [
+            {"type": "summary_text", "text": "Need the schema first."}
+        ]
+
+    def test_multiple_summary_parts_join_as_paragraphs(self):
+        from openai.types.responses.response_reasoning_summary_part_added_event import Part as ReasoningSummaryPart
+
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        for idx, text in enumerate(["first", "second"]):
+            c.process(ResponseReasoningSummaryPartAddedEvent(
+                type="response.reasoning_summary_part.added", item_id="rs_1", output_index=0, summary_index=idx,
+                part=ReasoningSummaryPart(type="summary_text", text=""), sequence_number=2 + 2 * idx,
+            ))
+            c.process(ResponseReasoningSummaryTextDeltaEvent(
+                type="response.reasoning_summary_text.delta", item_id="rs_1", output_index=0, summary_index=idx,
+                delta=text, sequence_number=3 + 2 * idx,
+            ))
+        c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1", summary=["first", "second"]), 0, 6))
+        c.process(_completed(7))
+        assert c.result().content[0].thinking == "first\n\nsecond"
+
+    def test_summary_only_on_done_is_used_when_nothing_streamed(self):
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1", summary=["late summary"]), 0, 2))
+        c.process(_completed(3))
+        assert c.result().content[0].thinking == "late summary"
+
+    def test_summary_without_encrypted_content_keeps_legacy_thinking(self):
+        """Summary text but no payload (include not requested): visible thinking, not a reasoning item."""
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(_done(_reasoning("rs_1", status="completed", summary=["visible"]), 0, 2))
+        c.process(_completed(3))
+        block = c.result().content[0]
+        assert block.thinking == "visible"
+        assert block.encrypted_content is None
+        assert block.id is None
+        assert not block.is_openai_reasoning_item
+
+    def test_done_without_added_still_records_the_item(self):
+        """A `.done` for an item whose `.added` was missed must not raise or lose the payload."""
+        c = self._collector()
+        item = c.process(_done(_reasoning("rs_orphan", status="completed", encrypted="enc-o"), 0, 1))
+        assert item is None  # no content block was opened, so no stop event
+        c.process(_completed(2))
+        block = c.result().content[0]
+        assert block.id == "rs_orphan" and block.encrypted_content == "enc-o"
+
+    def test_added_and_done_emit_stream_events_as_before(self):
+        c = self._collector()
+        started = c.process(_added(_reasoning("rs_1"), 0, 1))
+        assert isinstance(started, Thinking) and started.id == "rs_1"
+        stopped = c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1"), 0, 2))
+        assert isinstance(stopped, ContentBlockStop) and stopped.id == "rs_1"
+
+    def test_two_steps_two_reasoning_items(self):
+        """Parallel tool calls in one response: each reasoning item keeps its own payload."""
+        c = self._collector()
+        c.process(_added(_reasoning("rs_1"), 0, 1))
+        c.process(_done(_reasoning("rs_1", status="completed", encrypted="enc-1"), 0, 2))
+        c.process(_added(_fn_call("fc_1", "call_1", name="a"), 1, 3))
+        c.process(_done(_fn_call("fc_1", "call_1", name="a", arguments="{}", status="completed"), 1, 4))
+        c.process(_added(_reasoning("rs_2"), 2, 5))
+        c.process(_done(_reasoning("rs_2", status="completed", encrypted="enc-2"), 2, 6))
+        c.process(_added(_fn_call("fc_2", "call_2", name="b"), 3, 7))
+        c.process(_done(_fn_call("fc_2", "call_2", name="b", arguments="{}", status="completed"), 3, 8))
+        c.process(_completed(9))
+
+        items = c.result().to_openai_responses_input()
+        assert [(i["type"], i.get("id") or i.get("call_id")) for i in items] == [
+            ("reasoning", "rs_1"), ("function_call", "call_1"), ("reasoning", "rs_2"), ("function_call", "call_2"),
+        ]
+        assert [i["encrypted_content"] for i in items if i["type"] == "reasoning"] == ["enc-1", "enc-2"]
+
+
+# ---------------------------------------------------------------------------
+# OpenAI Responses: assistant `phase` and leaked tool-call recovery
+# ---------------------------------------------------------------------------
+
+def _msg_item(item_id: str, *, phase: str | None = None, status: str = "in_progress", text: str | None = None):
+    content = [ResponseOutputText(type="output_text", text=text, annotations=[])] if text is not None else []
+    kwargs = {"phase": phase} if phase else {}
+    return ResponseOutputMessage(id=item_id, type="message", role="assistant", content=content, status=status, **kwargs)
+
+
+def _part_added(item_id: str, seq: int):
+    return ResponseContentPartAddedEvent(
+        type="response.content_part.added", item_id=item_id, output_index=0, content_index=0,
+        part=ResponseOutputText(type="output_text", text="", annotations=[]), sequence_number=seq,
+    )
+
+
+def _delta(item_id: str, delta: str, seq: int):
+    return ResponseTextDeltaEvent(
+        type="response.output_text.delta", item_id=item_id, output_index=0, content_index=0,
+        delta=delta, logprobs=[], sequence_number=seq,
+    )
+
+
+class TestResponseCollectorPhase:
+    def _collector(self):
+        _make_context()
+        c = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        c.process(ResponseCreatedEvent(type="response.created", response=_make_response(model="gpt-5.6-luna"), sequence_number=0))
+        return c
+
+    def test_phase_from_added_lands_on_text_content(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1", phase="commentary"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", "Checking first.", 3))
+        c.process(_done(_msg_item("msg_1", phase="commentary", status="completed", text="Checking first."), 0, 4))
+        c.process(_completed(5))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["TextContent"]
+        assert msg.content[0].phase == "commentary"
+        assert msg.to_openai_responses_input()[0]["phase"] == "commentary"
+
+    def test_phase_only_on_done_is_still_captured(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", "Done.", 3))
+        c.process(_done(_msg_item("msg_1", phase="final_answer", status="completed", text="Done."), 0, 4))
+        c.process(_completed(5))
+        assert c.result().content[0].phase == "final_answer"
+
+    def test_no_phase_means_none(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", "Hello", 3))
+        c.process(_done(_msg_item("msg_1", status="completed", text="Hello"), 0, 4))
+        c.process(_completed(5))
+        assert c.result().content[0].phase is None
+
+
+class TestResponseCollectorLeakedToolCalls:
+    """A `message` whose text is a Harmony-form tool call becomes the tool call."""
+
+    def _collector(self):
+        _make_context()
+        c = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        c.process(ResponseCreatedEvent(type="response.created", response=_make_response(model="gpt-5.6-luna"), sequence_number=0))
+        return c
+
+    def test_prose_is_held_until_decided_then_released_with_what_accumulated(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        assert c.process(_part_added("msg_1", 2)) is None            # empty: undecided
+        assert c.process(_delta("msg_1", "t", 3)) is None            # prefix of `to=functions.`
+        assert c.process(_delta("msg_1", "o", 4)) is None
+        started = c.process(_delta("msg_1", "morrow", 5))            # diverged: prose
+        assert isinstance(started, Text) and started.id == "msg_1" and started.text == "tomorrow"
+        nxt = c.process(_delta("msg_1", " then", 6))
+        assert isinstance(nxt, MesserTextDelta) and nxt.text_delta == " then"
+        assert isinstance(c.process(_done(_msg_item("msg_1", status="completed", text="tomorrow then"), 0, 7)), ContentBlockStop)
+        c.process(_completed(8))
+        assert c.result().content[0].text == "tomorrow then"
+
+    def test_clean_text_releases_on_the_first_delta(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        started = c.process(_delta("msg_1", "Hello", 3))
+        assert isinstance(started, Text) and started.text == "Hello"
+
+    def test_short_undecided_text_is_released_at_done_with_its_stop(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        assert c.process(_delta("msg_1", "to", 3)) is None
+        first = c.process(_done(_msg_item("msg_1", status="completed", text="to"), 0, 4))
+        assert isinstance(first, Text) and first.text == "to"
+        assert isinstance(c.pop_pending_stream_item(), ContentBlockStop)
+        c.process(_completed(5))
+        assert c.result().content[0].text == "to"
+
+    def test_leak_is_never_streamed_and_becomes_a_tool_call(self):
+        leak = ' to=functions.messer__get_preview_logs  (json 恒一\n{"service":"ui"}ંалда'
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1", phase="final_answer"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        emitted = [c.process(_delta("msg_1", ch, 3 + i)) for i, ch in enumerate(leak)]
+        assert all(e is None for e in emitted), "leaked text must not reach the stream"
+        assert c.process(_done(_msg_item("msg_1", phase="final_answer", status="completed", text=leak), 0, 99)) is None
+        c.process(_completed(100))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["ToolUseContent"]
+        call = msg.content[0]
+        assert call.name == "messer__get_preview_logs"
+        assert call.input == {"service": "ui"}
+        assert call.id.startswith("call_leak_")
+        assert msg.to_openai_responses_input()[0]["type"] == "function_call"
+
+    def test_repeated_leaked_calls_collapse_and_the_fake_summary_is_dropped(self):
+        leak = (
+            ' to=functions.wait_for_background_tasks  code:\n{"task_ids":["x"],"timeout_seconds":120}\n\n'
+            ' to=functions.wait_for_background_tasks  code:\n{"task_ids":["x"],"timeout_seconds":120}\n\n'
+            "Invoice Triage is built.\n- Knowledge base: 5 vendors"
+        )
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", leak, 3))
+        c.process(_done(_msg_item("msg_1", status="completed", text=leak), 0, 4))
+        c.process(_completed(5))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["ToolUseContent"]
+        assert msg.content[0].input == {"task_ids": ["x"], "timeout_seconds": 120}
+        assert "Invoice Triage" not in msg.collect_text()
+
+    def test_leak_after_prose_keeps_the_prose_and_recovers_the_call(self):
+        text = 'Wave 3 dependency check:\n- UI → ready.\n\n\n to=functions.builder  code:\n{"title":"UI","run_in_background":true}'
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1", phase="commentary"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", text, 3))  # streams (it starts as prose) — history is still cleaned
+        c.process(_done(_msg_item("msg_1", phase="commentary", status="completed", text=text), 0, 4))
+        c.process(_completed(5))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["TextContent", "ToolUseContent"]
+        assert msg.content[0].text == "Wave 3 dependency check:\n- UI → ready."
+        assert msg.content[0].phase == "commentary"
+        assert msg.content[1].name == "builder"
+
+    def test_leak_next_to_a_structured_call_is_dropped_not_duplicated(self):
+        c = self._collector()
+        c.process(_added(_fn_call("fc_1", "call_1", name="search"), 0, 1))
+        c.process(_done(_fn_call("fc_1", "call_1", name="search", arguments='{"q":"x"}', status="completed"), 0, 2))
+        leak = ' to=functions.search json\n{"q":"x"}'
+        c.process(_added(_msg_item("msg_1"), 1, 3))
+        c.process(_part_added("msg_1", 4))
+        c.process(_delta("msg_1", leak, 5))
+        c.process(_done(_msg_item("msg_1", status="completed", text=leak), 1, 6))
+        c.process(_completed(7))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["ToolUseContent"]
+        assert msg.content[0].id == "call_1"
+
+    def test_unparseable_leak_is_dropped_leaving_no_garbage(self):
+        leak = " to=functions.wait_for_background_tasks  code: 亚洲AV"
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", leak, 3))
+        c.process(_done(_msg_item("msg_1", status="completed", text=leak), 0, 4))
+        c.process(_completed(5))
+        assert c.result().content == []
+
+    def test_recovered_count_is_recorded_in_usage(self):
+        ctx = _make_context()
+        c = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        c.process(ResponseCreatedEvent(type="response.created", response=_make_response(model="gpt-5.6-luna"), sequence_number=0))
+        leak = ' to=functions.a json\n{}\n to=functions.b json\n{"k":1}'
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        c.process(_delta("msg_1", leak, 3))
+        c.process(_done(_msg_item("msg_1", status="completed", text=leak), 0, 4))
+        c.process(_completed(5))
+        msg = c.result()
+        assert [b.name for b in msg.content] == ["a", "b"]
+        assert ctx.current_span().usage.get("recovered_tool_calls") == 2
+
+
+class TestResponseCollectorTextAfterLeak:
+    """Prose the model writes after a leaked call is its account of work that never ran."""
+
+    def _collector(self):
+        _make_context()
+        c = ResponseCollector(async_gen=_empty_gen(), start=time.perf_counter())
+        c.process(ResponseCreatedEvent(type="response.created", response=_make_response(model="gpt-5.6-luna"), sequence_number=0))
+        return c
+
+    def test_summary_after_a_leak_is_neither_streamed_nor_kept(self):
+        leak = ' to=functions.messer__get_preview_logs  code:\n{"component":"ui"}'
+        summary = "Invoice Triage is built.\n\n- Knowledge base: 5 vendors, 12 invoices"
+        c = self._collector()
+        c.process(_added(_msg_item("msg_1"), 0, 1))
+        c.process(_part_added("msg_1", 2))
+        assert c.process(_delta("msg_1", leak, 3)) is None
+        c.process(_done(_msg_item("msg_1", status="completed", text=leak), 0, 4))
+        c.process(_added(_msg_item("msg_2", phase="final_answer"), 1, 5))
+        c.process(_part_added("msg_2", 6))
+        streamed = [c.process(_delta("msg_2", part, 7 + i)) for i, part in enumerate(summary.split(" "))]
+        assert all(s is None for s in streamed), "the fake summary must not reach the stream"
+        assert c.process(_done(_msg_item("msg_2", phase="final_answer", status="completed", text=summary), 1, 40)) is None
+        c.process(_completed(41))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["ToolUseContent"]
+        assert msg.content[0].name == "messer__get_preview_logs"
+        # replays as just the call — no "final answer" wedged before the tool output
+        assert [i["type"] for i in msg.to_openai_responses_input()] == ["function_call"]
+
+    def test_later_leaked_blocks_are_still_recovered_and_deduped(self):
+        c = self._collector()
+        blocks = [
+            ' to=functions.messer__get_preview_logs  code:\n{"component":"ui"}',
+            ' to=functions.messer__get_preview_logs  code:\n{"component":"ui"}',
+            ' to=functions.list_background_tasks code:\n{}',
+            "All done here.",
+        ]
+        for n, text in enumerate(blocks):
+            mid = f"msg_{n}"
+            c.process(_added(_msg_item(mid), n, 10 * n + 1))
+            c.process(_part_added(mid, 10 * n + 2))
+            c.process(_delta(mid, text, 10 * n + 3))
+            c.process(_done(_msg_item(mid, status="completed", text=text), n, 10 * n + 4))
+        c.process(_completed(99))
+        msg = c.result()
+        assert [(type(b).__name__, getattr(b, "name", None)) for b in msg.content] == [
+            ("ToolUseContent", "messer__get_preview_logs"),
+            ("ToolUseContent", "list_background_tasks"),
+        ]
+
+    def test_prose_before_the_first_leak_is_kept_and_was_streamed(self):
+        c = self._collector()
+        c.process(_added(_msg_item("msg_0", phase="commentary"), 0, 1))
+        c.process(_part_added("msg_0", 2))
+        assert isinstance(c.process(_delta("msg_0", "Probing the UI build now.", 3)), Text)
+        c.process(_done(_msg_item("msg_0", phase="commentary", status="completed", text="Probing the UI build now."), 0, 4))
+        leak = ' to=functions.messer__get_preview_logs  code:\n{"component":"ui"}'
+        c.process(_added(_msg_item("msg_1"), 1, 5))
+        c.process(_part_added("msg_1", 6))
+        c.process(_delta("msg_1", leak, 7))
+        c.process(_done(_msg_item("msg_1", status="completed", text=leak), 1, 8))
+        c.process(_completed(9))
+        msg = c.result()
+        assert [type(b).__name__ for b in msg.content] == ["TextContent", "ToolUseContent"]
+        assert msg.content[0].phase == "commentary"
+        items = msg.to_openai_responses_input()
+        assert [i.get("type") or i.get("phase") for i in items] == ["commentary", "function_call"]

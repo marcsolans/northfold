@@ -1,0 +1,174 @@
+
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer Workflow vs Agno Workflow — workflow benchmark[0m
+  200 iters · 200 burst · 200 mem · 500 throughput ops
+  Agno found — telemetry=False
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mSpot-checking correctness (sequential)...[0m
+  Messer: ✓  |  Agno: ✓
+
+  [2m[Scenario · sequential][0m
+    Messer latency... p50=351.0 µs
+    Messer memory... 40.1 KB peak
+    Messer burst (200 concurrent)... p50=27.86 ms
+    Messer throughput conc=1... 2578/s
+    Messer throughput conc=10... 4357/s
+    Messer throughput conc=50... 4849/s
+    Messer throughput conc=200... 4916/s
+    Agno latency... p50=106.6 µs
+    Agno memory... 133.6 KB peak
+    Agno burst (200 concurrent)... p50=117.1 µs
+    Agno throughput conc=1... 7481/s
+    Agno throughput conc=10... 7497/s
+    Agno throughput conc=50... 7581/s
+    Agno throughput conc=200... 7581/s
+
+  [2m[Scenario · fanout][0m
+    Messer latency... p50=397.9 µs
+    Messer memory... 50.7 KB peak
+    Messer burst (200 concurrent)... p50=41.59 ms
+    Messer throughput conc=1... 2237/s
+    Messer throughput conc=10... 3697/s
+    Messer throughput conc=50... 3614/s
+    Messer throughput conc=200... 3729/s
+    Agno latency... p50=205.0 µs
+    Agno memory... 146.0 KB peak
+    Agno burst (200 concurrent)... p50=19.83 ms
+    Agno throughput conc=1... 4060/s
+    Agno throughput conc=10... 5595/s
+    Agno throughput conc=50... 5914/s
+    Agno throughput conc=200... 5730/s
+
+  [2m[Scenario · diamond][0m
+    Messer latency... p50=365.0 µs
+    Messer memory... 47.0 KB peak
+    Messer burst (200 concurrent)... p50=30.97 ms
+    Messer throughput conc=1... 2419/s
+    Messer throughput conc=10... 4079/s
+    Messer throughput conc=50... 3374/s
+    Messer throughput conc=200... 4339/s
+    Agno latency... p50=210.2 µs
+    Agno memory... 144.2 KB peak
+    Agno burst (200 concurrent)... p50=16.78 ms
+    Agno throughput conc=1... 3872/s
+    Agno throughput conc=10... 5263/s
+    Agno throughput conc=50... 5498/s
+    Agno throughput conc=200... 6173/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  sequential: A → B → C → D[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×200)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean        426.2 µs        109.0 µs
+           p50        351.0 µs        106.6 µs
+           p95        544.8 µs        124.2 µs
+           p99        727.9 µs        174.0 µs
+
+  [1mMemory  (×200)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                      40.1 KB         205  B
+  Agno                       133.6 KB         684  B
+
+  [1mBurst  (200 concurrent)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50        27.86 ms        117.1 µs
+           p75        29.72 ms        129.7 µs
+           p95        42.10 ms        170.6 µs
+           p99        42.49 ms        323.4 µs
+           max        42.66 ms        10.31 ms
+
+  [2mwall: Messer: 42.7 ms | Agno: 10.3 ms[0m
+
+  [1mThroughput  (500 loops)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+             1          2578/s          7481/s
+            10          4357/s          7497/s
+            50          4849/s          7581/s
+           200          4916/s          7581/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  fanout: A → [B, C, D] → E[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×200)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean        455.5 µs        213.5 µs
+           p50        397.9 µs        205.0 µs
+           p95        462.0 µs        270.3 µs
+           p99        662.6 µs        390.0 µs
+
+  [1mMemory  (×200)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                      50.7 KB         259  B
+  Agno                       146.0 KB         748  B
+
+  [1mBurst  (200 concurrent)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50        41.59 ms        19.83 ms
+           p75        42.70 ms        20.59 ms
+           p95        54.59 ms        30.83 ms
+           p99        54.93 ms        30.93 ms
+           max        55.06 ms        31.05 ms
+
+  [2mwall: Messer: 55.1 ms | Agno: 31.1 ms[0m
+
+  [1mThroughput  (500 loops)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+             1          2237/s          4060/s
+            10          3697/s          5595/s
+            50          3614/s          5914/s
+           200          3729/s          5730/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  diamond: A → [B, C] → D[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×200)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+          mean        441.3 µs        218.3 µs
+           p50        365.0 µs        210.2 µs
+           p95        508.9 µs        287.5 µs
+           p99        896.7 µs        431.8 µs
+
+  [1mMemory  (×200)[0m
+  framework                     peak       per run
+  ────────────────────  ────────────  ────────────
+  Messer                      47.0 KB         241  B
+  Agno                       144.2 KB         738  B
+
+  [1mBurst  (200 concurrent)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+           p50        30.97 ms        16.78 ms
+           p75        31.97 ms        17.40 ms
+           p95        42.37 ms        29.26 ms
+           p99        42.55 ms        29.36 ms
+           max        42.68 ms        29.50 ms
+
+  [2mwall: Messer: 42.7 ms | Agno: 29.5 ms[0m
+
+  [1mThroughput  (500 loops)[0m
+                        Messer            Agno
+  ────────────  ──────────────  ──────────────
+             1          2419/s          3872/s
+            10          4079/s          5263/s
+            50          3374/s          5498/s
+           200          4339/s          6173/s
+
+[2m────────────────────────────────────────────────────────────────────────────────────────
+  Messer: Workflow DAG with built-in InMemory tracing always on.
+  Agno: Workflow/Parallel primitives with telemetry=False.
+────────────────────────────────────────────────────────────────────────────────────────[0m
+

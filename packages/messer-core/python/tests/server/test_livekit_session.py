@@ -1,0 +1,1642 @@
+"""LiveKit session driver: env gating, reliable-data chunking, cancellation.
+
+Does not talk to a real SFU — the FFI extra is not required; the cancellation
+tests inject a fake ``livekit`` module.
+"""
+
+# ruff: noqa: ARG001  — fakes have to match the real signatures they stand in for
+from __future__ import annotations
+
+import asyncio
+import base64
+import contextlib
+import json
+import sys
+from types import SimpleNamespace
+
+import pytest
+from messer import Agent
+from messer.core.test_model import TestModel
+from messer.server import capacity
+from messer.server.livekit_session import (
+    _run_livekit_session,
+    chunk_data_payloads,
+    dial_from_body,
+    dial_from_env,
+    is_config_hello,
+    parse_interaction_answer,
+    is_livekit_dial,
+    maybe_start_livekit_session,
+    merge_client_config,
+    room_from_token,
+    start_livekit_session,
+)
+from messer.server.livekit_sip import is_eligible_caller
+
+
+def _jwt(payload: str) -> str:
+    """A JWT-shaped string around a raw payload — unpadded, as real ones are."""
+    encoded = base64.urlsafe_b64encode(payload.encode()).decode().rstrip("=")
+    return f"header.{encoded}.signature"
+
+
+def _token_for(room: str, *, identity: str = "agent") -> str:
+    """A LiveKit-shaped JWT: only the payload's ``video.room`` grant matters."""
+    return _jwt(json.dumps({"sub": identity, "video": {"room": room, "roomJoin": True}}))
+
+
+def _reassemble(chunks: list[dict]) -> dict:
+    """What a client does with ``chunk`` envelopes: concat by seq, decode, parse."""
+    ordered = sorted(chunks, key=lambda c: c["seq"])
+    return json.loads(base64.b64decode("".join(c["data"] for c in ordered)))
+
+
+class TestMaybeStart:
+    def test_off_when_transport_unset(self, monkeypatch) -> None:
+        monkeypatch.delenv("MESSER_VOICE_TRANSPORT", raising=False)
+        monkeypatch.delenv("MESSER_VOICE_MEDIA_OWNER", raising=False)
+        assert maybe_start_livekit_session(SimpleNamespace()) is None
+
+    def test_off_when_transport_is_webrtc(self, monkeypatch) -> None:
+        monkeypatch.delenv("MESSER_VOICE_MEDIA_OWNER", raising=False)
+        monkeypatch.setenv("MESSER_VOICE_TRANSPORT", "webrtc")
+        assert maybe_start_livekit_session(SimpleNamespace()) is None
+
+    async def test_starts_a_task_when_livekit(self, monkeypatch) -> None:
+        monkeypatch.delenv("MESSER_VOICE_MEDIA_OWNER", raising=False)
+        monkeypatch.setenv("MESSER_VOICE_TRANSPORT", "livekit")
+        task = maybe_start_livekit_session(SimpleNamespace(state=SimpleNamespace(runnable=None)))
+        assert task is not None
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    def test_off_when_platform_owns_media(self, monkeypatch) -> None:
+        """Leftover MESSER_VOICE_TRANSPORT=livekit on a headless dest box."""
+        monkeypatch.setenv("MESSER_VOICE_TRANSPORT", "livekit")
+        monkeypatch.setenv("MESSER_VOICE_MEDIA_OWNER", "platform")
+        assert maybe_start_livekit_session(SimpleNamespace()) is None
+
+
+class TestCallerIdentity:
+    def test_standard_remote_is_eligible_without_prefix(self) -> None:
+        from types import SimpleNamespace
+
+        p = SimpleNamespace(identity="any-id", kind="PARTICIPANT_KIND_STANDARD")
+        assert is_eligible_caller(p, local_identity="agent-1", caller_hint="caller-")
+
+    def test_egress_is_not_eligible(self) -> None:
+        from types import SimpleNamespace
+
+        p = SimpleNamespace(identity="rec", kind="PARTICIPANT_KIND_EGRESS")
+        assert not is_eligible_caller(p, local_identity="agent-1")
+
+
+class TestChunkDataPayloads:
+    def test_small_payloads_pass_through(self) -> None:
+        payloads = [{"type": "interrupted", "heard_text": "hi"}]
+        assert chunk_data_payloads(payloads) == payloads
+
+    def test_oversized_transcript_is_split_with_seq_total(self) -> None:
+        # Each entry is ~200 bytes; 100 of them blow past 12 KiB.
+        entries = [{"role": "assistant", "text": "x" * 180, "timestamp": 1.0 + i} for i in range(100)]
+        payloads = [{"type": "session_transcript", "entries": entries, "started_at": 1.0}]
+        chunks = chunk_data_payloads(payloads)
+        assert len(chunks) > 1
+        assert all(c["type"] == "session_transcript" for c in chunks)
+        assert [c["seq"] for c in chunks] == list(range(len(chunks)))
+        assert all(c["total"] == len(chunks) for c in chunks)
+        assert all(c["started_at"] == 1.0 for c in chunks)
+        rebuilt = [e for c in chunks for e in c["entries"]]
+        assert rebuilt == entries
+
+    def test_transcript_chunks_keep_their_own_type(self) -> None:
+        """The entry-wise split predates the generic envelope; clients that
+        already reassemble transcripts by seq must not have to change."""
+        entries = [{"role": "user", "text": "z" * 180, "timestamp": float(i)} for i in range(100)]
+        chunks = chunk_data_payloads([{"type": "session_transcript", "entries": entries}])
+        assert {c["type"] for c in chunks} == {"session_transcript"}
+
+    def test_oversized_payload_is_chunked_not_dropped(self) -> None:
+        """Sending an oversized payload whole means the SFU rejects it, which
+        from the client is indistinguishable from never emitting it."""
+        payload = {"type": "agent_text_done", "text": "y" * 20_000}
+        chunks = chunk_data_payloads([payload])
+
+        assert len(chunks) > 1
+        assert {c["type"] for c in chunks} == {"chunk"}
+        assert {c["msg_type"] for c in chunks} == {"agent_text_done"}
+        assert len({c["chunk_id"] for c in chunks}) == 1
+        assert [c["seq"] for c in chunks] == list(range(len(chunks)))
+        assert all(c["total"] == len(chunks) for c in chunks)
+        assert _reassemble(chunks) == payload
+
+    def test_every_chunk_fits_under_the_cap(self) -> None:
+        approval = {
+            "type": "agent_approval",
+            "run_id": "r1",
+            "approval_id": "a1",
+            "ui": {"prompt": "schema: " + "s" * 60_000},
+        }
+        chunks = chunk_data_payloads([approval])
+        assert all(len(json.dumps(c, separators=(",", ":")).encode()) <= 12 * 1024 for c in chunks)
+        assert _reassemble(chunks) == approval
+
+    def test_non_ascii_survives_a_chunk_boundary(self) -> None:
+        """Slices are taken over base64, so a cut can never land inside a
+        multi-byte codepoint."""
+        payload = {"type": "agent_approval", "run_id": "r", "prompt": "€ø漢" * 8_000}
+        assert _reassemble(chunk_data_payloads([payload])) == payload
+
+    def test_interleaved_payloads_keep_distinct_chunk_ids(self) -> None:
+        a = {"type": "agent_approval", "approval_id": "a", "ui": {"p": "a" * 20_000}}
+        b = {"type": "agent_approval", "approval_id": "b", "ui": {"p": "b" * 20_000}}
+        chunks = chunk_data_payloads([a, b])
+        by_id: dict[str, list[dict]] = {}
+        for c in chunks:
+            by_id.setdefault(c["chunk_id"], []).append(c)
+        assert len(by_id) == 2
+        assert sorted(_reassemble(g)["approval_id"] for g in by_id.values()) == ["a", "b"]
+
+
+class TestMergeClientConfig:
+    def test_hello_overlays_env(self) -> None:
+        merged = merge_client_config(
+            '{"stt_provider": "elevenlabs", "model": "env/model"}',
+            {"stt_provider": "deepgram-flux", "turn_detector": "provider"},
+        )
+        assert merged["stt_provider"] == "deepgram-flux"
+        assert merged["turn_detector"] == "provider"
+        assert merged["model"] == "env/model"
+
+    def test_bad_env_json_is_empty_base(self) -> None:
+        assert merge_client_config("not-json", {"tts_provider": "elevenlabs"}) == {"tts_provider": "elevenlabs"}
+
+    def test_no_hello_keeps_env(self) -> None:
+        assert merge_client_config('{"voice": "abc"}', None) == {"voice": "abc"}
+
+
+class TestConfigHello:
+    def test_untyped_object_is_hello(self) -> None:
+        assert is_config_hello({"sample_rate": 16000, "stt_provider": "elevenlabs"})
+
+    def test_typed_frame_is_not_hello(self) -> None:
+        assert not is_config_hello({"type": "playback", "played_ms": 12})
+
+    def test_null_type_is_hello(self) -> None:
+        assert is_config_hello({"type": None, "sample_rate": 16000})
+
+
+class TestInteractionAnswer:
+    def test_parse_requires_id_and_value(self) -> None:
+        assert parse_interaction_answer({"type": "playback"}) is None
+        assert parse_interaction_answer({"type": "interaction_answer"}) is None
+        assert parse_interaction_answer(
+            {"type": "interaction_answer", "interaction_id": "i1", "value": ""}
+        ) is None
+        assert parse_interaction_answer(
+            {
+                "type": "interaction_answer",
+                "interaction_id": "i1",
+                "run_id": None,
+                "value": "A spreadsheet",
+            }
+        ) == ("i1", "A spreadsheet", None)
+
+
+class _FakeParticipant:
+    def __init__(self) -> None:
+        self.dtmf_published: list[tuple[int, str]] = []
+
+    async def publish_data(self, *args: object, **kwargs: object) -> None:
+        pass
+
+    async def publish_track(self, *args: object, **kwargs: object) -> None:
+        pass
+
+    async def publish_dtmf(self, *, code: int, digit: str) -> None:
+        self.dtmf_published.append((code, digit))
+
+
+class _FakeRoom:
+    def __init__(self) -> None:
+        self.connected = asyncio.Event()
+        self.disconnect_entered = asyncio.Event()
+        self.disconnect_gate: asyncio.Event | None = None
+        self.disconnected = False
+        self.local_participant = _FakeParticipant()
+        self.local_participant.identity = "agent-test"
+        self.remote_participants: dict[str, SimpleNamespace] = {}
+        self.handlers: dict[str, object] = {}
+
+    def on(self, name: str, fn: object) -> None:
+        self.handlers[name] = fn
+
+    async def connect(self, url: str, token: str) -> None:
+        self.connected.set()
+
+    async def disconnect(self) -> None:
+        self.disconnect_entered.set()
+        if self.disconnect_gate is not None:
+            await self.disconnect_gate.wait()
+        self.disconnected = True
+
+
+class _FakeGuard:
+    def __init__(self) -> None:
+        self.released = False
+        self.finished = False
+        self.connected = False
+        self.on_abandon: object = None
+        self.disconnect_calls = 0
+
+    def claim(self) -> bool:
+        return True
+
+    def release(self) -> None:
+        self.released = True
+
+    def mark_connected(self) -> None:
+        self.connected = True
+
+    def mark_reconnected(self) -> None:
+        pass
+
+    def mark_disconnected(self, *, on_abandon: object = None) -> None:
+        self.disconnect_calls += 1
+        self.on_abandon = on_abandon
+
+    async def finish(self) -> None:
+        self.finished = True
+
+
+class _LogRecorder:
+    def __init__(self) -> None:
+        self.events: list[str] = []
+
+    def _rec(self, event: str, **kwargs: object) -> None:
+        self.events.append(event)
+
+    info = warning = error = debug = _rec
+
+
+@pytest.fixture
+def driver_env(monkeypatch: pytest.MonkeyPatch) -> tuple[_FakeRoom, _FakeGuard, _LogRecorder, object]:
+    """Fake livekit module + minimal app so the driver runs without the FFI."""
+    room = _FakeRoom()
+    fake_rtc = SimpleNamespace(
+        Room=lambda: room,
+        TrackKind=SimpleNamespace(KIND_AUDIO=1),
+        ParticipantKind=SimpleNamespace(
+            PARTICIPANT_KIND_STANDARD=0,
+            PARTICIPANT_KIND_SIP=3,
+            PARTICIPANT_KIND_EGRESS=1,
+            PARTICIPANT_KIND_INGRESS=2,
+        ),
+        AudioSource=lambda *a, **k: SimpleNamespace(clear_queue=lambda: None),
+    )
+    monkeypatch.setitem(sys.modules, "livekit", SimpleNamespace(rtc=fake_rtc))
+    monkeypatch.setenv("MESSER_LIVEKIT_URL", "ws://fake:7880")
+    monkeypatch.setenv("MESSER_LIVEKIT_TOKEN", "tok")
+    monkeypatch.setenv("MESSER_LIVEKIT_AGENT_IDENTITY", "agent-test")
+    monkeypatch.delenv("MESSER_VOICE_CLIENT_CONFIG", raising=False)
+    log = _LogRecorder()
+    monkeypatch.setattr("messer.server.livekit_session.logger", log)
+    guard = _FakeGuard()
+    agent = Agent(name="lk_test", model=TestModel(responses=["hi"]), tools=[])
+    app = SimpleNamespace(state=SimpleNamespace(runnable=agent, single_session_guard=guard, voice_config=None))
+    return room, guard, log, app
+
+
+class TestCancellationCleanup:
+    """Lifespan teardown cancels the driver — cleanup must still complete."""
+
+    async def test_cancel_while_waiting_for_caller_disconnects_and_releases(
+        self, driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object]
+    ) -> None:
+        room, guard, log, app = driver_env
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)  # let the driver reach caller_ready.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert room.disconnected
+        assert guard.released
+        assert not guard.finished  # session never started
+        assert "voice_livekit_disconnected" in log.events
+
+    async def test_second_cancel_mid_finally_does_not_skip_the_tail(
+        self, driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object]
+    ) -> None:
+        """Emulates the loop-shutdown mass-cancel: a CancelledError delivered
+        at an await inside the finally must not skip the steps after it."""
+        room, guard, log, app = driver_env
+        room.disconnect_gate = asyncio.Event()
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        task.cancel()
+        await asyncio.wait_for(room.disconnect_entered.wait(), timeout=1.0)
+        task.cancel()  # second cancel lands at the await inside disconnect()
+        room.disconnect_gate.set()
+        done, _ = await asyncio.wait({task}, timeout=1.0)
+        assert task in done and task.cancelled()
+        assert "voice_livekit_disconnected" in log.events  # tail still ran
+
+
+def _subscribe_caller(
+    room: _FakeRoom,
+    *,
+    identity: str = "playground",
+    kind: str = "PARTICIPANT_KIND_STANDARD",
+    attributes: dict | None = None,
+) -> SimpleNamespace:
+    participant = SimpleNamespace(
+        identity=identity,
+        kind=kind,
+        attributes=attributes or {},
+        disconnect_reason=None,
+    )
+    track = SimpleNamespace(kind=1)
+    room.handlers["track_subscribed"](track, None, participant)
+    return participant
+
+
+def _deliver_hello(room: _FakeRoom, hello: dict) -> None:
+    import json as _json
+
+    room.handlers["data_received"](SimpleNamespace(data=_json.dumps(hello).encode()))
+
+
+class TestGuardLifetimeAroundSessionBuild:
+    async def test_build_failure_after_media_exits_via_finish(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """mark_connected (mic subscribe) disarms the idle timer before the
+        session is built — a build failure must finish(), not release(),
+        or the box is unclaimed, idle-disarmed and immortal."""
+        room, guard, _log, app = driver_env
+        published = []
+
+        async def capture(payload, **kwargs):
+            import json
+            published.append(json.loads(payload))
+
+        room.local_participant.publish_data = capture
+
+        def _boom(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("recorder misconfigured")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _boom)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _deliver_hello(room, {"sample_rate": 16000})  # skip the 2s hello wait
+        _subscribe_caller(room)
+        done, _ = await asyncio.wait({task}, timeout=2.0)
+        assert task in done
+        assert isinstance(task.exception(), RuntimeError)
+        assert guard.connected
+        assert guard.finished
+        assert not guard.released
+        assert room.disconnected
+        assert "voice_livekit_startup_failed" in _log.events
+        assert published == [{"type": "error", "message": "Voice session could not start. Please try again."}]
+
+    async def test_failure_before_media_releases_the_claim(
+        self, driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object]
+    ) -> None:
+        """Before the mic subscribe the idle timer still owns the exit."""
+        room, guard, _log, app = driver_env
+
+        async def _connect_boom(url: str, token: str) -> None:
+            raise RuntimeError("sfu unreachable")
+
+        room.connect = _connect_boom
+        task = asyncio.create_task(_run_livekit_session(app))
+        done, _ = await asyncio.wait({task}, timeout=1.0)
+        assert task in done
+        assert guard.released
+        assert not guard.finished
+
+    async def test_caller_drop_before_session_build_arms_abandon(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A drop during the hello wait / session build (session_holder still
+        empty) must arm the abandon window; the closure closes whichever
+        session exists at abandon time."""
+        room, guard, _log, app = driver_env
+
+        def _boom(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("stop before session exists")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _boom)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _deliver_hello(room, {"sample_rate": 16000})
+        participant = _subscribe_caller(room)
+        # Drop before the driver has built the session (it is still parked
+        # behind caller_ready in the same loop turn).
+        room.handlers["participant_disconnected"](participant)
+        assert guard.disconnect_calls == 1
+        assert guard.on_abandon is not None
+        assert guard.on_abandon() is None  # no session yet: nothing to close, the waits stop
+        await asyncio.wait({task}, timeout=2.0)
+
+    async def test_hello_window_is_anchored_at_caller_connect_not_mic(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The window opens when the caller *connects*; their mic setup time
+        counts against it. A hello-less caller whose mic lands after the window
+        closed must not pay the full wait again on top (that flat tax on every
+        hello-less call is what this anchoring removed)."""
+        room, _guard, _log, app = driver_env
+        monkeypatch.setattr("messer.server.livekit_session._HELLO_WAIT_SECS", 0.5)
+
+        def _stop(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("stop at build")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _stop)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        participant = SimpleNamespace(
+            identity="playground",
+            kind="PARTICIPANT_KIND_STANDARD",
+            attributes={},
+            disconnect_reason=None,
+        )
+        room.handlers["participant_connected"](participant)
+        # No hello ever, and the mic takes longer than the whole window.
+        await asyncio.sleep(0.6)
+        room.handlers["track_subscribed"](SimpleNamespace(kind=1), None, participant)
+        # Build follows the subscribe immediately — the window was already spent.
+        done, _ = await asyncio.wait({task}, timeout=0.25)
+        assert task in done
+        assert isinstance(task.exception(), RuntimeError)
+
+    async def test_hello_after_mic_within_the_window_still_applies(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A prompt mic must not shrink the window to nothing: a hello arriving
+        after the subscribe but inside the window is still merged."""
+        room, _guard, _log, app = driver_env
+        seen: dict = {}
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            seen["config"] = config
+            raise RuntimeError("stop after capture")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _subscribe_caller(room)
+        await asyncio.sleep(0.1)
+        _deliver_hello(room, {"sample_rate": 16000, "stt_provider": "deepgram-flux"})
+        await asyncio.wait({task}, timeout=2.0)
+        assert seen["config"]["stt_provider"] == "deepgram-flux"
+
+    async def test_hello_before_subscribe_is_applied_to_the_session(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The page may re-send the hello as soon as the agent joins — before
+        the mic track is subscribed. It must be buffered and merged."""
+        room, guard, _log, app = driver_env
+        seen: dict = {}
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            seen["config"] = config
+            raise RuntimeError("stop after capture")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _deliver_hello(room, {"sample_rate": 16000, "stt_provider": "deepgram-flux"})
+        _subscribe_caller(room)
+        await asyncio.wait({task}, timeout=2.0)
+        assert seen["config"]["stt_provider"] == "deepgram-flux"
+        assert guard.finished
+
+
+class TestSipRuntime:
+    async def test_sip_bye_before_media_releases_guard(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+    ) -> None:
+        """_note_caller from remotes already in the room, then a SIP BYE
+        before the mic track — must not stay parked on caller_ready."""
+        room, guard, _log, app = driver_env
+        sip = SimpleNamespace(
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+            attributes={"sip.callID": "c1"},
+            disconnect_reason=SimpleNamespace(name="CLIENT_INITIATED"),
+        )
+        room.remote_participants[sip.identity] = sip
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        assert not task.done()
+        room.handlers["participant_disconnected"](sip)
+        done, _ = await asyncio.wait({task}, timeout=2.0)
+        assert task in done
+        assert guard.released
+        assert not guard.finished
+        assert room.disconnected
+
+    async def test_sip_bye_finishes_guard_when_session_not_built(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+    ) -> None:
+        room, guard, _log, app = driver_env
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        participant = _subscribe_caller(
+            room,
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+        )
+        participant.disconnect_reason = SimpleNamespace(name="CLIENT_INITIATED")
+        room.handlers["participant_disconnected"](participant)
+        await asyncio.sleep(0.05)
+        assert guard.finished
+        assert guard.disconnect_calls == 0
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    async def test_sip_dtmf_handler_is_registered(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+    ) -> None:
+        room, _guard, _log, app = driver_env
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        assert "sip_dtmf_received" in room.handlers
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    async def test_sip_caller_does_not_wait_for_a_hello(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A phone has no data channel to send a config hello on, so the
+        2s hello window can only expire — measured live as 2.0s of dead air
+        between the agent joining and the session being built. For a SIP
+        caller the build must follow the mic subscribe immediately."""
+        room, _guard, _log, app = driver_env
+        # A browser window far longer than any runner stall: a SIP caller that
+        # takes it fails on the wait below instead of on a sub-second budget.
+        monkeypatch.setenv("MESSER_VOICE_HELLO_WAIT_SECS", "30")
+        monkeypatch.delenv("MESSER_VOICE_SIP_HELLO_WAIT_SECS", raising=False)
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            raise RuntimeError("stop")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _subscribe_caller(room, identity="+34111", kind="PARTICIPANT_KIND_SIP")  # no hello, ever
+        done, _ = await asyncio.wait({task}, timeout=10.0)
+        assert task in done, "build waited on the hello window for a SIP caller"
+
+    def test_hello_window_is_tunable_per_caller_kind(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """agent voice_config > env > default, separately for browser and SIP."""
+        from messer.server.livekit_session import hello_wait_secs
+        from messer.voice.config import VoiceConfig
+
+        monkeypatch.delenv("MESSER_VOICE_HELLO_WAIT_SECS", raising=False)
+        monkeypatch.delenv("MESSER_VOICE_SIP_HELLO_WAIT_SECS", raising=False)
+        assert hello_wait_secs(caller_is_sip=False) == 2.0
+        assert hello_wait_secs(caller_is_sip=True) == 0.0
+        monkeypatch.setenv("MESSER_VOICE_HELLO_WAIT_SECS", "0.75")
+        monkeypatch.setenv("MESSER_VOICE_SIP_HELLO_WAIT_SECS", "0.3")
+        assert hello_wait_secs(caller_is_sip=False) == 0.75
+        assert hello_wait_secs(caller_is_sip=True) == 0.3
+        # What agent.py / `codegen set-config voice_config` wrote beats env.
+        declared = VoiceConfig(hello_wait_secs=1.25, sip_hello_wait_secs=0.5)
+        assert hello_wait_secs(caller_is_sip=False, defaults=declared) == 1.25
+        assert hello_wait_secs(caller_is_sip=True, defaults=declared) == 0.5
+        # An agent that sets only one leaves the other to env.
+        assert hello_wait_secs(caller_is_sip=True, defaults=VoiceConfig(hello_wait_secs=1.0)) == 0.3
+        # Garbage and negatives in env never break a call: fall back / clamp.
+        monkeypatch.setenv("MESSER_VOICE_HELLO_WAIT_SECS", "soon")
+        monkeypatch.setenv("MESSER_VOICE_SIP_HELLO_WAIT_SECS", "-4")
+        assert hello_wait_secs(caller_is_sip=False) == 2.0
+        assert hello_wait_secs(caller_is_sip=True) == 0.0
+        # In config the model refuses a negative outright (ge=0) — a typo
+        # fails at boot, not on the first call.
+        with pytest.raises(ValueError):
+            VoiceConfig(sip_hello_wait_secs=-1)
+
+    async def test_agent_voice_config_reopens_the_sip_hello_window(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The driver reads the window off the agent's merged voice_config
+        (``app.state.voice_config``) — the same object the box builds from
+        ``agent.py`` — so a Python-side ``sip_hello_wait_secs`` is honoured."""
+        from messer.voice.config import VoiceConfig
+
+        room, _guard, _log, app = driver_env
+        monkeypatch.delenv("MESSER_VOICE_SIP_HELLO_WAIT_SECS", raising=False)
+        app.state.voice_config = VoiceConfig(sip_hello_wait_secs=0.4)
+
+        def _capture(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("stop")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _subscribe_caller(room, identity="+34111", kind="PARTICIPANT_KIND_SIP")
+        done, _ = await asyncio.wait({task}, timeout=0.15)
+        assert task not in done
+        done, _ = await asyncio.wait({task}, timeout=1.0)
+        assert task in done
+
+    async def test_sip_hello_window_can_be_reopened_from_env(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A deployment whose SIP bridge does send a hello (or wants a settle
+        beat) sets MESSER_VOICE_SIP_HELLO_WAIT_SECS; the driver then waits."""
+        room, _guard, _log, app = driver_env
+        monkeypatch.setenv("MESSER_VOICE_SIP_HELLO_WAIT_SECS", "0.4")
+
+        def _capture(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("stop")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _subscribe_caller(room, identity="+34111", kind="PARTICIPANT_KIND_SIP")
+        done, _ = await asyncio.wait({task}, timeout=0.15)
+        assert task not in done  # inside the reopened window
+        done, _ = await asyncio.wait({task}, timeout=1.0)
+        assert task in done
+
+    async def test_browser_caller_still_gets_the_hello_window(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Contrast: a standard participant without a hello is waited on —
+        the playground's dropdowns ride that hello."""
+        room, _guard, _log, app = driver_env
+        monkeypatch.setattr("messer.server.livekit_session._HELLO_WAIT_SECS", 0.4)
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            raise RuntimeError("stop")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _subscribe_caller(room)  # browser, no hello
+        done, _ = await asyncio.wait({task}, timeout=0.15)
+        assert task not in done  # still inside the window
+        done, _ = await asyncio.wait({task}, timeout=1.0)
+        assert task in done
+
+    async def test_sip_session_is_listening_before_the_track_is_published(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Our published track is what makes livekit-sip send the 200 OK, so
+        for a phone "answered" must mean STT/TTS are already connected."""
+        room, _guard, _log, app = driver_env
+        order: list[str] = []
+
+        class _Session:
+            recording_meta: dict | None = None
+            session_id = "s"
+            closed = False
+
+            async def prepare(self) -> None:
+                order.append("prepare")
+
+            async def close(self) -> None:
+                self.closed = True
+                order.append("close")
+
+            async def run(self, _audio_in: object):
+                order.append("run")
+                await asyncio.Event().wait()
+                yield  # pragma: no cover - never reached
+
+        monkeypatch.setattr(
+            "messer.server.livekit_session.build_voice_session",
+            lambda *_args, **_kwargs: (_Session(), {}),
+        )
+        original_publish = room.local_participant.publish_track
+
+        async def _publish(*args: object, **kwargs: object) -> None:
+            order.append("publish")
+            await original_publish(*args, **kwargs)
+
+        room.local_participant.publish_track = _publish  # type: ignore[method-assign]
+        # No other test reaches publish, so the fake rtc has no track types.
+        fake_rtc = sys.modules["livekit"].rtc
+        monkeypatch.setattr(
+            fake_rtc, "LocalAudioTrack", SimpleNamespace(create_audio_track=lambda *_args: object()), raising=False
+        )
+        monkeypatch.setattr(fake_rtc, "TrackPublishOptions", lambda **_kwargs: _kwargs, raising=False)
+        monkeypatch.setattr(fake_rtc, "TrackSource", SimpleNamespace(SOURCE_MICROPHONE=1), raising=False)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        _subscribe_caller(room, identity="+34111", kind="PARTICIPANT_KIND_SIP")
+        for _ in range(50):
+            if "publish" in order:
+                break
+            await asyncio.sleep(0.02)
+        assert order[:2] == ["prepare", "publish"], order
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    async def test_sip_path_applies_phone_tuned_config(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        room, guard, _log, app = driver_env
+        seen: dict = {}
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            seen["config"] = config
+            raise RuntimeError("stop")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        _deliver_hello(room, {"sample_rate": 16000})
+        _subscribe_caller(
+            room,
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+            attributes={"sip.phoneNumber": "+34111"},
+        )
+        await asyncio.wait({task}, timeout=2.0)
+        assert seen["config"]["stt_extra"]["vad_threshold"] == 0.55
+        assert guard.finished
+
+    async def test_browser_caller_does_not_invoke_sip_recording_meta(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        def _boom(*_args: object, **_kwargs: object) -> dict:
+            raise AssertionError("sip_recording_meta must not run for browser callers")
+
+        monkeypatch.setattr("messer.server.livekit_sip.sip_recording_meta", _boom)
+
+        def _stop(*_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("stop")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _stop)
+        room, guard, _log, app = driver_env
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        _deliver_hello(room, {"sample_rate": 16000})
+        _subscribe_caller(room, attributes={"lk.theme": "dark"})
+        done, _ = await asyncio.wait({task}, timeout=2.0)
+        assert task in done
+        assert isinstance(task.exception(), RuntimeError)
+        assert guard.finished
+
+    async def test_sip_blip_during_hello_does_not_build_session(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A SIP caller gets no hello window (see
+        ``test_sip_caller_does_not_wait_for_a_hello``), so a blip right after
+        media lands *after* the build: the session is built at once, the
+        short-abandon then tears it down through finish(). What must not
+        happen is a build that outlives the abandon — the driver's post-build
+        abort check is what this pins."""
+        room, guard, _log, app = driver_env
+        built: list[object] = []
+        closed: list[object] = []
+        published: list[object] = []
+
+        class _Session:
+            recording_meta: dict | None = None
+            closed = False
+
+            async def prepare(self) -> None:
+                # Hold here long enough for the abandon timer to fire, the way
+                # a real STT/TTS connect would.
+                await asyncio.sleep(0.2)
+
+            async def close(self) -> None:
+                # The real path: once session_holder is set, the abandon goes
+                # through close(), not _abort() — the gate must see this.
+                self.closed = True
+                closed.append(True)
+
+        def _capture(*_args: object, **_kwargs: object):
+            built.append(True)
+            return _Session(), {}
+
+        async def _publish(*_args: object, **_kwargs: object) -> None:
+            published.append(True)
+
+        room.local_participant.publish_track = _publish  # type: ignore[method-assign]
+        fake_rtc = sys.modules["livekit"].rtc
+        monkeypatch.setattr(
+            fake_rtc, "LocalAudioTrack", SimpleNamespace(create_audio_track=lambda *_args: object()), raising=False
+        )
+        monkeypatch.setattr(fake_rtc, "TrackPublishOptions", lambda **_kwargs: _kwargs, raising=False)
+        monkeypatch.setattr(fake_rtc, "TrackSource", SimpleNamespace(SOURCE_MICROPHONE=1), raising=False)
+        monkeypatch.setenv("MESSER_VOICE_SIP_ABANDON_SECS", "0.05")
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        participant = _subscribe_caller(
+            room,
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+        )
+        participant.disconnect_reason = SimpleNamespace(name="STATE_MISMATCH")
+        room.handlers["participant_disconnected"](participant)
+        done, _ = await asyncio.wait({task}, timeout=2.0)
+        assert task in done
+        assert built == [True]
+        assert closed  # built, then torn down by the abandon
+        assert published == []  # a hung-up caller is never answered (Bugbot, PR 170)
+        assert guard.finished
+
+    async def test_late_media_after_sip_bye_does_not_build(
+        self,
+        driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """BYE sets session_aborted; a late track_subscribed must not flip
+        caller_ready and sneak past the abort gate."""
+        room, guard, _log, app = driver_env
+        built: list[object] = []
+
+        def _capture(*_args: object, **_kwargs: object) -> None:
+            built.append(True)
+            raise RuntimeError("should not build after BYE")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        sip = SimpleNamespace(
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+            attributes={"sip.callID": "c1"},
+            disconnect_reason=SimpleNamespace(name="CLIENT_INITIATED"),
+        )
+        room.remote_participants[sip.identity] = sip
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        room.handlers["participant_disconnected"](sip)
+        _subscribe_caller(room, identity="+34111", kind="PARTICIPANT_KIND_SIP")
+        done, _ = await asyncio.wait({task}, timeout=2.0)
+        assert task in done
+        assert built == []
+        assert guard.released
+        assert not guard.finished
+
+
+class TestDialParsing:
+    def test_transport_discriminates_the_body(self) -> None:
+        assert is_livekit_dial({"transport": "livekit"})
+        assert not is_livekit_dial({"sdp": "v=0...", "type": "offer"})
+        assert not is_livekit_dial({"transport": "webrtc"})
+        assert not is_livekit_dial(None)
+
+    def test_body_dial_carries_config_as_json(self) -> None:
+        dial = dial_from_body(
+            {
+                "transport": "livekit",
+                "url": "ws://sfu:7880",
+                "token": "tok",
+                "room": "v1_1_2_3_abc",
+                "caller_identity": "caller-abc",
+                "config": {"stt_provider": "deepgram-flux"},
+            }
+        )
+        assert (dial.url, dial.token, dial.room) == ("ws://sfu:7880", "tok", "v1_1_2_3_abc")
+        assert dial.caller_identity == "caller-abc"
+        assert merge_client_config(dial.client_config, None) == {"stt_provider": "deepgram-flux"}
+
+    def test_non_object_config_is_dropped(self) -> None:
+        dial = dial_from_body({"transport": "livekit", "url": "u", "token": "t", "config": "x"})
+        assert dial.client_config == "{}"
+
+
+class TestDialParentId:
+    """The run a call continues (text → voice) rides the dial — minted by
+    whoever authorized the call — never the browser's data-channel hello."""
+
+    def test_body_dial_carries_it(self) -> None:
+        dial = dial_from_body({"transport": "livekit", "url": "u", "token": "t", "parent_id": " run-1 "})
+        assert dial.parent_id == "run-1"
+
+    def test_absent_means_fresh_thread(self) -> None:
+        assert dial_from_body({"transport": "livekit", "url": "u", "token": "t"}).parent_id == ""
+
+    def test_boot_env_dial_reads_it(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MESSER_VOICE_PARENT_RUN_ID", "run-2")
+        assert dial_from_env().parent_id == "run-2"
+
+    async def test_driver_passes_it_to_the_session_build(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        room, app = ecs_app
+        seen: dict = {}
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            seen["parent_run_id"] = kwargs.get("parent_run_id")
+            raise RuntimeError("stop after capture")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        status, _body = await start_livekit_session(app, dial_from_body(_dial(parent_id="run-3")))
+        assert status == 200
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        _deliver_hello(room, {"sample_rate": 16000})
+        _subscribe_caller(room)
+        await asyncio.wait({live}, timeout=2.0)
+        assert seen["parent_run_id"] == "run-3"
+
+    async def test_a_hello_supplied_parent_id_is_not_the_dials(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The data channel is the browser's: a hello parent_id must not become
+        the seed on this transport."""
+        room, app = ecs_app
+        seen: dict = {}
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            seen["parent_run_id"] = kwargs.get("parent_run_id")
+            raise RuntimeError("stop after capture")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        status, _body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 200
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        _deliver_hello(room, {"sample_rate": 16000, "parent_id": "attacker-thread"})
+        _subscribe_caller(room)
+        await asyncio.wait({live}, timeout=2.0)
+        assert seen["parent_run_id"] is None
+
+
+class TestRoomFromToken:
+    """The token pins the room; the body's `room` is only a label."""
+
+    def test_reads_the_video_room_grant(self) -> None:
+        assert room_from_token(_token_for("v1_1_2_3_abc")) == "v1_1_2_3_abc"
+
+    def test_padding_is_restored_before_decoding(self) -> None:
+        # base64 payloads whose length isn't a multiple of 4 are the common case.
+        for room in ("a", "ab", "abc", "abcd", "room-with-a-longer-name"):
+            assert room_from_token(_token_for(room)) == room
+
+    @pytest.mark.parametrize(
+        "token",
+        [
+            "",
+            "not-a-jwt",
+            "header.!!!not-base64!!!.sig",
+            _jwt("[1, 2, 3]"),  # payload is not an object
+            _jwt("{}"),  # no grants
+            _jwt('{"video": "nope"}'),  # grants are not an object
+            _jwt('{"video": {"roomJoin": true}}'),  # no room claim
+            _jwt("not json at all"),
+        ],
+    )
+    def test_anything_unparseable_is_empty_not_an_error(self, token: str) -> None:
+        """A bad token is the SFU's problem to reject; this only needs a key."""
+        assert room_from_token(token) == ""
+
+
+@pytest.fixture
+def ecs_app(
+    driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object],
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[_FakeRoom, object]:
+    """A long-lived server: no single-session guard, no LiveKit boot env."""
+    room, _guard, _log, app = driver_env
+    app.state.single_session_guard = None
+    # Exercise the uncapped default. Capacity tests below opt into a limit.
+    monkeypatch.delenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", raising=False)
+    capacity.reset_for_tests()
+    return room, app
+
+
+def _dial(**over: object) -> dict:
+    body = {
+        "transport": "livekit",
+        "url": "ws://fake:7880",
+        "token": "tok",
+        "room": "v1_1_2_3_abc",
+        "agent_identity": "agent-test",
+        "caller_identity": "caller-hint",
+    }
+    body.update(over)
+    return body
+
+
+class TestStartLivekitSession:
+    """Per-request join (ECS / on-premise): the process serves room after room."""
+
+    @pytest.mark.parametrize("limit", [None, "", "0", "auto", "2"])
+    async def test_capacity_is_opt_in(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch, limit: str | None
+    ) -> None:
+        _room, app = ecs_app
+        if limit is not None:
+            monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", limit)
+        monkeypatch.setattr(capacity, "_auto_limit", lambda: 2)
+        capacity.reset_for_tests()
+        capped = limit in ("auto", "2")
+        try:
+            statuses = [
+                (await start_livekit_session(app, dial_from_body(_dial(room=f"room-{i}"))))[0]
+                for i in range(10)
+            ]
+            assert statuses == ([200] * 2 + [503] * 8 if capped else [200] * 10)
+            assert capacity.active_sessions() == (2 if capped else 10)
+        finally:
+            tasks = list(app.state.livekit_sessions.values())
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+        assert capacity.active_sessions() == 0
+        assert not app.state.livekit_sessions
+
+    async def test_join_answers_200_and_leaves_the_session_running(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        room, app = ecs_app
+        status, body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 200
+        assert body == {"transport": "livekit", "room": "v1_1_2_3_abc", "status": "joined"}
+        # 200 means "the agent is in the room", not "the call is over".
+        assert room.connected.is_set()
+        assert not room.disconnected
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        assert not live.done()
+        live.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+
+    async def test_second_join_for_the_same_room_conflicts(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        _room, app = ecs_app
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        status, body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 409
+        assert "already live" in body["error"]
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        live.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+
+    async def test_a_finished_room_frees_its_key_for_the_next_call(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        """The point of the per-request path: one call ending must not retire
+        the process (nor its room key)."""
+        _room, app = ecs_app
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        live.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+        assert "v1_1_2_3_abc" not in app.state.livekit_sessions
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        again = app.state.livekit_sessions["v1_1_2_3_abc"]
+        again.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await again
+
+    async def test_missing_credentials_is_a_400(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        _room, app = ecs_app
+        status, body = await start_livekit_session(app, dial_from_body(_dial(token="")))
+        assert status == 400
+        assert "url" in body["error"]
+
+    async def test_unreachable_sfu_surfaces_the_join_failure(
+        self, ecs_app: tuple[_FakeRoom, object], driver_env: tuple[object, object, _LogRecorder, object]
+    ) -> None:
+        room, app = ecs_app
+        _r, _g, log, _a = driver_env
+
+        async def _connect_boom(url: str, token: str) -> None:
+            raise RuntimeError("sfu unreachable")
+
+        room.connect = _connect_boom
+        status, body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 502
+        # The caller learns the join failed; *why* is in the log (see
+        # `test_a_join_failure_does_not_echo_internals_to_the_caller`).
+        assert body == {"error": "the agent could not join the room"}
+        assert "voice_livekit_join_failed" in log.events
+
+    async def test_a_hung_join_times_out_and_cancels_the_task(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        room, app = ecs_app
+
+        async def _connect_hang(url: str, token: str) -> None:
+            await asyncio.Event().wait()
+
+        room.connect = _connect_hang
+        status, body = await start_livekit_session(app, dial_from_body(_dial()), timeout=0.05)
+        assert status == 504
+        assert "did not join" in body["error"]
+        # The key is freed with the 504 (see the retry test below), so reach the
+        # task by name rather than looking it up by room.
+        live = next(
+            t for t in asyncio.all_tasks() if t.get_name().startswith("voice-livekit-session:")
+        )
+        assert live.cancelled() or live.cancelling()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+        assert "v1_1_2_3_abc" not in app.state.livekit_sessions
+
+    async def test_a_504_frees_the_room_for_the_retry(
+        self, ecs_app: tuple[_FakeRoom, object]
+    ) -> None:
+        """A caller that got a 504 retries. The abandoned task still has awaits
+        left in its teardown, so keying on "not done" would answer that retry
+        with a 409 for a room nothing is serving."""
+        room, app = ecs_app
+        hang = asyncio.Event()
+
+        async def _connect_hang(url: str, token: str) -> None:
+            await hang.wait()
+
+        room.connect = _connect_hang
+        assert (await start_livekit_session(app, dial_from_body(_dial()), timeout=0.05))[0] == 504
+        assert "v1_1_2_3_abc" not in app.state.livekit_sessions
+
+        # The retry succeeds instead of colliding with the corpse.
+        hang.set()
+        del room.connect  # back to the fixture's instant connect
+        status, _body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 200
+        for task in list(app.state.livekit_sessions.values()):
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    async def test_one_token_cannot_join_its_room_twice(
+        self, ecs_app: tuple[_FakeRoom, object]
+    ) -> None:
+        """Sessions key on the token's `video.room` grant, not the body's label.
+        Keying on the label lets one token put two agents in one real room,
+        both publishing, talking over each other."""
+        _room, app = ecs_app
+        token = _token_for("v1_1_2_3_abc")
+
+        assert (await start_livekit_session(app, dial_from_body(_dial(token=token))))[0] == 200
+        # Same token — so the same actual room — under a different label.
+        status, body = await start_livekit_session(
+            app, dial_from_body(_dial(token=token, room="pretending-to-be-elsewhere"))
+        )
+        assert status == 409
+        assert "already live" in body["error"]
+        assert len(app.state.livekit_sessions) == 1
+
+        for task in list(app.state.livekit_sessions.values()):
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    async def test_two_rooms_still_run_side_by_side(
+        self, ecs_app: tuple[_FakeRoom, object]
+    ) -> None:
+        """The dedupe is per room, not a second single-session guard."""
+        _room, app = ecs_app
+        assert (
+            await start_livekit_session(app, dial_from_body(_dial(token=_token_for("room-a"))))
+        )[0] == 200
+        assert (
+            await start_livekit_session(app, dial_from_body(_dial(token=_token_for("room-b"))))
+        )[0] == 200
+        assert sorted(app.state.livekit_sessions) == ["room-a", "room-b"]
+
+        for task in list(app.state.livekit_sessions.values()):
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    async def test_a_dial_to_an_unpinned_url_is_a_403(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """With MESSER_LIVEKIT_URL set, the body cannot redirect this process at
+        an SFU of the caller's choosing — the dial spends this deployment's
+        STT/TTS/LLM budget, streaming to whoever is in that room."""
+        _room, app = ecs_app
+        monkeypatch.setenv("MESSER_LIVEKIT_URL", "ws://ours:7880")
+        status, body = await start_livekit_session(
+            app, dial_from_body(_dial(url="ws://attacker.example:7880"))
+        )
+        assert status == 403
+        assert "pinned" in body["error"]
+        # Refused before any state is touched: no session dict, no slot held.
+        assert not hasattr(app.state, "livekit_sessions")
+        assert capacity.active_sessions() == 0
+
+    async def test_the_pinned_url_still_joins(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _room, app = ecs_app
+        monkeypatch.setenv("MESSER_LIVEKIT_URL", "ws://fake:7880")
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        for task in list(app.state.livekit_sessions.values()):
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    async def test_a_join_failure_does_not_echo_internals_to_the_caller(
+        self, ecs_app: tuple[_FakeRoom, object]
+    ) -> None:
+        """The 502 body goes to whoever posted the dial, so the SFU's hostname
+        and error text belong in the log, not the response."""
+        room, app = ecs_app
+
+        async def _connect_boom(url: str, token: str) -> None:
+            raise RuntimeError("connect failed: sfu-internal.vpc.local:7880 refused")
+
+        room.connect = _connect_boom
+        status, body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 502
+        assert body == {"error": "the agent could not join the room"}
+        assert "vpc.local" not in json.dumps(body)
+
+    async def test_missing_extra_is_a_501(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _room, app = ecs_app
+        monkeypatch.setitem(sys.modules, "livekit", None)
+        status, body = await start_livekit_session(app, dial_from_body(_dial()))
+        assert status == 501
+        assert "voice-livekit" in body["error"]
+
+    async def test_at_capacity_the_next_dial_is_refused(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A full process rejects instead of degrading the calls it is already
+        carrying."""
+        _room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", "1")
+        capacity.reset_for_tests()
+
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        status, body = await start_livekit_session(app, dial_from_body(_dial(room="v1_1_2_3_other")))
+        assert status == 503
+        assert "capacity" in body["error"]
+
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        live.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+
+    async def test_the_slot_comes_back_when_the_session_ends(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The slot tracks the session, not the request — and a leak here
+        would silently shrink the box one call at a time."""
+        _room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", "1")
+        capacity.reset_for_tests()
+
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        assert capacity.active_sessions() == 1
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        live.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+        assert capacity.active_sessions() == 0
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        again = app.state.livekit_sessions["v1_1_2_3_abc"]
+        again.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await again
+
+    async def test_a_rejected_dial_does_not_hold_a_slot(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """400/409 happen before the acquire; a failed join releases on the
+        task's done callback."""
+        _room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", "2")
+        capacity.reset_for_tests()
+
+        assert (await start_livekit_session(app, dial_from_body(_dial(token=""))))[0] == 400
+        assert capacity.active_sessions() == 0
+
+        monkeypatch.setitem(sys.modules, "livekit", None)
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 501
+        await asyncio.sleep(0)
+        assert capacity.active_sessions() == 0
+
+    async def test_body_config_reaches_the_session(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No MESSER_VOICE_CLIENT_CONFIG on this path — the config rides the POST."""
+        room, app = ecs_app
+        seen: dict = {}
+
+        def _capture(runnable: object, defaults: object, config: dict, **kwargs: object):
+            seen["config"] = config
+            raise RuntimeError("stop after capture")
+
+        monkeypatch.setattr("messer.server.livekit_session.build_voice_session", _capture)
+        status, _body = await start_livekit_session(
+            app, dial_from_body(_dial(config={"stt_provider": "deepgram-flux"}))
+        )
+        assert status == 200
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        _deliver_hello(room, {"sample_rate": 16000})
+        _subscribe_caller(room)
+        await asyncio.wait({live}, timeout=2.0)
+        assert seen["config"]["stt_provider"] == "deepgram-flux"
+
+    async def test_sip_bye_before_media_releases_the_slot(
+        self,
+        ecs_app: tuple[_FakeRoom, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Per-request path: early SIP note + BYE before media must free the
+        room key and capacity slot, not sit on caller_ready.wait()."""
+        room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", "1")
+        capacity.reset_for_tests()
+
+        sip = SimpleNamespace(
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+            attributes={"sip.callID": "c1"},
+            disconnect_reason=SimpleNamespace(name="CLIENT_INITIATED"),
+        )
+        room.remote_participants[sip.identity] = sip
+
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        assert capacity.active_sessions() == 1
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        assert not live.done()
+
+        room.handlers["participant_disconnected"](sip)
+        done, _ = await asyncio.wait({live}, timeout=2.0)
+        assert live in done
+        assert capacity.active_sessions() == 0
+        assert "v1_1_2_3_abc" not in app.state.livekit_sessions
+
+    async def test_sip_blip_before_media_aborts_after_short_window(
+        self,
+        ecs_app: tuple[_FakeRoom, object],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_SIP_ABANDON_SECS", "0.05")
+        monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", "1")
+        capacity.reset_for_tests()
+
+        sip = SimpleNamespace(
+            identity="+34111",
+            kind="PARTICIPANT_KIND_SIP",
+            attributes={},
+            disconnect_reason=SimpleNamespace(name="STATE_MISMATCH"),
+        )
+        room.remote_participants[sip.identity] = sip
+
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        room.handlers["participant_disconnected"](sip)
+        done, _ = await asyncio.wait({live}, timeout=2.0)
+        assert live in done
+        assert capacity.active_sessions() == 0
+
+    async def test_server_control_packet_publishes_dtmf_to_sip_leg(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        room, app = ecs_app
+        assert (await start_livekit_session(app, dial_from_body(_dial())))[0] == 200
+        sip = SimpleNamespace(
+            identity="sip-caller",
+            kind=SimpleNamespace(name="PARTICIPANT_KIND_SIP"),
+            attributes={},
+        )
+        room.handlers["participant_connected"](sip)
+        packet = SimpleNamespace(
+            data=json.dumps(
+                {
+                    "type": "messer.sip.send_dtmf",
+                    "digits": "3#",
+                    "participant_identity": "sip-caller",
+                }
+            ).encode(),
+            topic="messer.sip.control",
+            participant=None,
+        )
+        room.handlers["data_received"](packet)
+        for _ in range(10):
+            if room.local_participant.dtmf_published:
+                break
+            await asyncio.sleep(0.01)
+        assert room.local_participant.dtmf_published == [(3, "3"), (11, "#")]
+
+        live = app.state.livekit_sessions["v1_1_2_3_abc"]
+        live.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await live
+
+
+def _browser(identity: str = "browser-1") -> SimpleNamespace:
+    return SimpleNamespace(identity=identity, kind="PARTICIPANT_KIND_STANDARD", attributes={}, disconnect_reason=None)
+
+
+async def _ends(task: asyncio.Task, timeout: float = 2.0) -> bool:
+    done, _ = await asyncio.wait({task}, timeout=timeout)
+    return task in done
+
+
+async def _stop(task: asyncio.Task) -> None:
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+
+
+class TestAbandonedSessionsAreReclaimed:
+    """Every terminal path ends the driver, which frees the slot and room key
+    on a long-lived process without restarting it."""
+
+    @pytest.fixture(autouse=True)
+    def _capped(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("MESSER_VOICE_MAX_CONCURRENT_SESSIONS", "1")
+        capacity.reset_for_tests()
+
+    async def _admitted(self, app: object, room: str = "v1_1_2_3_abc") -> asyncio.Task:
+        assert (await start_livekit_session(app, dial_from_body(_dial(room=room))))[0] == 200
+        assert capacity.active_sessions() == 1
+        return app.state.livekit_sessions[room]
+
+    async def _assert_reclaimed(self, app: object, task: asyncio.Task) -> None:
+        assert await _ends(task)
+        assert capacity.active_sessions() == 0
+        assert "v1_1_2_3_abc" not in app.state.livekit_sessions
+        # The replacement call is admitted on the same process.
+        replacement = await self._admitted(app)
+        await _stop(replacement)
+
+    async def test_room_deleted_before_the_caller_arrives(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        room, app = ecs_app
+        task = await self._admitted(app)
+        room.handlers["disconnected"]("ROOM_DELETED")
+        await self._assert_reclaimed(app, task)
+
+    async def test_room_deleted_after_the_caller_joined_without_audio(self, ecs_app: tuple[_FakeRoom, object]) -> None:
+        room, app = ecs_app
+        task = await self._admitted(app)
+        room.handlers["participant_connected"](_browser())
+        room.handlers["disconnected"]("ROOM_DELETED")
+        await self._assert_reclaimed(app, task)
+
+    async def test_caller_never_joins(
+        self, ecs_app: tuple[_FakeRoom, object], driver_env: tuple, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _room, app = ecs_app
+        log = driver_env[2]
+        monkeypatch.setenv("MESSER_VOICE_CALLER_WAIT_SECS", "0.05")
+        task = await self._admitted(app)
+        assert "voice_livekit_caller_never_arrived" not in log.events
+        await self._assert_reclaimed(app, task)
+        assert "voice_livekit_caller_never_arrived" in log.events
+
+    async def test_caller_joins_but_never_publishes_audio(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_CALLER_WAIT_SECS", "0.05")
+        task = await self._admitted(app)
+        room.handlers["participant_connected"](_browser())
+        await self._assert_reclaimed(app, task)
+
+    async def test_zero_caller_wait_keeps_waiting(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_CALLER_WAIT_SECS", "0")
+        task = await self._admitted(app)
+        assert not await _ends(task, timeout=0.2)
+        await _stop(task)
+
+    async def test_browser_abandons_before_audio_without_a_guard(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_ABANDON_SECS", "0.05")
+        task = await self._admitted(app)
+        caller = _browser()
+        room.handlers["participant_connected"](caller)
+        room.handlers["participant_disconnected"](caller)
+        await self._assert_reclaimed(app, task)
+
+    async def test_browser_rejoin_inside_the_window_keeps_the_call(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_ABANDON_SECS", "0.2")
+        task = await self._admitted(app)
+        caller = _browser()
+        room.handlers["participant_connected"](caller)
+        room.handlers["participant_disconnected"](caller)
+        await asyncio.sleep(0.05)
+        room.handlers["participant_connected"](caller)
+        assert not await _ends(task, timeout=0.4)
+        assert capacity.active_sessions() == 1
+        await _stop(task)
+
+    async def test_guard_abandon_before_the_session_is_built(
+        self, driver_env: tuple[_FakeRoom, _FakeGuard, _LogRecorder, object]
+    ) -> None:
+        room, guard, _log, app = driver_env
+        task = asyncio.create_task(_run_livekit_session(app))
+        await asyncio.wait_for(room.connected.wait(), timeout=1.0)
+        await asyncio.sleep(0)
+        caller = _browser()
+        room.handlers["participant_connected"](caller)
+        room.handlers["participant_disconnected"](caller)
+        assert guard.disconnect_calls == 1
+        assert not await _ends(task, timeout=0.05)  # the guard owns the window
+        assert guard.on_abandon() is None
+        assert await _ends(task)
+        assert guard.released and not guard.finished
+        assert room.disconnected
+
+    async def test_a_stalled_room_disconnect_is_bounded(
+        self,
+        ecs_app: tuple[_FakeRoom, object],
+        driver_env: tuple,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        room, app = ecs_app
+        log = driver_env[2]
+        monkeypatch.setattr("messer.server.livekit_session._TEARDOWN_STEP_SECS", 0.05)
+        room.disconnect_gate = asyncio.Event()  # never set: disconnect hangs
+        task = await self._admitted(app)
+        room.handlers["disconnected"]("ROOM_DELETED")
+        assert await _ends(task)
+        assert capacity.active_sessions() == 0
+        assert "voice_livekit_teardown_step_timeout" in log.events
+
+    async def test_repeated_abandoned_starts_do_not_exhaust_capacity(
+        self, ecs_app: tuple[_FakeRoom, object], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        room, app = ecs_app
+        monkeypatch.setenv("MESSER_VOICE_CALLER_WAIT_SECS", "0.05")
+        monkeypatch.setenv("MESSER_VOICE_ABANDON_SECS", "0.05")
+
+        def room_deleted() -> None:
+            room.handlers["disconnected"]("ROOM_DELETED")
+
+        def browser_left() -> None:
+            caller = _browser()
+            room.handlers["participant_connected"](caller)
+            room.handlers["participant_disconnected"](caller)
+
+        def nobody_came() -> None:
+            pass
+
+        for end in [room_deleted, browser_left, nobody_came] * 3:
+            task = await self._admitted(app)
+            end()
+            assert await _ends(task), end.__name__
+            assert capacity.active_sessions() == 0
+        assert not app.state.livekit_sessions
+        await self._assert_reclaimed(app, task)
+
+    def test_bad_lifecycle_env_falls_back(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from messer.server.livekit_session import caller_wait_secs, guardless_abandon_secs
+
+        monkeypatch.delenv("MESSER_VOICE_CALLER_WAIT_SECS", raising=False)
+        assert caller_wait_secs() == 120.0
+        for bad in ["soon", "inf", "nan"]:
+            monkeypatch.setenv("MESSER_VOICE_CALLER_WAIT_SECS", bad)
+            assert caller_wait_secs() == 120.0
+        monkeypatch.setenv("MESSER_VOICE_CALLER_WAIT_SECS", "-5")
+        assert caller_wait_secs() is None
+        monkeypatch.setenv("MESSER_VOICE_ABANDON_SECS", "7")
+        assert guardless_abandon_secs() == 7.0

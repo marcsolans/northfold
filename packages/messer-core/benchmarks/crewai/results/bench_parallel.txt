@@ -1,0 +1,155 @@
+Installed 61 packages in 119ms
+
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer vs CrewAI Flow — Wide Parallel Fan-out[0m
+  Topology: root → [N async branches] → sink
+  Widths: [4, 8, 16, 32, 64]  |  200 iters  |  200 burst
+  CrewAI Flow found + OpenInference
+  [2mFlow steps: N @listen methods + OI → N+3 spans/kickoff (structurally equal to Messer).[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mVerifying correctness (N=4, trivial)...[0m
+  N=4: Messer=84  Flow steps=84  ✓ match
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario A — Trivial branches (async, no sleep)  ← pure scheduling overhead[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency p50  (×200 sequential runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4        465.8 µs         2.76 ms
+       8        637.0 µs         2.93 ms
+      16        936.5 µs         3.85 ms
+      32         1.65 ms         5.99 ms
+      64         3.01 ms         9.94 ms
+
+  [1mLatency p95  (×200 sequential runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4        726.5 µs         3.41 ms
+       8        990.3 µs         3.45 ms
+      16         1.33 ms         4.63 ms
+      32         2.08 ms         7.18 ms
+      64         3.63 ms         11.0 ms
+
+  [1mLatency p99  (×200 sequential runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4        847.3 µs         5.99 ms
+       8         1.13 ms         3.81 ms
+      16         1.57 ms         5.20 ms
+      32         2.48 ms         8.26 ms
+      64         3.86 ms         11.9 ms
+
+  [1mOverhead per extra branch  (slope of p50 latency vs N)[0m
+  [2mEstimated by linear regression over the N values above[0m
+  Messer          +42.5 µs / branch
+  Flow steps      +122.8 µs / branch
+
+  [1mBurst p50  (200 concurrent runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         54.8 ms        274.6 ms
+       8         83.6 ms        344.0 ms
+      16        223.6 ms        583.7 ms
+      32        444.3 ms        929.8 ms
+      64        837.0 ms       2120.1 ms
+
+  [1mBurst p95  (200 concurrent runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         57.7 ms        415.0 ms
+       8         87.0 ms        474.5 ms
+      16        227.9 ms        720.4 ms
+      32        450.0 ms       1065.2 ms
+      64        845.8 ms       2299.5 ms
+
+  [1mBurst p99  (200 concurrent runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         57.9 ms        426.9 ms
+       8         87.3 ms        486.5 ms
+      16        228.3 ms        733.0 ms
+      32        450.5 ms       1078.3 ms
+      64        846.5 ms       2317.2 ms
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario B — 1 ms async sleep per branch  ← parallelism verification[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency p50  (×200 sequential runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         1.60 ms         3.47 ms
+       8         1.73 ms         3.83 ms
+      16         1.96 ms         4.46 ms
+      32         2.68 ms         6.37 ms
+      64         3.98 ms         11.7 ms
+
+  [1mLatency p95  (×200 sequential runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         1.81 ms         4.15 ms
+       8         2.04 ms         4.49 ms
+      16         2.31 ms         5.25 ms
+      32         3.27 ms         7.37 ms
+      64         4.71 ms         13.8 ms
+
+  [1mLatency p99  (×200 sequential runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         1.95 ms         4.48 ms
+       8         2.27 ms         5.06 ms
+      16         2.51 ms         5.79 ms
+      32         3.92 ms         8.04 ms
+      64         4.91 ms         76.9 ms
+
+  [1mOverhead per extra branch  (slope of p50 latency vs N)[0m
+  [2mEstimated by linear regression over the N values above[0m
+  Messer          +40.3 µs / branch
+  Flow steps      +138.1 µs / branch
+
+  [1mBurst p50  (200 concurrent runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         63.9 ms        350.5 ms
+       8        175.7 ms        419.3 ms
+      16        338.9 ms        715.1 ms
+      32        618.2 ms       1219.0 ms
+      64       1280.1 ms       2533.9 ms
+
+  [1mBurst p95  (200 concurrent runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         66.8 ms        477.9 ms
+       8        179.4 ms        557.1 ms
+      16        343.0 ms        853.6 ms
+      32        623.5 ms       1370.8 ms
+      64       1289.1 ms       2716.3 ms
+
+  [1mBurst p99  (200 concurrent runs)[0m
+       N          Messer      Flow steps
+  ──────  ──────────────  ──────────────
+       4         67.0 ms        490.3 ms
+       8        179.7 ms        568.9 ms
+      16        343.3 ms        867.2 ms
+      32        624.5 ms       1385.1 ms
+      64       1289.7 ms       2731.9 ms
+
+  [2mTheoretical serial: N × 1000 µs  |  Theoretical parallel: ~1000 µs flat[0m
+  [2mBoth frameworks use asyncio.gather — expect near-flat latency across widths[0m
+
+[2m────────────────────────────────────────────────────────────────────────────────────────
+  Messer: one asyncio.Task + Span per branch — full per-branch observability.
+
+  Flow steps: N individual @listen methods built dynamically via type(). Each
+  branch is a first-class Flow step. OI instruments _execute_method() → one span
+  per @start/@listen invocation = N+3 spans per kickoff (root + N branches + sink
+  + 1 kickoff span). Structurally equivalent to Messer. NullExporter: full span
+  pipeline measured, no network I/O. suppress_flow_events=True on all flows.
+
+  Scenario B: asyncio.sleep yields so all N branches run concurrently.
+  Latency should be ~1 ms flat for truly parallel execution.
+────────────────────────────────────────────────────────────────────────────────────────[0m
+

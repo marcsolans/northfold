@@ -1,0 +1,139 @@
+---
+title: "Messer Platform"
+description: "Deploy Messer projects to managed hosting"
+---
+
+The [Messer Platform](https://app.messer.local) runs your project's UI, API, and workforce components for you. There is no local `messer build` or Docker workflow — you push code with `messer push` and deploy from the platform.
+
+## Prerequisites
+
+- A project scaffolded with [`messer create`](/quickstart#create-a-messer-project)
+- [Messer CLI](/installation) installed (`messer configure` for local credentials if needed)
+- The project tested locally with [`messer start`](/quickstart#run-locally)
+
+## How deployment works
+
+Each platform **project** maps to a git repository. **Environments** map to git branches (e.g. `main` → production, `staging` → staging). When you deploy an environment, the platform:
+
+1. Checks out the requested git **rev** (branch)
+2. Reads each `workforce/<name>/messer.yaml` manifest
+3. Builds and runs the UI, API, and every workforce member as separate deployable units
+4. Routes traffic through a shared gateway (`proj-env-<env_id>.deployments.messer.local`)
+
+<Steps>
+  <Step title="Create and push your project">
+    Scaffold locally, develop with `messer start`, then commit and push:
+
+    ```bash
+    messer create my-project
+    cd my-project
+    messer configure
+    git add .
+    git commit -m "Initial project"
+    messer push
+    ```
+  </Step>
+  <Step title="Open your linked project">
+    On the first push, the CLI creates a project in your configured organization and adds a `messer` Git remote. The platform default branch remains `main`; the CLI pushes whichever branch you have checked out. Existing Messer remotes are reused, and GitHub remotes stay intact.
+
+    Open the project in the [Messer Platform](https://app.messer.local). Pushing discovers your components and provisions new branch environments. Pushes to an existing environment follow the platform’s normal deployment behavior.
+  </Step>
+  <Step title="Configure secrets">
+    Add environment variables and secrets in the platform dashboard — model API keys, integration tokens, anything sensitive. These are injected at runtime and are not baked into your repo.
+
+    Reference them in code with standard env var names (e.g. `OPENAI_API_KEY`).
+  </Step>
+  <Step title="Deploy">
+    Trigger a deploy for the target environment from the platform UI (or via the [Deploy API](/api-reference/projects/environments/deploy)). The platform deploys the git rev for that environment's branch.
+
+    Deployments are idempotent on the same rev. Re-deploy after pushing new commits to pick up changes.
+  </Step>
+</Steps>
+
+## Pushing code
+
+`messer push` uploads the current branch's commits using Git. It leaves uncommitted files alone and preserves your existing upstream. To also set the Messer remote as the branch's upstream, use `messer push -u`.
+
+```bash
+# First push: optional project name and organization overrides
+messer push --name my-project --org 123
+
+# Select credentials and API host from a configured profile
+messer push --profile dev
+
+# Preview without creating a project or linking a remote
+messer push --dry-run
+```
+
+The default project name is the repository directory name. `--name` and `--org` apply only to the first push. Profile selection follows `--profile`, then `MESSER_PROFILE`, then `default`, for both project creation and Git authentication.
+
+A failed upload keeps the project link, so `messer push` retries the same project. For a project created by this command, the initial push to `main` replaces the generated scaffold using an exact-SHA `--force-with-lease`. The CLI verifies the scaffold is a single initial commit and saves its SHA before pushing; retries never refresh the lease. A concurrent update causes rejection. Existing linked projects and subsequent pushes use normal Git behavior. Common Git options such as `--force-with-lease`, `--porcelain`, and `--follow-tags` are supported; run `messer push --help` for the full list. The command always targets the current branch; use Git directly for other refspecs.
+
+Automatic creation uses the existing minimal `Scratch` scaffold without server-generated workforce members. Your committed UI and workforce code are uploaded by Git; the project’s `has_ui` metadata retains the creation default because the existing metadata API does not expose that field.
+
+If several Messer remotes exist, name the intended one `messer`. A remote named `messer` that points elsewhere must be renamed before automatic linking can proceed.
+
+Environment variables are separate from code: use `messer env push` to upload them and `messer env pull` to configure your local environment after the first code push.
+
+## `messer.yaml` manifest
+
+Every workforce member needs a `messer.yaml`. `messer create` generates one automatically — do not remove the `_id` or `_type` fields.
+
+```yaml workforce/<name>/messer.yaml icon="y"
+# Auto-generated. Do not modify _id / _type by hand unless you know what you're doing.
+_id: "a1b2c3d4-..."
+_type: "agent"   # or "workflow"
+
+build:
+  # Optional: apt packages for the platform build environment
+  # system_packages:
+  #   - "libgl1-mesa-glx"
+
+  # Optional: commands run after the environment is set up
+  # run:
+  #   - "echo env is ready!"
+
+# Which runnable to serve (relative to this directory)
+fqn: "agent.py::agent"
+```
+
+| Field | Purpose |
+|-------|---------|
+| `_id` | Stable manifest UUID — used for routing, logs, and deployment identity |
+| `_type` | `agent` or `workflow` |
+| `fqn` | Import spec for the Python runnable (`file.py::object`) |
+| `build.system_packages` | Ubuntu packages installed during platform build |
+| `build.run` | Shell commands run after dependency install |
+
+Add additional workforce members locally with `messer add` — each gets its own directory and manifest.
+
+## Accessing a deployed project
+
+Once live, the environment gateway exposes:
+
+- **UI** at the environment root
+- **API** at `/api/...`
+- **Workforce** at `/api/workforce/<member>/...` (proxied to each member's HTTP server)
+
+For programmatic access outside the gateway, the platform also exposes run endpoints:
+
+```http
+POST https://api.messer.local/orgs/{org_id}/apps/{app_id}/runs/collect
+POST https://api.messer.local/orgs/{org_id}/apps/{app_id}/runs/stream
+```
+
+See the [API Reference](/api-reference/introduction) for auth, request shapes, and SDK usage.
+
+## Monitoring and logs
+
+The platform dashboard provides:
+
+- **Deployment status** per component (UI, API, workforce members)
+- **Runtime logs** filtered by component
+- **Resource usage** and deploy history
+
+You can also fetch logs via the [environment logs API](/api-reference/projects/environments/logs).
+
+<Tip>
+Even when self-hosting workforce runtimes, you can point tracing at the platform — see [Tracing](/core-concepts/tracing).
+</Tip>

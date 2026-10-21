@@ -1,0 +1,339 @@
+# This script is adapted from the Python uv installer script (uv-installer.ps1)
+# found at: https://astral.sh/uv/install.ps1
+
+# The original script is licensed under the MIT License.
+# As this script is a derivative work, it is also licensed under the MIT License.
+
+
+<#
+.SYNOPSIS
+Installer for the Messer CLI.
+
+.DESCRIPTION
+This script installs the Messer Command Line Interface (CLI).
+It detects the host architecture (Windows x86_64 or aarch64), downloads the appropriate
+Messer executable from the latest GitHub release, and installs it to:
+    $env:USERPROFILE\.local\bin\messer.exe
+
+The script then adds the installation directory ($env:USERPROFILE\.local\bin)
+to the user's PATH environment variable, making the 'messer' command available
+in the terminal.
+
+This script requires PowerShell 5 or later and an appropriate Execution Policy
+(e.g., RemoteSigned, Bypass).
+
+.PARAMETER Help
+Displays this help message.
+
+.NOTES
+Source: Adapted from the uv installer script (uv-installer.ps1) found at https://astral.sh/uv/install.ps1
+License: MIT License
+#>
+
+
+param (
+    [Parameter(HelpMessage = "Print Help")]
+    [switch]$Help,
+    [Parameter(HelpMessage = "Automatically answer yes to all prompts")]
+    [switch]$Yes
+)
+
+
+$InformationPreference = 'Continue'
+
+
+function Initialize-Environment() {
+    If (($PSVersionTable.PSVersion.Major) -lt 5) {
+        throw @"
+Error: PowerShell 5 or later is required to install messer.
+Upgrade PowerShell:
+
+    https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell
+
+"@
+    }
+
+    # show notification to change execution policy:
+    $allowedExecutionPolicy = @('Unrestricted', 'RemoteSigned', 'Bypass')
+    If ((Get-ExecutionPolicy).ToString() -notin $allowedExecutionPolicy) {
+        throw @"
+Error: PowerShell requires an execution policy in [$($allowedExecutionPolicy -join ", ")] to run messer. For example, to set the execution policy to 'RemoteSigned' please run:
+
+    Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+
+"@
+    }
+
+    # GitHub requires TLS 1.2
+    If ([System.Enum]::GetNames([System.Net.SecurityProtocolType]) -notcontains 'Tls12') {
+        throw @"
+Error: Installing messer requires at least .NET Framework 4.5
+Please download and install it first:
+
+    https://www.microsoft.com/net/download
+
+"@
+    }
+}
+
+
+function Install-Uv() {
+    Write-Information "Installing uv..."
+    try {
+        powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+        if ($LASTEXITCODE -ne 0) { throw "Exit code $LASTEXITCODE" }
+    } catch {
+        throw "Failed to install uv. Please install it manually from https://docs.astral.sh/uv/"
+    }
+    # Refresh PATH in current session
+    $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + [Environment]::GetEnvironmentVariable("Path", "Machine")
+    if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+        throw "uv was installed but could not be found in PATH. Please restart your terminal and re-run this script."
+    }
+    Write-Information "uv installed successfully."
+}
+
+
+function Test-UvInstallation() {
+    Write-Information "Checking for 'uv' command in PATH..."
+
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+        Write-Information "'uv' command found successfully."
+        return
+    }
+
+    Write-Information "uv is not installed. Messer requires uv for Python project management."
+    if ($Yes) {
+        Write-Information "Auto-installing uv (--yes flag provided)..."
+        Install-Uv
+    } else {
+        $choice = Read-Host "Install uv now? (Y/n)"
+        if ($choice -eq "n" -or $choice -eq "N") {
+            Write-Warning "Warning: uv is required for Messer to work. You can install it later from https://docs.astral.sh/uv/"
+        } else {
+            Install-Uv
+        }
+    }
+}
+
+
+function Test-GitInstallation() {
+    Write-Information "Checking for 'git' command in PATH..."
+
+    try {
+        Get-Command git -ErrorAction Stop | Out-Null
+        Write-Information "'git' command found successfully."
+    } catch [System.Management.Automation.CommandNotFoundException] {
+        $errorMessage = @"
+'git' command not found in PATH. Git is required for version control and credential management with the Messer Platform.
+
+Possible Solutions:
+1. Install git:
+   Download from: https://git-scm.com/downloads/win
+   Or via winget: winget install Git.Git
+2. If git is already installed, ensure its installation directory
+   is correctly added to your User or System PATH environment variable and restart your terminal.
+"@
+        Write-Error $errorMessage
+        Exit 1
+    } catch {
+        Write-Error "An unexpected error occurred while checking for 'git': $($_.Exception.Message)"
+        Exit 1
+    }
+}
+
+
+function Install-Bun() {
+    Write-Information "Installing bun..."
+    try {
+        powershell -ExecutionPolicy ByPass -c "irm https://bun.sh/install.ps1 | iex"
+        if ($LASTEXITCODE -ne 0) { throw "Exit code $LASTEXITCODE" }
+    } catch {
+        throw "Failed to install bun. Please install it manually from https://bun.sh"
+    }
+    # Refresh PATH in current session
+    $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + [Environment]::GetEnvironmentVariable("Path", "Machine")
+    if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
+        throw "bun was installed but could not be found in PATH. Please restart your terminal and re-run this script."
+    }
+    Write-Information "bun installed successfully."
+}
+
+
+function Test-BunInstallation() {
+    Write-Information "Checking for 'bun' command in PATH..."
+
+    if (Get-Command bun -ErrorAction SilentlyContinue) {
+        Write-Information "'bun' command found successfully."
+        return
+    }
+
+    Write-Information "bun is not installed. Messer uses bun to manage packages and run UIs and APIs for your projects."
+    if ($Yes) {
+        Write-Information "Auto-installing bun (--yes flag provided)..."
+        Install-Bun
+    } else {
+        $choice = Read-Host "Install bun now? (Y/n)"
+        if ($choice -eq "n" -or $choice -eq "N") {
+            Write-Warning "Warning: bun is required to run UIs and APIs with Messer. You can install it later from https://bun.sh"
+        } else {
+            Install-Bun
+        }
+    }
+}
+
+
+function Get-Arch() {
+    try {
+        # NOTE: this might return X64 on ARM64 Windows, which is OK since emulation is available.
+        # It works correctly starting in PowerShell Core 7.3 and Windows PowerShell in Win 11 22H2.
+        # Ideally this would just be
+        #   [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+        # but that gets a type from the wrong assembly on Windows PowerShell (i.e. not Core)
+        $a = [System.Reflection.Assembly]::LoadWithPartialName("System.Runtime.InteropServices.RuntimeInformation")
+        $t = $a.GetType("System.Runtime.InteropServices.RuntimeInformation")
+        $p = $t.GetProperty("OSArchitecture")
+        # Possible OSArchitecture Values: https://learn.microsoft.com/dotnet/api/system.runtime.interopservices.architecture
+        # Rust supported platforms: https://doc.rust-lang.org/stable/rustc/platform-support.html
+        switch ($p.GetValue($null).ToString())
+        {
+            "X86" { return "i686-pc-windows" }
+            "X64" { return "x86_64-pc-windows" }
+            "Arm" { return "thumbv7a-pc-windows" }
+            "Arm64" { return "aarch64-pc-windows" }
+        }
+    } catch {
+        # The above was added in .NET 4.7.1, so Windows PowerShell in versions of Windows
+        # prior to Windows 10 v1709 may not have this API.
+        Write-Verbose "Get-TargetTriple: Exception when trying to determine OS architecture."
+        Write-Verbose $_
+    }
+
+    # This is available in .NET 4.0. We already checked for PS 5, which requires .NET 4.5.
+    Write-Verbose("Get-TargetTriple: falling back to Is64BitOperatingSystem.")
+    if ([System.Environment]::Is64BitOperatingSystem) {
+        return "x86_64-pc-windows"
+    } else {
+        return "i686-pc-windows"
+    }
+}
+
+
+function Get-Executable($DestinationPath) {
+    if ([string]::IsNullOrWhiteSpace($DestinationPath)) {
+        throw "Get-Executable requires a non-empty -DestinationPath parameter."
+    }
+
+    $arch = Get-Arch
+    Write-Information "Detected architecture: $arch"
+
+    if ($arch -ne "x86_64-pc-windows") {
+        throw "ERROR: Messer installation currently only supports the 'x86_64-pc-windows' (amd64) architecture. Detected: $arch"
+    }
+
+    $manifestUrl = "https://github.com/marcsolans/northfold/releases/latest/download/manifest.json"
+    $manifestPath = [System.IO.Path]::GetTempFileName()
+    try {
+        Invoke-WebRequest -Uri $manifestUrl -OutFile $manifestPath -UseBasicParsing -ErrorAction Stop
+    } catch {
+        throw "Failed to download manifest.json from $manifestUrl. Error $($_.Exception.Message)"
+    }
+
+    try {
+        $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+        $url = $manifest.binaries.windows.x86_64.url
+        if (-not $url) {
+            Remove-Item $manifestPath -Force -ErrorAction SilentlyContinue
+            throw "No download URL found in manifest for windows and x86_64"
+        }
+    } catch {
+        Remove-Item $manifestPath -Force -ErrorAction SilentlyContinue
+        throw "Failed to parse manifest.json. Error $($_.Exception.Message)"
+    } finally {
+        Remove-Item $manifestPath -Force -ErrorAction SilentlyContinue
+    }
+
+    Write-Information "Downloading $url to $DestinationPath"
+
+    try {
+        # Ensure TLS 1.2+ is used
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12, [Net.SecurityProtocolType]::Tls13
+
+        # Remove existing destination file if it exists to ensure a clean download
+        if (Test-Path -Path $DestinationPath) {
+            Write-Warning "Overwriting existing file at '$DestinationPath'."
+            Remove-Item -Path $DestinationPath -Force -ErrorAction Stop
+        }
+
+        # Download the file directly to the final destination path
+        Invoke-WebRequest -Uri $url -OutFile $DestinationPath -UseBasicParsing -ErrorAction Stop
+
+        # Check if the file was actually downloaded and is not empty
+        if (-not (Test-Path -Path $DestinationPath) -or (Get-Item $DestinationPath).Length -eq 0) {
+             # Clean up potentially corrupt/empty file before throwing
+             if (Test-Path -Path $DestinationPath) { Remove-Item -Path $DestinationPath -Force -ErrorAction SilentlyContinue }
+             throw "Downloaded file is missing or empty. Check if the release asset exists at $url"
+        }
+
+        # No return value needed
+    } catch {
+        # Attempt cleanup of potentially partial download at the destination
+        if (Test-Path -Path $DestinationPath) {
+            Remove-Item -Path $DestinationPath -Force -ErrorAction SilentlyContinue
+        }
+        # Rethrow a more specific error including the intended destination
+        throw "FATAL: Failed to download Messer CLI from '$url' to '$DestinationPath'. Check URL, network, and permissions. Error: $($_.Exception.Message)"
+    }
+}
+
+
+function Install-Binary($install_args) {
+    if ($Help) {
+        Get-Help $PSCommandPath -Detailed
+        Exit
+    }
+
+    Initialize-Environment
+
+    Test-GitInstallation
+    Test-UvInstallation
+    Test-BunInstallation
+
+    $InstallDir = Join-Path -Path $env:USERPROFILE -ChildPath ".local\bin"
+
+    if (-not (Test-Path -Path $InstallDir -PathType Container)) {
+        Write-Information "Creating installation directory: '$InstallDir'"
+        try {
+            New-Item -Path $InstallDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
+        } catch {
+            throw "Failed to create installation directory '$InstallDir'. Error: $($_.Exception.Message)"
+        }
+    } else {
+        Write-Information "Installation directory already exists: '$InstallDir'"
+    }
+
+    $CliExecutableName = "messer.exe"
+    $CliExecutablePath = Join-Path -Path $InstallDir -ChildPath $CliExecutableName
+
+    Get-Executable -DestinationPath $CliExecutablePath
+
+    # Add installation directory to the user PATH persistently if not already present
+    $CurrentUserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if (-not ($CurrentUserPath -split ";" | Where-Object { $_ -eq $InstallDir })) {
+        $NewUserPath = "$InstallDir;$CurrentUserPath"
+        [Environment]::SetEnvironmentVariable("Path", $NewUserPath, "User")
+        Write-Information "Added '$InstallDir' to your user PATH. Restart your terminal for changes to take effect."
+    } else {
+        Write-Information "'$InstallDir' is already in your user PATH."
+    }
+
+    Write-Information "Successfully installed messer. Run 'messer configure' to set up your credentials and settings."
+}
+
+
+try {
+    Install-Binary "$Args"
+} catch {
+    Write-Information $_
+    exit 1
+}

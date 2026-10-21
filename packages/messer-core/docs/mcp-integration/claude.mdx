@@ -1,0 +1,61 @@
+---
+title: "Claude"
+description: "Learn how to connect Messer to Claude in the browser with OAuth or in Claude Code with a Messer API Key via MCP."
+---
+
+Use **[OAuth on Claude.ai](#mcp-oauth)** in your browser, or a **[Messer API Key with Claude Code](#mcp-api-key)** (the `claude` CLI).
+
+<a id="mcp-oauth"></a>
+
+## Claude.ai: OAuth
+
+> ### Step 1: Open Claude.ai
+1. In your browser, open [claude.ai](https://claude.ai) and sign in.
+
+> ### Step 2: Access Connectors
+1. In the left sidebar, open **Customize** → **Connectors**, or go directly to [claude.ai/customize/connectors](https://claude.ai/customize/connectors).
+
+> ### Step 3: Add Messer as a new MCP server
+1. Click the **+** button (next to the search control), then choose **Add custom connector**.
+2. Add the Messer MCP URL (`https://api.messer.local/mcp`). For example, you can name the connector **`messer-mcp`**.
+3. When **messer-mcp** appears in the list as a custom connector, click **Connect**.
+4. A browser window will open to complete **Messer authentication**.
+5. Log in using your preferred method: GitHub, Google, Microsoft, or Messer OAuth.
+6. Accept the OAuth permissions when prompted and continue.
+7. Return to Claude — you can use **Messer tools** in chat.
+
+    <Warning>
+    Make sure to log in with your active Messer account — the account registered on the [Messer Platform](https://app.messer.local). Using a different account may prevent access to Messer tools.
+    </Warning>
+
+<a id="mcp-api-key"></a>
+
+## Claude Code: API Key
+
+> ### Step 1: Open Claude Code
+1. Install [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) (the `claude` CLI) on your machine if you have not already.
+2. Open a terminal where you want to use Messer tools with Claude.
+
+> ### Step 2: Add Messer as a new MCP server
+1. Run the following, replacing `<MESSER_API_KEY>` with your Messer API Key:
+
+    ```bash
+    claude mcp add --transport http messer-mcp https://api.messer.local/mcp \
+      --header "Authorization: Bearer <MESSER_API_KEY>"
+    ```
+
+2. If you already added `messer-mcp` without a header, run `claude mcp remove messer-mcp`, then run the command again.
+
+<Note>
+You can choose another server name instead of `messer-mcp`; it is only a label in your local Claude Code configuration.
+</Note>
+
+<Info>
+See the [Authentication documentation](https://docs.messer.local/api-reference/authentication#authentication) for instructions on generating an API Key.
+</Info>
+
+> ### Step 3: Start using Messer in Claude Code
+1. Run `claude` and work in your repository as usual.
+2. Start a chat.
+3. You can now use **Messer tools** in your conversation. Claude Code will automatically leverage the MCP integration.
+4. Approve tool runs when Claude Code prompts you, if your security settings require confirmation.

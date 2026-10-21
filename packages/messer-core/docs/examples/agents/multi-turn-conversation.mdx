@@ -1,0 +1,115 @@
+---
+title: "Multi-turn Conversations"
+description: "Test agent memory, context retention, and complex conversational flows across multiple interactions"
+---
+
+Multi-turn conversation testing ensures your agent maintains context across multiple interactions. Use `params.messages` to establish conversation history and validate the agent's response to the final message.
+
+## Example
+
+This example demonstrates how to test multi-turn conversations by passing a full conversation history via `params.messages` and validating that the agent uses context appropriately.
+
+### Eval Configuration
+
+```yaml evals.yaml
+- name: eval_weather_advice
+  description: Test agent uses weather data to provide appropriate advice
+  runnable: agent.py::agent
+  params:
+    messages:
+      - role: user
+        content: "What's the weather like in New York?"
+      - role: assistant
+        content: "It's currently 15°C and raining in New York."
+      - role: user
+        content: "Should I bring an umbrella?"
+  output:
+    contains!: 
+      value: "yes"
+      transform: lowercase
+  seq!:
+    - llm
+    # Only llm should be called
+    # get_weather should not be called since context is available
+```
+
+### Agent Implementation
+
+```python agent.py
+from messer import Agent
+
+def get_weather(location: str) -> str:
+    """Get current weather information for a specific location."""
+    weather_data = {
+        "New York": "15°C and raining",
+        "London": "12°C and cloudy",
+        "Tokyo": "22°C and sunny"
+    }
+    return weather_data.get(location, f"Weather data not available for {location}")
+
+agent = Agent(
+    name="weather_agent",
+    model="openai/gpt-5.2",
+    system_prompt="You are a helpful weather assistant.",
+    tools=[get_weather],    
+)
+```
+
+### Running Evaluations
+
+```bash
+python -m messer.evals.cli evals.yaml
+```
+
+## How It Works
+
+1. **Conversation History**: The `params.messages` array establishes the full conversation history, including previous user messages and assistant responses.
+
+2. **Context Usage**: The agent receives the entire conversation history, so it can remember what was said in previous turns and answer accordingly.
+
+3. **Output Validation**: The `output` validator checks that the agent's response contains the expected content (e.g., "yes" for the umbrella question).
+
+4. **Sequence Validation**: The `seq!` validator ensures the agent only calls `llm` and doesn't unnecessarily call `get_weather` again, since the weather information is already available in the conversation history.
+
+## Evaluation Results
+
+### Successful Validation
+
+When the agent remembers context and provides the correct response:
+
+```
+──────────────────── Messer Evals ────────────────────
+collected 1 evals from 1 file
+
+ PASSED  evals.yaml::eval_weather_advice [1.06s]
+└── weather_agent
+    ├── ✓ seq!
+    │   └── llm
+    └── ✓ output.contains! ("yes") ⤳ lowercase
+
+============================= 1 passed in 1.06s ==============================
+```
+
+### Failed Validation
+
+When the agent doesn't use context or provides an incorrect response:
+
+```
+──────────────────── Messer Evals ────────────────────
+collected 1 evals from 1 file
+
+ FAILED  evals.yaml::eval_weather_advice [2.91s]
+└── weather_agent
+    ├── ✗ seq!
+    │   └── llm
+    └── ✗ output.contains! ("yes") ⤳ lowercase
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 1 failed in 2.91s !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+## Key Features
+
+- **Conversation History**: Use `params.messages` to establish full conversation context
+- **Context Memory**: Agents receive the entire conversation history and can remember previous interactions
+- **Sequence Validation**: Use `seq!` to verify agents don't call tools unnecessarily when context is available
+- **Response Continuity**: Ensure agents build logically on previous interactions

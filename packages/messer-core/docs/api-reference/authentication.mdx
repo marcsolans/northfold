@@ -1,0 +1,25 @@
+---
+title: "Authentication"
+description: "How to authenticate to the Messer API"
+---
+
+The Messer API uses API keys to authenticate requests. You can create and manage your API keys by navigating to **Profile → API Keys** in the dashboard.
+
+API keys are **personal to your user account** and inherit all your permissions across organizations. Each key carries the same privileges as your user account, so be sure to keep them secure! Do not share your API keys in publicly accessible areas such as GitHub, client-side code, and so forth.
+
+<Warning>
+**Important:** For security, we do not store your API keys after creation. Make sure to copy and store them in a secure location immediately—you will not be able to recover them later.
+</Warning>
+
+When using the Messer framework, you can set these environment variables for automatic authentication:
+
+```bash
+export MESSER_API_KEY="your_api_key_here"
+export MESSER_API_HOST="api.messer.local"
+```
+
+The framework uses these values for platform requests. `MESSER_API_HOST` is a hostname, without `https://` or a path; the request helper adds HTTPS. Set both values before creating the run context. Some operations also need `MESSER_ORG_ID`, `MESSER_KB_ID`, or explicit resource IDs.
+
+<Warning>
+All API requests must be made over HTTPS. Calls made over plain HTTP will fail. API requests without authentication will also fail.
+</Warning>

@@ -1,0 +1,68 @@
+{
+  "title": "Settings",
+  "sections": {
+    "profile": "Profile and security",
+    "organization": "Organization",
+    "members": "Members and roles",
+    "sso": "SSO and SCIM",
+    "billing": "Plan and billing",
+    "credits": "Credits",
+    "budgets": "Budgets",
+    "apiKeys": "API keys",
+    "secrets": "Secrets",
+    "models": "Models and prices",
+    "residency": "Residency and retention",
+    "audit": "Audit",
+    "data": "Export and deletion"
+  },
+  "groups": {
+    "account": "Account",
+    "org": "Organization",
+    "governance": "Governance",
+    "developers": "Developers"
+  },
+  "members": {
+    "description": "Manage who can access the organization and with which permissions.",
+    "invite": "Invite",
+    "inviteTitle": "Invite a member",
+    "inviteDescription": "We'll send an email with a link valid for 7 days.",
+    "inviteSent": "Invitation sent to {email}",
+    "pending": "Pending invitations",
+    "noPending": "There are no pending invitations.",
+    "expires": "Expires",
+    "revoke": "Revoke",
+    "revokeConfirm": "Revoke the invitation to {email}?",
+    "removeConfirm": "Remove {email} from the organization?",
+    "removeDescription": "They lose access immediately. This action is audited.",
+    "you": "You",
+    "source": {
+      "manual": "Manual",
+      "sso": "SSO",
+      "scim": "SCIM"
+    },
+    "roleDescriptions": {
+      "owner": "Everything, including billing.",
+      "admin": "Users, budgets, policies and SSO.",
+      "builder": "Creates and edits projects, agents, workflows and knowledge.",
+      "viewer": "Read-only and use of interfaces."
+    }
+  },
+  "profile": {
+    "description": "Your details and account security.",
+    "name": "Name",
+    "email": "Email",
+    "language": "Language",
+    "mfa": "Two-step verification (TOTP)",
+    "mfaEnabled": "Enabled",
+    "mfaDisabled": "Disabled",
+    "mfaEnable": "Enable",
+    "mfaDisable": "Disable",
+    "mfaScan": "Scan this code with your authenticator app (or enter the key) and type the 6-digit code.",
+    "mfaSecret": "Key",
+    "mfaRecovery": "Store these recovery codes somewhere safe. They are shown only once.",
+    "mfaCodePrompt": "Current code from your app",
+    "emailUnverified": "Your email is not verified.",
+    "resendVerification": "Resend verification",
+    "verificationSent": "We've sent you a new link."
+  }
+}

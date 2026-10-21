@@ -1,0 +1,57 @@
+
+[1m================================================================================================[0m
+[1m  Messer hooks vs Google ADK callbacks benchmark[0m
+[1m================================================================================================[0m
+  Messer: OK  |  ADK: OK
+    Messer hooks latency... p50=239.2 us
+    Messer hooks memory... 45 KB peak
+    Messer hooks burst (40 concurrent)... p50=239.2 us
+    Messer hooks throughput conc=1... 2858/s
+    Messer hooks throughput conc=10... 2660/s
+    Messer hooks throughput conc=50... 2883/s
+    ADK callbacks latency... p50=2.22 ms
+    ADK callbacks memory... 2408 KB peak
+    ADK callbacks burst (40 concurrent)... p50=70.32 ms
+    ADK callbacks throughput conc=1... 399/s
+    ADK callbacks throughput conc=10... 517/s
+    ADK callbacks throughput conc=50... 526/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Callback-enabled single-tool loop[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency  (x100 sequential runs)[0m
+                      Messer hooks       ADK callbacks
+  ------------  ------------------  ------------------
+          mean            247.4 us             2.48 ms
+           p50            239.2 us             2.22 ms
+           p95            289.5 us             2.65 ms
+           p99            534.5 us            23.84 ms
+
+  [1mMemory  (x100 runs)[0m
+  framework                         peak       per run
+  ------------------------  ------------  ------------
+  Messer hooks                    45.1 KB         462  B
+  ADK callbacks                 2408.2 KB       24660  B
+
+  [1mBurst  (40 concurrent)[0m
+                      Messer hooks       ADK callbacks
+  ------------  ------------------  ------------------
+           p50            239.2 us            70.32 ms
+           p75            258.4 us            92.45 ms
+           p95            556.7 us            93.09 ms
+           p99            20.91 ms            93.39 ms
+           max            20.91 ms            93.39 ms
+
+  [1mThroughput  (200 loops)[0m
+                      Messer hooks       ADK callbacks
+  ------------  ------------------  ------------------
+             1              2858/s               399/s
+            10              2660/s               517/s
+            50              2883/s               526/s
+
+[2m------------------------------------------------------------------------------------------------
+  Both columns run no-op lifecycle callbacks around model/tool execution.
+  This measures callback-enabled agent-loop overhead, not workflow scheduling.
+------------------------------------------------------------------------------------------------[0m
+

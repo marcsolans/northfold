@@ -1,0 +1,705 @@
+"""ElevenLabs realtime STT + streaming TTS for :class:`~messer.voice.VoiceSession`.
+
+Uses the official WebSocket APIs:
+
+* ``wss://api.elevenlabs.io/v1/speech-to-text/realtime`` — Scribe realtime
+* ``wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input`` — TTS stream
+* ``wss://api.elevenlabs.io/v1/text-to-dialogue/multi-stream-input`` — v4 TTS
+
+Requires ``websockets`` (``pip install messer[server]``) and ``ELEVENLABS_API_KEY``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import base64
+import contextlib
+import json
+import os
+from collections.abc import AsyncIterator
+from typing import Any
+from urllib.parse import quote, urlencode
+
+import structlog
+from pydantic import SecretStr
+from websockets.asyncio.client import connect as ws_connect
+from websockets.exceptions import ConnectionClosed
+
+from .providers import (
+    AudioInputConfig,
+    AudioOutputConfig,
+    SpeechToText,
+    TextToSpeech,
+    TranscriptEvent,
+    TTSStream,
+)
+
+logger = structlog.get_logger("messer.voice.elevenlabs")
+
+STT_FLUSH_INTERVAL = 0.1
+
+# ElevenLabs stream-input closes with 1008 if no new *text* is sent for `inactivity_timeout`
+# seconds while the socket is open (default 20). Long single-chunk playback can exceed that.
+_DEFAULT_TTS_INACTIVITY_TIMEOUT = 180
+# Space pings reset stream-input inactivity; too frequent can inject extra “text” mid-receive.
+_TTS_KEEPALIVE_INTERVAL_SEC = 55.0
+# Dialogue contexts expire after 20 seconds without a client message.
+_DIALOGUE_KEEPALIVE_INTERVAL_SEC = 10.0
+# The dialogue endpoint has no ``auto_mode``: fed text waits for more text unless
+# flushed. A feed ending here is a finished clause, so it is flushed to stand in.
+_DIALOGUE_FLUSH_END_CHARS = frozenset(".!?;:\n…。！？؟؛")
+
+STT_FATAL_MESSAGE_TYPES = frozenset(
+    {
+        "auth_error",
+        "quota_exceeded",
+        "rate_limited",
+        "resource_exhausted",
+        "session_time_limit_exceeded",
+    }
+)
+
+_DEFAULT_STT_MODEL = "scribe_v2_realtime"
+_DEFAULT_TTS_MODEL = "eleven_v4_turbo"
+
+
+def _resolve_api_key(explicit: str | SecretStr | None) -> str:
+    if isinstance(explicit, SecretStr):
+        return explicit.get_secret_value()
+    if explicit:
+        return explicit
+    key = os.environ.get("ELEVENLABS_API_KEY")
+    if not key:
+        raise ValueError("Set ELEVENLABS_API_KEY or pass api_key to the provider.")
+    return key
+
+
+def _stt_audio_format(config: AudioInputConfig) -> str:
+    """Map sample rate to ElevenLabs ``audio_format`` query value."""
+    sr = config.sample_rate
+    mapping = {
+        8000: "pcm_8000",
+        16000: "pcm_16000",
+        22050: "pcm_22050",
+        24000: "pcm_24000",
+        44100: "pcm_44100",
+        48000: "pcm_48000",
+    }
+    if sr in mapping:
+        return mapping[sr]
+    return config.extra.get("audio_format") or "pcm_16000"
+
+
+def _tts_output_format(config: AudioOutputConfig) -> str:
+    sr = config.sample_rate
+    mapping = {
+        8000: "pcm_8000",
+        16000: "pcm_16000",
+        22050: "pcm_22050",
+        24000: "pcm_24000",
+        44100: "pcm_44100",
+    }
+    if config.extra.get("output_format"):
+        return str(config.extra["output_format"])
+    if sr in mapping:
+        return mapping[sr]
+    return "pcm_16000"
+
+
+def effective_tts_model(config: AudioOutputConfig) -> str:
+    """Model id actually sent to ElevenLabs (foreign leftovers swapped out).
+
+    The mirror of the Munsit/Fish guards. ``tts_model`` is server-wide while
+    ``tts_provider`` is per-session and client-settable, so a session that
+    selects another provider's model — or falls back here after an unknown
+    provider — must not put ``faseeh-v1-preview`` in the stream-input query
+    string. ElevenLabs rejects the handshake, which reads as "TTS is broken"
+    rather than "the model id belongs to a different provider".
+    """
+    m = (config.model or "").strip()
+    if m.startswith("eleven"):
+        return m
+    return _DEFAULT_TTS_MODEL
+
+
+class ElevenLabsRealtimeSTT(SpeechToText):
+    """ElevenLabs Scribe v2 realtime WebSocket (VAD commits by default)."""
+
+    def __init__(self, api_key: str | SecretStr | None = None) -> None:
+        self._api_key_explicit = api_key
+        self._api_key: str | None = None
+        self._ws: Any = None
+        self._buf = bytearray()
+        self._buf_lock = asyncio.Lock()
+        self._stop = asyncio.Event()
+        self._flusher: asyncio.Task[None] | None = None
+        self._receiver: asyncio.Task[None] | None = None
+        self._queue: asyncio.Queue[TranscriptEvent | None] = asyncio.Queue()
+        self._input_config: AudioInputConfig | None = None
+
+    async def connect(self, config: AudioInputConfig) -> None:
+        self._api_key = _resolve_api_key(self._api_key_explicit)
+        self._input_config = config
+        extra = dict(config.extra)
+        host = str(extra.pop("stt_host", "api.elevenlabs.io"))
+        commit_strategy = str(extra.pop("commit_strategy", "vad"))
+
+        params: dict[str, Any] = {
+            "model_id": config.model or _DEFAULT_STT_MODEL,
+            "audio_format": extra.pop("audio_format", None) or _stt_audio_format(config),
+            "commit_strategy": commit_strategy,
+        }
+        if config.language:
+            params["language_code"] = config.language
+        for k, v in extra.items():
+            if v is None or k.startswith("_"):
+                continue
+            # Booleans go on the wire as ``true`` / ``false``, not ``True``.
+            params[k] = str(v).lower() if isinstance(v, bool) else v
+
+        # ``doseq``: list-valued knobs (``keyterms``, ``secondary_languages``)
+        # become repeated parameters — ``keyterms=Acme&keyterms=Messer`` — which
+        # is the only spelling Scribe accepts. Without it a list is stringified
+        # into one bogus term (``keyterms=%5B%27Acme%27...``).
+        query = urlencode(params, doseq=True)
+        uri = f"wss://{host}/v1/speech-to-text/realtime?{query}"
+        self._ws = await ws_connect(
+            uri,
+            additional_headers={"xi-api-key": self._api_key},
+        )
+        self._stop.clear()
+        self._flusher = asyncio.create_task(self._periodic_flush())
+        self._receiver = asyncio.create_task(self._receive_loop())
+
+    async def push_audio(self, chunk: bytes) -> None:
+        if chunk:
+            async with self._buf_lock:
+                self._buf.extend(chunk)
+
+    async def commit(self) -> None:
+        """Force-commit the current STT buffer (manual commit strategy)."""
+        await self._flush_audio(commit=True)
+
+    async def _flush_audio(self, commit: bool = False) -> None:
+        if self._ws is None:
+            return
+        async with self._buf_lock:
+            raw = bytes(self._buf)
+            self._buf.clear()
+        if not raw and not commit:
+            return
+        msg: dict[str, Any] = {
+            "message_type": "input_audio_chunk",
+            "audio_base_64": base64.b64encode(raw).decode("ascii") if raw else "",
+            "commit": commit,
+            "sample_rate": self._input_config.sample_rate if self._input_config else 16_000,
+        }
+        try:
+            await self._ws.send(json.dumps(msg))
+        except ConnectionClosed:
+            # Dead socket: drop the audio. Acceptable only because the receive
+            # loop's sentinel is already tearing the session down — and required,
+            # because this path is called from the periodic flusher and from
+            # commit() (VAD endpointing), neither of which may raise.
+            pass
+
+    async def _periodic_flush(self) -> None:
+        try:
+            while not self._stop.is_set():
+                await asyncio.sleep(STT_FLUSH_INTERVAL)
+                await self._flush_audio(commit=False)
+        except asyncio.CancelledError:
+            raise
+
+    async def _receive_loop(self) -> None:
+        assert self._ws is not None
+        try:
+            async for raw_msg in self._ws:
+                msg = json.loads(raw_msg)
+                mt = msg.get("message_type", "")
+
+                if mt == "session_started":
+                    logger.info("el_stt_session_started", session_id=msg.get("session_id"))
+
+                elif mt == "partial_transcript":
+                    text = msg.get("text", "")
+                    if text:
+                        await self._queue.put(TranscriptEvent(type="partial", text=text))
+
+                elif mt in ("committed_transcript", "committed_transcript_with_timestamps"):
+                    text = (msg.get("text") or "").strip()
+                    if text:
+                        await self._queue.put(TranscriptEvent(type="committed", text=text))
+
+                elif mt == "error":
+                    err = msg.get("error", "Unknown STT error")
+                    logger.error("el_stt_error", error=err)
+                    await self._queue.put(TranscriptEvent(type="error", text=f"STT error: {err}"))
+                    break
+
+                elif mt in STT_FATAL_MESSAGE_TYPES:
+                    err = msg.get("error", mt)
+                    logger.error("el_stt_fatal", error=err, type=mt)
+                    await self._queue.put(TranscriptEvent(type="error", text=f"STT fatal ({mt}): {err}"))
+                    break
+        except ConnectionClosed as e:
+            if self._stop.is_set():
+                # Requested teardown; an error event here races session close and
+                # can surface a spurious SessionError on a normal hangup.
+                logger.debug("el_stt_ws_closed", error=str(e))
+            else:
+                logger.warning("el_stt_ws_closed_unrequested", error=str(e))
+                await self._queue.put(TranscriptEvent(type="error", text=f"STT connection closed: {e}"))
+        except Exception as e:
+            logger.error("el_stt_receive_error", error=str(e), exc_info=True)
+            await self._queue.put(TranscriptEvent(type="error", text=f"STT receive error: {e}"))
+        finally:
+            await self._queue.put(None)
+
+    async def events(self) -> AsyncIterator[TranscriptEvent]:
+        while True:
+            item = await self._queue.get()
+            if item is None:
+                break
+            if item.type == "error":
+                raise RuntimeError(item.text)
+            if item.text:
+                yield item
+
+    async def close(self) -> None:
+        self._stop.set()
+        if self._flusher and not self._flusher.done():
+            self._flusher.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._flusher
+        self._flusher = None
+        with contextlib.suppress(Exception):
+            await self._flush_audio(commit=False)
+        if self._ws is not None:
+            with contextlib.suppress(Exception):
+                await self._ws.close()
+            self._ws = None
+        if self._receiver and not self._receiver.done():
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await self._receiver
+        self._receiver = None
+
+
+class ElevenLabsStreamTTS(TextToSpeech):
+    """ElevenLabs TTS via the **multi-context** WebSocket.
+
+    Keeps ONE persistent WS connection across ``synthesize`` calls.  Each call
+    creates an independent *context* — ElevenLabs returns per-context audio and
+    ``is_final`` markers, which eliminates the "second segment silence" bug that
+    occurred with one-connection-per-segment.
+
+    Flash/Turbo/v2 use ``/v1/text-to-speech/{voice_id}/multi-stream-input``.
+    Eleven v4 models use ``/v1/text-to-dialogue/multi-stream-input`` with
+    voice registration and dialogue inputs for each context.
+    """
+
+    provider_id = "elevenlabs"
+
+    def __init__(self, api_key: str | SecretStr | None = None) -> None:
+        self._api_key_explicit = api_key
+        self._api_key: str | None = None
+        self._out: AudioOutputConfig | None = None
+        # Persistent multi-context WS state
+        self._ws: Any = None
+        self._ws_open: bool = False
+        self._reader_task: asyncio.Task[None] | None = None
+        self._keepalive_task: asyncio.Task[None] | None = None
+        self._stop = asyncio.Event()
+        self._audio_queues: dict[str, asyncio.Queue[dict | None]] = {}
+        # Contexts still accepting input; closed contexts may continue to
+        # receive their final audio through _audio_queues.
+        self._active_contexts: set[str] = set()
+        self._ctx_counter: int = 0
+        self._last_ws_error: str | None = None
+        self._ws_lock = asyncio.Lock()
+        self._preconnect_task: asyncio.Task[None] | None = None
+        self._dialogue = False
+        self._dialogue_contexts: set[str] = set()
+        # Registration, keep-alive, and close must be ordered: messaging a
+        # closing dialogue context can make the server close the whole socket.
+        self._context_send_lock = asyncio.Lock()
+
+    async def connect(self, config: AudioOutputConfig) -> None:
+        self._api_key = _resolve_api_key(self._api_key_explicit)
+        if not config.voice:
+            raise ValueError("AudioOutputConfig.voice (ElevenLabs voice_id) is required.")
+        self._out = config
+        self._dialogue = effective_tts_model(config).startswith("eleven_v4")
+        # Pre-open the multi-context WS in the background so the first
+        # synthesize of the session doesn't pay the TCP+TLS+WS handshake
+        # (~0.5-1s of the first reply's audio latency). Failures are logged
+        # and ignored — the first synthesize retries via _ensure_ws anyway.
+        self._preconnect_task = asyncio.create_task(self._preconnect())
+
+    async def _preconnect(self) -> None:
+        try:
+            await self._ensure_ws()
+        except Exception as e:
+            logger.debug("el_tts_preconnect_failed", error=str(e))
+
+    # -- persistent WS lifecycle --------------------------------------------
+
+    async def _ensure_ws(self) -> None:
+        """Lazily open the multi-context WS if not already connected.
+
+        Lock-guarded: the connect() pre-warm task and the first synthesize can
+        race here — without the lock they would open two sockets and leak one.
+        """
+        async with self._ws_lock:
+            await self._ensure_ws_locked()
+
+    async def _ensure_ws_locked(self) -> None:
+        if self._ws is not None and self._ws_open:
+            return
+        if self._ws is not None:
+            await self._teardown_ws()
+
+        cfg = self._out
+        assert cfg is not None
+        extra = dict(cfg.extra)
+        host = str(extra.pop("tts_host", "api.elevenlabs.io"))
+        model_id = effective_tts_model(cfg)
+        output_format = _tts_output_format(cfg)
+        inactivity_timeout = int(extra.pop("inactivity_timeout", _DEFAULT_TTS_INACTIVITY_TIMEOUT))
+        inactivity_timeout = max(20, min(inactivity_timeout, 180))
+        auto_mode = str(extra.pop("auto_mode", "true")).lower() in ("1", "true", "yes")
+        keepalive_interval = float(extra.pop("tts_keepalive_interval", _TTS_KEEPALIVE_INTERVAL_SEC))
+        apply_text_normalization = str(extra.pop("apply_text_normalization", "on"))
+
+        params: dict[str, Any] = {
+            "model_id": model_id,
+            "output_format": output_format,
+            "inactivity_timeout": inactivity_timeout,
+            "apply_text_normalization": apply_text_normalization,
+        }
+        if self._dialogue:
+            params.pop("inactivity_timeout")
+            keepalive_interval = min(keepalive_interval, _DIALOGUE_KEEPALIVE_INTERVAL_SEC)
+        elif auto_mode:
+            params["auto_mode"] = "true"
+        for k, v in extra.items():
+            if v is not None and not str(k).startswith("_"):
+                params[k] = v
+
+        path = f"/v1/text-to-speech/{quote(cfg.voice, safe='')}/multi-stream-input"
+        if self._dialogue:
+            path = "/v1/text-to-dialogue/multi-stream-input"
+        uri = f"wss://{host}{path}?{urlencode(params)}"
+
+        logger.debug("el_tts_ws_connecting", uri=uri[:160])
+        self._ws = await ws_connect(
+            uri,
+            additional_headers={"xi-api-key": self._api_key},
+        )
+        self._ws_open = True
+        self._last_ws_error = None
+        self._stop.clear()
+        self._reader_task = asyncio.create_task(self._read_loop())
+        self._keepalive_task = asyncio.create_task(
+            self._keepalive_loop(max(5.0, keepalive_interval)),
+        )
+        logger.debug("el_tts_ws_connected")
+
+    async def _teardown_ws(self) -> None:
+        self._stop.set()
+        self._ws_open = False
+        if self._keepalive_task and not self._keepalive_task.done():
+            self._keepalive_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._keepalive_task
+        self._keepalive_task = None
+        if self._reader_task and not self._reader_task.done():
+            self._reader_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._reader_task
+        self._reader_task = None
+        if self._ws is not None:
+            with contextlib.suppress(Exception):
+                await self._ws.close()
+            self._ws = None
+        for q in list(self._audio_queues.values()):
+            with contextlib.suppress(Exception):
+                q.put_nowait(None)
+        self._audio_queues.clear()
+        self._active_contexts.clear()
+        self._dialogue_contexts.clear()
+
+    async def _send_text(self, context_id: str, text: str, *, flush: bool = False) -> None:
+        async with self._context_send_lock:
+            # An in-flight feed/end may acquire this lock after abort/close.
+            # Absence from the registered set must not reopen a closed context.
+            if context_id not in self._active_contexts:
+                return
+            assert self._ws is not None and self._out is not None
+            msg: dict[str, Any] = {"context_id": context_id}
+            if self._dialogue:
+                if context_id not in self._dialogue_contexts:
+                    await self._ws.send(json.dumps({"context_id": context_id, "voices": [self._out.voice]}))
+                    self._dialogue_contexts.add(context_id)
+                    # abort() can invalidate input while registration awaits
+                    # the socket; it will close the registration under this lock.
+                    if context_id not in self._active_contexts:
+                        return
+                if text.strip():
+                    msg["inputs"] = [{"text": text, "voice_id": self._out.voice}]
+            else:
+                msg["text"] = text
+            if flush:
+                msg["flush"] = True
+            await self._ws.send(json.dumps(msg))
+
+    async def _close_context(self, context_id: str) -> None:
+        async with self._context_send_lock:
+            self._active_contexts.discard(context_id)
+            if self._dialogue:
+                if context_id not in self._dialogue_contexts:
+                    return
+                self._dialogue_contexts.discard(context_id)
+            if self._ws is not None and self._ws_open:
+                await self._ws.send(json.dumps({"context_id": context_id, "close_context": True}))
+
+    async def _send_keepalive(self) -> None:
+        async with self._context_send_lock:
+            if self._ws is None or not self._ws_open:
+                return
+            if self._dialogue:
+                for context_id in self._dialogue_contexts:
+                    await self._ws.send(json.dumps({"context_id": context_id, "keep_alive": True}))
+            else:
+                await self._ws.send(json.dumps({"context_id": "_ka", "text": ""}))
+
+    # -- background tasks ---------------------------------------------------
+
+    async def _read_loop(self) -> None:
+        """Dispatch incoming WS messages to per-context queues."""
+        assert self._ws is not None
+        try:
+            async for raw in self._ws:
+                msg = json.loads(raw)
+                if msg.get("error"):
+                    # Dialogue protocol errors close the whole connection and
+                    # may carry no context id. Wake every waiting consumer.
+                    raise RuntimeError(f"ElevenLabs TTS error: {msg['error']}")
+                ctx = msg.get("contextId") or msg.get("context_id")
+                if ctx and ctx in self._audio_queues:
+                    await self._audio_queues[ctx].put(msg)
+        except ConnectionClosed as e:
+            self._last_ws_error = str(e)
+            logger.warning("el_tts_ws_closed", error=str(e))
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            self._last_ws_error = str(e)
+            logger.error("el_tts_reader_error", error=str(e), exc_info=True)
+        finally:
+            self._ws_open = False
+            for q in list(self._audio_queues.values()):
+                with contextlib.suppress(Exception):
+                    q.put_nowait(None)
+
+    async def _keepalive_loop(self, interval: float) -> None:
+        while not self._stop.is_set():
+            try:
+                await asyncio.wait_for(self._stop.wait(), timeout=interval)
+                return
+            except TimeoutError:
+                pass
+            try:
+                await self._send_keepalive()
+            except Exception:
+                return
+
+    # -- public interface ---------------------------------------------------
+
+    def open_stream(self) -> _ElevenLabsTTSStream:
+        """One streaming *context* per agent reply.
+
+        Feeding every flush into a single context keeps prosody continuous —
+        one context per segment gives each fragment independent "final
+        sentence" intonation and an audible seam (the "choppy" feel).
+        """
+        return _ElevenLabsTTSStream(self)
+
+    async def synthesize(self, text: str) -> AsyncIterator[bytes]:
+        if not self._api_key or not self._out:
+            raise RuntimeError("Call connect() before synthesize().")
+        stripped = text.strip()
+        if not stripped:
+            return
+
+        await self._ensure_ws()
+
+        self._ctx_counter += 1
+        ctx_id = f"ctx_{self._ctx_counter}"
+        queue: asyncio.Queue[dict | None] = asyncio.Queue()
+        self._audio_queues[ctx_id] = queue
+        self._active_contexts.add(ctx_id)
+
+        chunk_count = 0
+        try:
+            logger.debug(
+                "el_tts_context_send",
+                context_id=ctx_id,
+                text_chars=len(stripped),
+                text_preview=stripped[:120],
+            )
+            await self._send_text(ctx_id, stripped + " ", flush=True)
+            # Close the context right after flush so ElevenLabs finishes
+            # generating audio for the buffered text and then sends is_final.
+            # Without this, is_final never arrives and synthesize deadlocks.
+            await self._close_context(ctx_id)
+
+            while True:
+                msg = await queue.get()
+                if msg is None:
+                    if self._last_ws_error:
+                        raise RuntimeError(f"ElevenLabs TTS closed: {self._last_ws_error}")
+                    break
+                if msg.get("error"):
+                    raise RuntimeError(f"ElevenLabs TTS error: {msg.get('error')}")
+                if msg.get("audio"):
+                    chunk_count += 1
+                    yield base64.b64decode(msg["audio"])
+                if msg.get("is_final") or msg.get("isFinal"):
+                    break
+        finally:
+            self._audio_queues.pop(ctx_id, None)
+            self._active_contexts.discard(ctx_id)
+            if self._dialogue:
+                with contextlib.suppress(Exception):
+                    await self._close_context(ctx_id)
+            logger.debug(
+                "el_tts_context_done",
+                context_id=ctx_id,
+                audio_chunks=chunk_count,
+            )
+
+    async def close(self) -> None:
+        if self._preconnect_task is not None and not self._preconnect_task.done():
+            self._preconnect_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._preconnect_task
+        self._preconnect_task = None
+        await self._teardown_ws()
+        self._out = None
+
+
+class _ElevenLabsTTSStream(TTSStream):
+    """One multi-context WS *context* fed incrementally over an agent reply.
+
+    Text chunks are appended server-side to the same context, so ElevenLabs
+    synthesizes them as one continuous utterance (``auto_mode`` generates at
+    sentence boundaries). Contrast with ``synthesize``, which opens a fresh
+    context per segment and gives each one independent final-sentence prosody.
+    """
+
+    def __init__(self, tts: ElevenLabsStreamTTS) -> None:
+        self._tts = tts
+        self._ctx_id: str | None = None
+        # Created eagerly so ``audio()`` can be iterated before the first feed
+        # opens the context (the session starts the pump task immediately).
+        self._queue: asyncio.Queue[dict | None] = asyncio.Queue()
+        self._ended = False
+        self._aborted = False
+        self._chunks = 0
+
+    async def _open_context(self) -> None:
+        tts = self._tts
+        if not tts._api_key or not tts._out:
+            raise RuntimeError("Call connect() before open_stream().")
+        await tts._ensure_ws()
+        # The first feed can be interrupted or ended during the handshake.
+        if self._ended or self._aborted:
+            return
+        tts._ctx_counter += 1
+        self._ctx_id = f"ctx_{tts._ctx_counter}"
+        tts._audio_queues[self._ctx_id] = self._queue
+        tts._active_contexts.add(self._ctx_id)
+        logger.debug("el_tts_stream_context_opened", context_id=self._ctx_id)
+
+    async def feed(self, text: str) -> None:
+        if self._ended or self._aborted or not text.strip():
+            return
+        if self._ctx_id is None:
+            await self._open_context()
+        if self._ctx_id is None:
+            return
+        assert self._tts._ws is not None
+        logger.debug(
+            "el_tts_stream_feed",
+            context_id=self._ctx_id,
+            text_chars=len(text),
+            text_preview=text[:120],
+        )
+        # Without this a reply's first sentence waits for the next one: a model
+        # that pauses after "Done." held its first audio for the whole pause.
+        # Spaces and tabs only: a segment the session cut at a bare newline (a
+        # list item, a paragraph) ends a clause too.
+        flush = self._tts._dialogue and text.rstrip(" \t")[-1:] in _DIALOGUE_FLUSH_END_CHARS
+        await self._tts._send_text(self._ctx_id, text, flush=flush)
+
+    async def end(self) -> None:
+        if self._ended or self._aborted:
+            return
+        self._ended = True
+        if self._ctx_id is None:
+            # Nothing was ever fed — unblock audio() directly.
+            self._queue.put_nowait(None)
+            return
+        tts = self._tts
+        try:
+            assert tts._ws is not None
+            # close_context finishes generating audio for buffered text and
+            # then emits is_final, which terminates audio(). Flush first for
+            # parity with synthesize (harmless if auto_mode already flushed).
+            await tts._send_text(self._ctx_id, " ", flush=True)
+            await tts._close_context(self._ctx_id)
+        except Exception as e:
+            logger.warning("el_tts_stream_end_failed", context_id=self._ctx_id, error=str(e))
+            self._queue.put_nowait(None)
+
+    async def abort(self) -> None:
+        if self._aborted:
+            return
+        self._aborted = True
+        tts = self._tts
+        if self._ctx_id is not None:
+            # Unroute first so in-flight audio for this context is dropped.
+            tts._audio_queues.pop(self._ctx_id, None)
+            tts._active_contexts.discard(self._ctx_id)
+            if tts._ws is not None and tts._ws_open:
+                with contextlib.suppress(Exception):
+                    await tts._close_context(self._ctx_id)
+        self._queue.put_nowait(None)
+
+    async def audio(self) -> AsyncIterator[bytes]:
+        try:
+            while True:
+                msg = await self._queue.get()
+                if self._aborted:
+                    return
+                if msg is None:
+                    if self._tts._last_ws_error:
+                        raise RuntimeError(f"ElevenLabs TTS closed: {self._tts._last_ws_error}")
+                    return
+                if msg.get("error"):
+                    raise RuntimeError(f"ElevenLabs TTS error: {msg.get('error')}")
+                if msg.get("audio"):
+                    self._chunks += 1
+                    yield base64.b64decode(msg["audio"])
+                if msg.get("is_final") or msg.get("isFinal"):
+                    return
+        finally:
+            if self._ctx_id is not None:
+                self._tts._audio_queues.pop(self._ctx_id, None)
+                self._tts._active_contexts.discard(self._ctx_id)
+            logger.debug(
+                "el_tts_stream_context_done",
+                context_id=self._ctx_id,
+                audio_chunks=self._chunks,
+            )

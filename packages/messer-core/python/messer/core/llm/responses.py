@@ -1,0 +1,154 @@
+"""OpenAI Responses API request adapter (openai, xai)."""
+
+import re
+from collections.abc import AsyncIterator, Callable
+from typing import TYPE_CHECKING, Any
+
+from ...types.message import Message
+from ...utils import transform_schema
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+    from ..runnable import Runnable
+
+
+# OpenAI reasoning models: the `o` series, GPT-5.x, GPT-6.x and the codex line. With
+# `store: false` these only keep their chain of thought across a tool loop if every
+# request asks for `reasoning.encrypted_content` and replays the items it gets back.
+# Non-reasoning models (gpt-4o, gpt-4.1) and xAI's Responses-compatible endpoint
+# are left alone so an unsupported `include` value can never 400 a request.
+_ENCRYPTED_REASONING_MODEL_RE = re.compile(r"^(?:o\d|gpt-5|gpt-6|codex)", re.IGNORECASE)
+
+REASONING_ENCRYPTED_CONTENT_INCLUDE = "reasoning.encrypted_content"
+
+
+def _responses_tool_schema(tool: "Runnable", provider: str, model_name: str) -> dict[str, Any]:
+    """A tool's Responses schema; tools whose native shape varies by provider or model resolve it themselves."""
+    if getattr(type(tool), "openai_responses_schema_for", None) is not None:
+        return tool.openai_responses_schema_for(provider, model_name)
+    return tool.openai_responses_schema
+
+
+def normalize_responses_params(provider_params: dict[str, Any]) -> dict[str, Any]:
+    """Translate the Chat Completions effort alias without losing user intent.
+
+    Agent model switches can retain this spelling. Responses uses a nested
+    object; sending the alias directly fails in the SDK before an HTTP request.
+    Conflicting spellings are a configuration error, never a silent override.
+    Effort values remain provider/model-owned, including future additions.
+    """
+    params = dict(provider_params)
+    if "reasoning_effort" not in params:
+        return params
+    effort = params.pop("reasoning_effort")
+    if effort is None:
+        return params
+    if not isinstance(effort, str) or not effort.strip():
+        raise ValueError("model_params.reasoning_effort must be a nonempty string")
+    reasoning = params.get("reasoning")
+    if reasoning is not None and not isinstance(reasoning, dict):
+        raise ValueError("model_params.reasoning must be an object when reasoning_effort is supplied")
+    reasoning = dict(reasoning or {})
+    if reasoning.get("effort") is not None and reasoning["effort"] != effort:
+        raise ValueError("Conflicting model_params.reasoning.effort and model_params.reasoning_effort")
+    reasoning["effort"] = effort
+    params["reasoning"] = reasoning
+    return params
+
+
+def supports_encrypted_reasoning(model_name: str) -> bool:
+    """Whether `include: ["reasoning.encrypted_content"]` should be requested for this model."""
+    return bool(_ENCRYPTED_REASONING_MODEL_RE.match((model_name or "").strip()))
+
+
+def prepare_responses_request(
+    *,
+    provider: str,
+    client: Any,
+    model_name: str,
+    request_headers: dict[str, str],
+    system_prompt: str | None,
+    messages: list[Message],
+    tools: "list[Runnable] | None",
+    max_tokens: int | None,
+    temperature: float | None,
+    output_model: "type[BaseModel] | None",
+    provider_params: dict[str, Any],
+) -> tuple[Callable[[], AsyncIterator[Any]], str]:
+    """Build the Responses API kwargs and return (create_stream, context_label)."""
+    include = ["web_search_call.action.sources"]
+    if supports_encrypted_reasoning(model_name):
+        include.append(REASONING_ENCRYPTED_CONTENT_INCLUDE)
+    responses_kwargs = {
+        "model": model_name,
+        "stream": True,
+        "store": False,
+        "include": include,
+    }
+
+    if system_prompt:
+        responses_kwargs["instructions"] = system_prompt
+
+    input_items = []
+    openai_reasoning = supports_encrypted_reasoning(model_name)
+    for message in messages:
+        # Grok 4.7 always returns encrypted reasoning without an include flag.
+        # Replay it only to the originating Grok model; provider ciphertext is
+        # not portable. Unannotated history retains the legacy OpenAI behavior.
+        source_model = message.metadata.get("reasoning_model", "")
+        keep_reasoning = (
+            source_model == model_name
+            if model_name == "grok-4.7"
+            else openai_reasoning and (not source_model or supports_encrypted_reasoning(source_model))
+        )
+        for item in message.to_openai_responses_input():
+            if item.get("type") == "reasoning" and item.get("encrypted_content") and not keep_reasoning:
+                continue
+            if not openai_reasoning:
+                item = {k: v for k, v in item.items() if k != "phase"}
+            input_items.append(item)
+    responses_kwargs["input"] = input_items
+
+    if tools:
+        responses_tools = [_responses_tool_schema(tool, provider, model_name) for tool in tools]
+        if responses_tools:
+            responses_kwargs["tools"] = responses_tools
+            responses_kwargs["parallel_tool_calls"] = True
+
+    if max_tokens:
+        responses_kwargs["max_output_tokens"] = max_tokens
+
+    if temperature is not None:
+        responses_kwargs["temperature"] = temperature
+
+    if output_model is not None:
+        responses_kwargs["text"] = {
+            "format": {
+                "type": "json_schema",
+                "name": output_model.__name__,
+                "schema": transform_schema(output_model),
+                "strict": True,
+            }
+        }
+
+    # provider_params may carry provider-native (server-side) tool defs, e.g.
+    # {"type": "web_search"}. Merge them with the client tools instead of
+    # letting dict.update clobber the generated list.
+    provider_params = normalize_responses_params(provider_params)
+    extra_tools = provider_params.pop("tools", None)
+    # A caller-supplied `include` extends ours rather than replacing it: dropping
+    # `reasoning.encrypted_content` silently would reintroduce the lost-chain-of-thought bug.
+    extra_include = provider_params.pop("include", None)
+    if extra_include:
+        responses_kwargs["include"] = list(dict.fromkeys([*responses_kwargs["include"], *extra_include]))
+    responses_kwargs.update(provider_params)
+    if extra_tools:
+        responses_kwargs["tools"] = [*responses_kwargs.get("tools", []), *extra_tools]
+
+    async def _create_stream():
+        res = await client.responses.create(extra_headers=request_headers, **responses_kwargs)
+        async for chunk in res:
+            yield chunk
+
+    return _create_stream, "OpenAI Responses"

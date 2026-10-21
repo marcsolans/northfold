@@ -1,0 +1,307 @@
+---
+title: "Google"
+description: "Gemini API availability, verified Standard pricing, and migration guidance"
+---
+
+<Note>
+Reviewed October 17, 2026 against Google's [model catalog](https://ai.google.dev/gemini-api/docs/models),
+[pricing](https://ai.google.dev/gemini-api/docs/pricing), [release notes](https://ai.google.dev/gemini-api/docs/changelog),
+and [deprecations](https://ai.google.dev/gemini-api/docs/deprecations).
+Unless explicitly labeled otherwise, prices below are USD per **1 million tokens**, paid **Standard** tier, using published post-promotion rates.
+Output rates include thinking tokens for reasoning models. Batch, Flex, Priority, free-tier allowances,
+cache storage, grounding, and media generation are separate charges or pricing plans.
+</Note>
+
+## Gemini 4 Argon
+
+`google/gemini-4-argon`
+
+**Generally available since October 13, 2026**, through the paid Gemini API and AI Studio.
+Google lists `gemini-4-argon` as stable; it is no longer limited to the earlier trusted-tester release.
+See the [launch announcement](https://cloud.google.com/blog/products/ai-machine-learning/gemini-4-argon-available-on-google-cloud/).
+
+- Standard input / output / cached input: **&#36;2 / &#36;10 / &#36;0.10** through November 30, 2026;
+  **&#36;4 / &#36;20 / &#36;0.20** from December 1. The catalog and generated cost SQL use the latter, post-promotion rates.
+- Batch and Flex: **&#36;1 / &#36;5 / &#36;0.05**, then **&#36;2 / &#36;10 / &#36;0.10** on December 1.
+- Priority: **&#36;3.60 / &#36;18 / &#36;0.18**, then **&#36;7.20 / &#36;36 / &#36;0.36** on December 1.
+- Invite-only Contributor tier: same token rates as Batch/Flex, with data used to improve Google's products.
+- No free API tier. Output prices include thinking. Implicit caching only; no explicit cache creation or storage charge.
+- Search and Maps grounding each have a shared 5,000-query monthly allowance, then **&#36;14 per 1,000 queries**.
+  These native tool charges are separate from Messer's text-token estimates.
+
+[Full pricing](https://ai.google.dev/gemini-api/docs/pricing#gemini-4-argon)
+
+The [model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-4-argon) give a **1,048,576-token unified input/output window**,
+with a default synchronous output limit of **65,536**. Text, image, audio, video, and PDF input are supported; output is text.
+Tools, structured output, and reasoning are supported. Thinking levels are `low`, `medium` (default), and `high`.
+
+Set `GEMINI_API_KEY` for direct access, or use an authorized Messer platform configuration:
+
+```python
+from messer import Agent
+
+agent = Agent(
+    name="argon",
+    model="google/gemini-4-argon",
+    max_tokens=32768,
+    model_params={"reasoning_effort": "medium"},
+)
+```
+
+Messer uses Google's [OpenAI-compatible streaming chat API](https://ai.google.dev/gemini-api/docs/openai).
+The model's default reasoning level also applies when `model_params` is omitted. Google ignores sampling parameters
+such as `temperature` and `top_p` on Argon. Explicit caching is unsupported.
+Native long decode can use the remaining unified window, but requires background execution or continuation handling;
+Messer's Agent chat route does not implement that continuation protocol. See the
+[migration guide](https://ai.google.dev/gemini-api/docs/latest-model#migration-checklist).
+
+## Gemini 3.8, 3.7, and 3.6 Flash
+
+<Note>
+All three use published post-promotion Standard input / output / cached-input rates of **&#36;1.50 / &#36;7.50 / &#36;0.15**, effective January 1, 2027.
+This timing is published on the [pricing page](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash).
+The catalog already uses these post-promotion rates; temporary introductory discounts are excluded.
+Post-promotion cache storage is an additional &#36;1 per million token-hours.
+Batch and Flex token rates are half Standard; Priority token rates are 1.8 times Standard. These are not the default catalog prices.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="gemini-3.8-flash">
+  `google/gemini-3.8-flash`
+
+  Current stable Flash generation for coding and multi-step agent work.
+
+  - Input / output: &#36;1.50 / &#36;7.50 (post-promotion)
+  - Cached input: &#36;0.15
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Text, image, video, audio, and PDF input; text output
+  - Tools and thinking; `low`, `medium` (default), or `high`; `minimal` is rejected
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash)
+  </Card>
+
+  <Card title="gemini-3.7-flash">
+  `google/gemini-3.7-flash`
+
+  Previous stable Flash generation, still supported.
+
+  - Input / output: &#36;1.50 / &#36;7.50 (post-promotion)
+  - Cached input: &#36;0.15
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Text, image, video, audio, and PDF input; text output
+  - Tools and thinking; `low`, `medium`, or `high`; `minimal` is rejected
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.7-flash)
+  </Card>
+
+  <Card title="gemini-3.6-flash">
+  `google/gemini-3.6-flash`
+
+  Earlier stable Flash generation for multimodal and agent workloads.
+
+  - Input / output: &#36;1.50 / &#36;7.50 (post-promotion)
+  - Cached input: &#36;0.15
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Text, image, video, audio, and PDF input; text output
+  - Tools and thinking
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.6-flash)
+  </Card>
+</CardGroup>
+
+For Gemini 3.8 migration details, including removed sampling parameters and thinking configuration,
+see Google's [Gemini 3.8 model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash).
+Messer's Google Agent route uses the OpenAI-compatible chat API; model-level native capabilities do not imply every native tool or modality is exposed through that route.
+
+## Other Gemini 3 models
+
+<CardGroup cols={2}>
+  <Card title="gemini-3.5-flash">
+  `google/gemini-3.5-flash`
+
+  - Current token pricing: unverified for this redirected ID
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Multimodal input, text output, tools, and thinking
+
+  Google now [routes this ID to `gemini-3.6-flash`](https://ai.google.dev/gemini-api/docs/deprecations).
+  It is no longer selectable in AI Studio; the API endpoint is not shutting down. Redirect billing rates are
+  unverified, so catalog prices are null and new cost SQL omits this ID. Use an explicit current Flash ID for new applications.
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash)
+  </Card>
+
+  <Card title="gemini-3.5-flash-lite">
+  `google/gemini-3.5-flash-lite`
+
+  - Input / output: &#36;0.30 / &#36;2.50, including audio input at the same input rate
+  - Cached input: &#36;0.03
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Multimodal input, text output, tools, and thinking
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite)
+  </Card>
+
+  <Card title="gemini-3.1-pro-preview">
+  `google/gemini-3.1-pro-preview`
+
+  - Input / output: &#36;2 / &#36;12 at up to 200,000 input tokens
+  - Above 200,000 input tokens: &#36;4 / &#36;18 for the entire request
+  - Cached input: &#36;0.20; &#36;0.40 above 200,000 input tokens
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Multimodal input, text output, tools, and thinking
+  - Preview; no shutdown date announced
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview)
+  </Card>
+
+  <Card title="gemini-3.1-pro-preview-customtools">
+  `google/gemini-3.1-pro-preview-customtools`
+
+  Variant that prioritizes custom tools and bash. Same token limits and Standard prices as Gemini 3.1 Pro Preview,
+  including its 200,000-input-token threshold. Preview quality can differ on tasks that do not benefit from tools.
+
+  [Variant documentation](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview#gemini-3.1-pro-preview-customtools)
+  </Card>
+
+  <Card title="gemini-3.1-flash-lite">
+  `google/gemini-3.1-flash-lite`
+
+  - Text/image/video input / text output: &#36;0.25 / &#36;1.50
+  - Audio input: &#36;0.50
+  - Cached input: &#36;0.025 text/image/video; &#36;0.05 audio
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Tools and thinking
+  - Earliest announced shutdown: May 7, 2027; replacement: `gemini-3.5-flash-lite`
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite)
+  </Card>
+
+  <Card title="gemini-3-flash-preview">
+  `google/gemini-3-flash-preview`
+
+  - Text/image/video input / text output: &#36;0.50 / &#36;3
+  - Audio input: &#36;1
+  - Cached input: &#36;0.05 text/image/video; &#36;0.10 audio
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Tools and thinking
+  - Preview; no shutdown date announced. Prefer a current stable Flash model for new applications.
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-3-flash-preview)
+  </Card>
+</CardGroup>
+
+Google's [Gemini 3 guide](https://ai.google.dev/gemini-api/docs/gemini-3) independently lists the 3.1 Pro, 3.1 Flash-Lite,
+and 3 Flash base prices. For current Standard prices and modality differences, the dedicated pricing page takes precedence over older preview summaries.
+Do not derive every cache tier from a flat multiplier: for example, 3.1 Pro's Batch/Flex cache read rate stays at the Standard rate,
+while 3.5 Flash-Lite's pricing page rounds Batch/Flex cached input to &#36;0.02.
+
+## Gemini 2.5 legacy access
+
+<Warning>
+Since September 18, 2026, Google limits Gemini 2.5 access to previous users. The general-purpose 2.5 Pro, Flash,
+and Flash-Lite models are **not deprecated** and have no announced shutdown date. For new projects use 3.5 Flash-Lite or 3.8 Flash.
+See the [access announcement](https://ai.google.dev/gemini-api/docs/changelog#september-18-2026).
+</Warning>
+
+<CardGroup cols={2}>
+  <Card title="gemini-2.5-pro">
+  `google/gemini-2.5-pro`
+
+  - Input / output: &#36;1.25 / &#36;10 at up to 200,000 input tokens
+  - Above 200,000 input tokens: &#36;2.50 / &#36;15 for the entire request
+  - Cached input: &#36;0.125; &#36;0.25 above 200,000 input tokens
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Multimodal input, text output, tools, and thinking
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-pro)
+  </Card>
+
+  <Card title="gemini-2.5-flash">
+  `google/gemini-2.5-flash`
+
+  - Text/image/video input / text output: &#36;0.30 / &#36;2.50
+  - Audio input: &#36;1
+  - Cached input: &#36;0.03 text/image/video; &#36;0.10 audio
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Multimodal input, text output, tools, and thinking
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash)
+  </Card>
+
+  <Card title="gemini-2.5-flash-lite">
+  `google/gemini-2.5-flash-lite`
+
+  - Text/image/video input / text output: &#36;0.10 / &#36;0.40
+  - Audio input: &#36;0.30
+  - Cached input: &#36;0.01 text/image/video; &#36;0.03 audio
+  - Input limit: 1,048,576 tokens; output limit: 65,536
+  - Multimodal input, text output, tools, and thinking
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-lite)
+  </Card>
+</CardGroup>
+
+## Image and speech models
+
+These require native Gemini media APIs. Image generation is available through Messer's GeminiImages tools;
+audio synthesis is not provided by the Google Agent chat route. Media rates must not be used as text-output rates.
+
+<CardGroup cols={2}>
+  <Card title="gemini-2.5-flash-image — migrate">
+  `google/gemini-2.5-flash-image`
+
+  Google's [deprecation schedule](https://ai.google.dev/gemini-api/docs/deprecations) now lists **March 15, 2027**,
+  conflicting with the older October 2, 2026 notice still on the pricing page. The catalog retains this compatibility ID
+  and records the conflict. Google recommends `gemini-3.1-flash-lite-image` as its replacement.
+
+  - Text/image input: &#36;0.30; text output: &#36;2.50
+  - Image output: &#36;30 per million image tokens (about &#36;0.039 per image)
+  - Input and output limits: 32,768 tokens each
+
+  [Pricing and shutdown notice](https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-image)
+  </Card>
+
+  <Card title="gemini-2.5-pro-preview-tts">
+  `google/gemini-2.5-pro-preview-tts`
+
+  - Text input: &#36;1; audio output: &#36;20
+  - Input limit: 8,192 tokens; output limit: 16,384
+  - Native TTS only; no tools, thinking, or caching
+  - Catalog text-output price is null because this model outputs audio
+  - Shuts down **November 17, 2026**; migrate to `gemini-3.8-flash-tts` or `gemini-3.8-flash-lite-tts`
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-pro-preview-tts)
+  </Card>
+
+  <Card title="gemini-2.5-flash-preview-tts">
+  `google/gemini-2.5-flash-preview-tts`
+
+  - Text input: &#36;0.50; audio output: &#36;10
+  - Input limit: 8,192 tokens; output limit: 16,384
+  - Native TTS only; no tools, thinking, or caching
+  - Catalog text-output price is null because this model outputs audio
+  - Shuts down **November 17, 2026**; migrate to `gemini-3.8-flash-tts` or `gemini-3.8-flash-lite-tts`
+
+  [Model specifications](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-preview-tts)
+  </Card>
+</CardGroup>
+
+The [current native model catalog](https://ai.google.dev/gemini-api/docs/models) also includes `gemini-3.8-flash-tts`,
+`gemini-3.8-flash-lite-tts`, `gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.5-transcribe`,
+`gemini-3.5-transcribe-live`, `gemini-3.5-live-translate-preview`, `gemini-omni-1.1-flash`,
+and the stable image models `gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image`, and `gemini-3-pro-image`.
+It now also includes `gemini-nano-banana-2.1`. Their native endpoints and output types require separate integrations;
+listing them here does not register them as Agent chat models.
+Use the [native pricing sections](https://ai.google.dev/gemini-api/docs/pricing) for their modality-specific rates.
+
+## Cost accounting boundaries
+
+The catalog's `input_price`, `output_price`, and `cached_input_price` describe text rates; `long_context` records full-request thresholds.
+Audio, generated images/video, grounding calls, and cache storage are not represented by these fields and are not included in text-only cost estimates.
+Even when a model prices audio input like text, that does not add an audio charge to the text cost table.
+Cached audio also has its own rates on some models; do not apply the text-cache rate to it.
+
+Standard cache storage for 3.1 Pro and 2.5 Pro is &#36;4.50 per million token-hours; the other listed general-purpose Flash models at post-promotion rates use &#36;1.
+Google Search grounding on Gemini 3 is billed per individual search query after its shared monthly allowance,
+while Gemini 2.5 uses grounded-prompt billing after its daily allowance. A request can trigger multiple search queries.
+Consult [Google's billing details](https://ai.google.dev/gemini-api/docs/pricing) before estimating an entire workflow.

@@ -1,0 +1,36 @@
+name: Deploy
+
+# staging ← develop, production ← main. Each step is skipped when its deploy token is not configured.
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      TARGET: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Railway (EU) — api, runtime, worker, scheduler, voice, mcp
+        if: env.RAILWAY_TOKEN != ''
+        run: |
+          npm install -g @railway/cli
+          for svc in api runtime worker scheduler voice mcp; do
+            railway up --service "messer-$svc" --environment "$TARGET" --detach
+          done
+      - name: Vercel (EU) — web
+        if: env.VERCEL_TOKEN != ''
+        run: |
+          npm install -g vercel
+          if [ "$TARGET" = "production" ]; then PROD="--prod"; else PROD=""; fi
+          vercel deploy $PROD --token "$VERCEL_TOKEN" --yes
+      - name: Deployment tokens missing
+        if: env.RAILWAY_TOKEN == '' || env.VERCEL_TOKEN == ''
+        run: echo "::warning::RAILWAY_TOKEN / VERCEL_TOKEN not configured — see PROGRESS.md (Pending keys)."

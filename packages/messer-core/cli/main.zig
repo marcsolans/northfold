@@ -1,0 +1,98 @@
+const std = @import("std");
+
+const utils = @import("utils.zig");
+
+const add_cmd = @import("commands/add.zig");
+const create_cmd = @import("commands/create.zig");
+const configure_cmd = @import("commands/configure.zig");
+const credential_helper_cmd = @import("commands/credential_helper.zig");
+const push_cmd = @import("commands/push.zig");
+const env_cmd = @import("commands/env.zig");
+const start_cmd = @import("commands/start.zig");
+const upgrade_cmd = @import("commands/upgrade.zig");
+
+// Embedded version.
+const version_info = @import("version.zig");
+const messer_version = version_info.messer_version;
+const messer_commit_hash = version_info.messer_commit_hash;
+const messer_commit_date = version_info.messer_commit_date;
+
+fn printUsage() !void {
+    const stderr = std.io.getStdErr().writer();
+    try stderr.writeAll("Simple, battle-tested framework for building reliable AI applications.\n" ++
+        "\n" ++
+        "\x1b[1;32mUsage: \x1b[1;36mmesser \x1b[0;36m[OPTIONS] <COMMAND>\n" ++
+        "\n" ++
+        "\x1b[1;32mCommands:\n" ++
+        "    \x1b[1;36mconfigure \x1b[0mConfigure Messer credentials and settings\n" ++
+        "    \x1b[1;36mcreate    \x1b[0mCreate a new project (interactive or use --type + --ui)\n" ++
+        "    \x1b[1;36madd       \x1b[0mAdd a component to an existing project\n" ++
+        "    \x1b[1;36mpush      \x1b[0mPush the current branch to Messer (auto-creates a project)\n" ++
+        "    \x1b[1;36menv       \x1b[0mPull/push project environment variables\n" ++
+        "    \x1b[1;36mstart     \x1b[0mStart a project (UI, API, agents, and workflows)\n" ++
+        "    \x1b[1;36mupgrade   \x1b[0mUpgrade messer to the latest version\n" ++
+        "    \x1b[1;36mversion   \x1b[0mDisplay the current version\n" ++
+        "\n" ++
+        utils.global_options_help ++
+        "\n");
+}
+
+fn printUsageWithError(err: []const u8) !void {
+    const stderr = std.io.getStdErr().writer();
+    try stderr.print("{s}\n\n", .{err});
+    try printUsage();
+}
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+
+    if (args.len < 2) {
+        try printUsageWithError("Error: missing command");
+        std.process.exit(2);
+    }
+
+    const action = args[1];
+
+    // Sub-commands signal usage errors by exiting with code 2 directly. Any
+    // error that propagates here is a runtime failure: print a concise message
+    // (the sub-command has usually already explained the details) and exit 1.
+    // This keeps a clean, scriptable exit-code contract: 0 success, 2 usage, 1 runtime.
+    dispatch(allocator, action, args) catch |err| {
+        const stderr = std.io.getStdErr().writer();
+        stderr.print("Error: {s}\n", .{@errorName(err)}) catch {};
+        std.process.exit(1);
+    };
+}
+
+fn dispatch(allocator: std.mem.Allocator, action: []const u8, args: []const []const u8) !void {
+    if (std.mem.eql(u8, action, "add")) {
+        try add_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "create")) {
+        try create_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "push")) {
+        try push_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "env")) {
+        try env_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "start")) {
+        try start_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "configure")) {
+        try configure_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "credential-helper")) {
+        try credential_helper_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "upgrade")) {
+        try upgrade_cmd.run(allocator, args[2..]);
+    } else if (std.mem.eql(u8, action, "version")) {
+        std.debug.print("messer {s} ({s} {s})\n", .{ messer_version, messer_commit_hash, messer_commit_date });
+        std.process.exit(0);
+    } else if (std.mem.eql(u8, action, "-h") or std.mem.eql(u8, action, "--help")) {
+        try printUsage();
+    } else {
+        try printUsageWithError("Error: unknown command");
+        std.process.exit(2);
+    }
+}

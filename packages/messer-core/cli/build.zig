@@ -1,0 +1,98 @@
+const std = @import("std");
+
+const targets = [_]std.Target.Query{
+    // Linux
+    .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .gnu },
+    .{ .cpu_arch = .aarch64, .os_tag = .linux, .abi = .gnu },
+    // MacOS. Unlike Linux, which has multiple common C library implementations and corresponding
+    // ABIs, macOS has a single, unified system ABI provided by its standard C library (part of the Darwin/XNU kernel environment).
+    .{ .cpu_arch = .x86_64, .os_tag = .macos },
+    .{ .cpu_arch = .aarch64, .os_tag = .macos },
+    // Windows. With x86 we cover the bast majority of scenarios. Might add aarch64 in the future.
+    .{ .cpu_arch = .x86_64, .os_tag = .windows, .abi = .gnu },
+};
+
+fn formatExecutableName(
+    allocator: std.mem.Allocator,
+    name: []const u8,
+    version: []const u8,
+    target_query: std.Target.Query,
+) ![]u8 {
+    var name_buf = std.ArrayList(u8).init(allocator);
+
+    try name_buf.appendSlice(name);
+
+    try name_buf.append('-');
+    try name_buf.appendSlice(version);
+
+    try name_buf.append('-');
+    try name_buf.appendSlice(@tagName(target_query.os_tag orelse return error.Null));
+
+    try name_buf.append('-');
+    try name_buf.appendSlice(@tagName(target_query.cpu_arch orelse return error.Null));
+
+    if (target_query.abi) |abi| {
+        try name_buf.append('-');
+        try name_buf.appendSlice(@tagName(abi));
+    }
+
+    return name_buf.toOwnedSlice();
+}
+
+pub fn build(b: *std.Build) !void {
+    const optimize = b.standardOptimizeOption(.{});
+
+    const version_opt = b.option([]const u8, "version", "The CLI version being built.");
+    const version = version_opt orelse "dev";
+    const commit_hash_opt = b.option([]const u8, "commit_hash", "The short commit hash for this build.");
+    const commit_hash = commit_hash_opt orelse "unknown";
+    const commit_date_opt = b.option([]const u8, "commit_date", "The commit date (YYYY-MM-DD) for this build.");
+    const commit_date = commit_date_opt orelse "unknown";
+
+    // Generate a version file. The CLI commands will import from this file to get the messer version.
+    const version_file = "version.zig";
+    var file = try std.fs.cwd().createFile(version_file, .{});
+    defer file.close();
+    const content = try std.fmt.allocPrint(
+        b.allocator,
+        "pub const messer_version = \"{s}\";\npub const messer_commit_hash = \"{s}\";\npub const messer_commit_date = \"{s}\";\n",
+        .{ version, commit_hash, commit_date },
+    );
+    defer b.allocator.free(content);
+    try file.writeAll(content);
+
+    // const target = b.standardTargetOptions(.{});
+    for (targets) |target_query| {
+        const target = b.resolveTargetQuery(target_query);
+
+        const name = try formatExecutableName(b.allocator, "messer", version, target_query);
+        defer b.allocator.free(name);
+
+        const exe = b.addExecutable(.{
+            .name = name,
+            .root_source_file = b.path("main.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+
+        // Create an install step that places the artifact in a subdirectory named after the target triple.
+        const target_install = b.addInstallArtifact(exe, .{ .dest_dir = .{ .override = .{
+            .custom = version,
+        } } });
+
+        // Make the main install step depend on this target-specific install step.
+        b.getInstallStep().dependOn(&target_install.step);
+    }
+
+    // Unit tests step: `zig build test`. Runs only against the host target so
+    // local development is fast and doesn't try to spawn cross-compiled tests.
+    const host_target = b.standardTargetOptions(.{});
+    const tests = b.addTest(.{
+        .root_source_file = b.path("tests.zig"),
+        .target = host_target,
+        .optimize = optimize,
+    });
+    const run_tests = b.addRunArtifact(tests);
+    const test_step = b.step("test", "Run unit tests");
+    test_step.dependOn(&run_tests.step);
+}

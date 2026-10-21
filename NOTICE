@@ -1,0 +1,17 @@
+Messer
+Copyright 2026 Messer
+
+This product includes software derived from Timbal (https://github.com/timbal-ai/timbal),
+licensed under the Apache License, Version 2.0, Copyright (c) the Timbal authors.
+Upstream tag v2.7.39, commit 45f3298899f32f861f8573c918ae22bdf90e489f.
+
+The derived code lives in packages/messer-core/ (Python framework, CLI, TUI, docs, examples,
+benchmarks and scripts). It has been modified by Messer: the project was renamed (packages,
+imports, CLI commands, environment variables, configuration files, text and documentation),
+platform integrations were redirected to the Messer platform API, visual assets were replaced,
+and dependencies were re-pinned. Files with substantial functional changes carry a
+"Modified by Messer" header.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use these files
+except in compliance with the License. You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0

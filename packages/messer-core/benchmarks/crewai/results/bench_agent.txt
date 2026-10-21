@@ -1,0 +1,565 @@
+Installed 61 packages in 112ms
+
+[1m══════════════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer vs CrewAI — agent loop benchmark[0m
+  100 iters · burst {1: 30, 2: 20, 3: 25} · 100 mem · 100 throughput ops
+  Messer: TestModel (offline) · CrewAI: patched OpenAI (offline)
+  CrewAI found — will measure + akickoff() async
+  [2mCA sync burst/throughput: capped at 5 threads (kickoff not async-safe; see #2632).[0m
+  [2mCA async burst/throughput: fully concurrent (akickoff is native async).[0m
+[1m══════════════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mSpot-checking correctness (Scenario 1)...[0m
+
+
+  Messer: ✓  |  CA sync: ✓  |  CA async: ✓
+
+  [2m[Phase 1 · Scenario 1][0m
+    Messer latency... p50=309.0 µs
+    Messer memory... 46 KB peak
+    Messer burst (30 concurrent)... p50=244.2 µs
+    Messer burst memory (30 concurrent)... 461 KB peak
+    Messer throughput conc=1... 3566/s
+    Messer throughput conc=5... 2935/s
+    Messer throughput conc=20... 3599/s
+    CA sync latency... 
+
+
+p50=8.69 ms
+    CA sync memory... 
+
+
+41885 KB peak
+    CA sync burst (30 bounded, conc≤5)... 
+
+
+p50=790.09 ms
+    CA sync burst memory (30 bounded, conc≤5)... 
+
+
+6767 KB peak
+    CA sync throughput conc=1... 
+
+
+24/s
+    CA sync throughput conc=5... 
+
+
+22/s
+    CA sync throughput conc=20... 
+
+
+18/s
+    CA async latency... 
+
+
+p50=6.74 ms
+    CA async memory... 
+
+
+41920 KB peak
+
+
+    CA async burst (30 concurrent)... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+p50=758.06 ms
+    CA async burst memory (30 concurrent)... 
+
+
+2195 KB peak
+    CA async throughput conc=1... 
+
+
+24/s
+    CA async throughput conc=5... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+26/s
+    CA async throughput conc=20... 
+
+
+26/s
+
+  [2m[Phase 1 · Scenario 2][0m
+    Messer latency... p50=325.3 µs
+    Messer memory... 87 KB peak
+    Messer burst (20 concurrent)... p50=611.5 µs
+    Messer burst memory (20 concurrent)... 745 KB peak
+    Messer throughput conc=1... 1670/s
+    Messer throughput conc=5... 1690/s
+    Messer throughput conc=20... 1514/s
+    CA sync latency... 
+
+
+p50=6.99 ms
+    CA sync memory... 
+
+
+55805 KB peak
+
+
+    CA sync burst (20 bounded, conc≤5)... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+p50=669.59 ms
+    CA sync burst memory (20 bounded, conc≤5)... 
+
+
+1999 KB peak
+    CA sync throughput conc=1... 
+
+
+25/s
+    CA sync throughput conc=5... 
+
+
+17/s
+    CA sync throughput conc=20... 
+
+
+22/s
+    CA async latency... 
+
+
+p50=6.59 ms
+    CA async memory... 
+
+
+55927 KB peak
+    CA async burst (20 concurrent)... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+p50=462.38 ms
+    CA async burst memory (20 concurrent)... 
+
+
+2295 KB peak
+    CA async throughput conc=1... 
+
+
+22/s
+    CA async throughput conc=5... 
+
+
+24/s
+    CA async throughput conc=20... 
+
+
+25/s
+
+  [2m[Phase 1 · Scenario 3][0m
+    Messer latency... p50=339.5 µs
+    Messer memory... 70 KB peak
+    Messer burst (25 concurrent)... p50=6.36 ms
+    Messer burst memory (25 concurrent)... 805 KB peak
+    Messer throughput conc=1... 1907/s
+    Messer throughput conc=5... 2100/s
+    Messer throughput conc=20... 1974/s
+    CA sync latency... 
+
+
+p50=7.32 ms
+    CA sync memory... 
+
+
+54612 KB peak
+    CA sync burst (25 bounded, conc≤5)... 
+
+
+p50=710.89 ms
+    CA sync burst memory (25 bounded, conc≤5)... 
+
+
+2316 KB peak
+    CA sync throughput conc=1... 
+
+
+24/s
+    CA sync throughput conc=5... 
+
+
+21/s
+    CA sync throughput conc=20... 
+
+
+14/s
+    CA async latency... 
+
+
+p50=6.91 ms
+    CA async memory... 
+
+
+54309 KB peak
+    CA async burst (25 concurrent)... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+p50=546.19 ms
+    CA async burst memory (25 concurrent)... 
+
+
+2843 KB peak
+    CA async throughput conc=1... 
+
+
+24/s
+    CA async throughput conc=5... 
+
+
+23/s
+    CA async throughput conc=20... 
+
+
+25/s
+
+  [2mActivating AgentOps instrumentation...[0m
+  AgentOps instrumented.
+
+  [2m[Phase 2 · Scenario 1][0m
+    CA sync+AO latency... 
+
+
+p50=9.58 ms
+    CA sync+AO memory... 
+
+
+49690 KB peak
+    CA sync+AO burst (30 bounded, conc≤5)... 
+
+
+p50=810.82 ms
+    CA sync+AO burst memory (30 bounded, conc≤5)... 
+
+
+1980 KB peak
+
+    CA sync+AO throughput conc=1... 
+
+
+24/s
+    CA sync+AO throughput conc=5... 
+
+
+18/s
+    CA sync+AO throughput conc=20... 
+
+
+18/s
+    CA async+AO latency... 
+
+
+p50=6.88 ms
+    CA async+AO memory... 
+
+
+41873 KB peak
+    CA async+AO burst (30 concurrent)... 
+
+
+p50=630.24 ms
+    CA async+AO burst memory (30 concurrent)... 
+
+
+2200 KB peak
+    CA async+AO throughput conc=1... 
+
+
+25/s
+    CA async+AO throughput conc=5... 
+
+
+23/s
+    CA async+AO throughput conc=20... 
+
+
+25/s
+
+  [2m[Phase 2 · Scenario 2][0m
+    CA sync+AO latency... 
+
+
+p50=8.58 ms
+    CA sync+AO memory... 
+
+
+65077 KB peak
+    CA sync+AO burst (20 bounded, conc≤5)... 
+
+
+p50=691.76 ms
+    CA sync+AO burst memory (20 bounded, conc≤5)... 
+
+
+2189 KB peak
+    CA sync+AO throughput conc=1... 
+
+
+22/s
+    CA sync+AO throughput conc=5... 
+
+
+26/s
+    CA sync+AO throughput conc=20... 
+
+
+21/s
+    CA async+AO latency... 
+
+
+p50=8.17 ms
+    CA async+AO memory... 
+
+
+55877 KB peak
+    CA async+AO burst (20 concurrent)... 
+
+
+p50=474.34 ms
+    CA async+AO burst memory (20 concurrent)... 
+
+
+2287 KB peak
+    CA async+AO throughput conc=1... 
+
+
+21/s
+    CA async+AO throughput conc=5... 
+
+
+20/s
+    CA async+AO throughput conc=20... 
+
+
+23/s
+
+  [2m[Phase 2 · Scenario 3][0m
+    CA sync+AO latency... 
+
+
+p50=11.07 ms
+
+
+    CA sync+AO memory... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+63735 KB peak
+    CA sync+AO burst (25 bounded, conc≤5)... 
+
+
+p50=871.71 ms
+    CA sync+AO burst memory (25 bounded, conc≤5)... 
+
+
+2997 KB peak
+    CA sync+AO throughput conc=1... 
+
+
+21/s
+    CA sync+AO throughput conc=5... 
+
+
+19/s
+    CA sync+AO throughput conc=20... 
+
+
+18/s
+    CA async+AO latency... 
+
+
+p50=8.30 ms
+    CA async+AO memory... 
+
+
+54288 KB peak
+
+
+    CA async+AO burst (25 concurrent)... ╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+
+
+p50=590.58 ms
+    CA async+AO burst memory (25 concurrent)... 
+
+
+2853 KB peak
+    CA async+AO throughput conc=1... 
+
+
+21/s
+    CA async+AO throughput conc=5... 
+
+
+23/s
+    CA async+AO throughput conc=20... 
+
+
+23/s
+
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 1: Single tool  (LLM → add → LLM → answer)[0m
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100  Messer async · CA sync: sequential · CA async: sequential)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+          mean        322.4 µs        11.13 ms         6.98 ms        10.32 ms         7.19 ms
+           p50        309.0 µs         8.69 ms         6.74 ms         9.58 ms         6.88 ms
+           p95        570.0 µs        28.16 ms         9.08 ms        14.85 ms         9.62 ms
+           p99        796.7 µs        70.98 ms        10.04 ms        22.42 ms        13.03 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          46.2 KB         473  B
+  CA (sync)                    41885.5 KB      428907  B
+  CA (async)                   41919.6 KB      429256  B
+  CA sync+AO                   49690.2 KB      508828  B
+  CA async+AO                  41873.3 KB      428783  B
+
+  [1mBurst  (30 concurrent — Messer/CA async: unbounded · CA sync: bounded conc≤5)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+           p50        244.2 µs       790.09 ms       758.06 ms       810.82 ms       630.24 ms
+           p75        261.7 µs      1024.46 ms      1093.54 ms      1037.18 ms       870.59 ms
+           p95        326.5 µs      1432.74 ms      1322.67 ms      1454.68 ms      1084.18 ms
+           p99        472.3 µs      1434.27 ms      1355.73 ms      1457.56 ms      1125.17 ms
+           max        472.3 µs      1434.27 ms      1355.73 ms      1457.56 ms      1125.17 ms
+
+  [2mwall: Messer: 0.5 ms | CA (sync): 1434.3 ms | CA (async): 1355.7 ms | CA sync+AO: 1457.6 ms | CA async+AO: 1125.2 ms[0m
+
+  [1mBurst memory  (30 concurrent — peak during full burst, no GC between)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         461.5 KB       15752  B
+  CA (sync)                     6766.8 KB      230974  B
+  CA (async)                    2194.7 KB       74911  B
+  CA sync+AO                    1979.7 KB       67574  B
+  CA async+AO                   2200.1 KB       75096  B
+
+  [1mThroughput  (100 loops  ·  CA sync capped at conc≤5)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+             1          3566/s            24/s            24/s            24/s            25/s
+             5          2935/s            22/s            26/s            18/s            23/s
+            20          3599/s            18/s            26/s            18/s            25/s
+
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 2: Multi-step  (LLM → add → LLM → mul → LLM → sub → LLM → answer)[0m
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+
+  [1mLatency  (×100  Messer async · CA sync: sequential · CA async: sequential)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+          mean        337.3 µs         7.40 ms         6.98 ms         9.55 ms         8.70 ms
+           p50        325.3 µs         6.99 ms         6.59 ms         8.58 ms         8.17 ms
+           p95        502.5 µs         9.78 ms         9.48 ms        13.74 ms        11.69 ms
+           p99        848.7 µs        10.41 ms        11.44 ms        16.93 ms        12.47 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          86.6 KB         886  B
+  CA (sync)                    55805.2 KB      571445  B
+  CA (async)                   55926.8 KB      572691  B
+  CA sync+AO                   65077.0 KB      666388  B
+  CA async+AO                  55876.8 KB      572179  B
+
+  [1mBurst  (20 concurrent — Messer/CA async: unbounded · CA sync: bounded conc≤5)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+           p50        611.5 µs       669.59 ms       462.38 ms       691.76 ms       474.34 ms
+           p75        709.0 µs       845.97 ms       636.45 ms       848.49 ms       647.51 ms
+           p95        918.2 µs      1570.10 ms       789.65 ms       914.86 ms       787.46 ms
+           p99        918.2 µs      1570.10 ms       789.65 ms       914.86 ms       787.46 ms
+           max        918.2 µs      1570.10 ms       789.65 ms       914.86 ms       787.46 ms
+
+  [2mwall: Messer: 0.9 ms | CA (sync): 1570.1 ms | CA (async): 789.6 ms | CA sync+AO: 914.9 ms | CA async+AO: 787.5 ms[0m
+
+  [1mBurst memory  (20 concurrent — peak during full burst, no GC between)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         745.2 KB       38155  B
+  CA (sync)                     1998.7 KB      102335  B
+  CA (async)                    2294.5 KB      117480  B
+  CA sync+AO                    2188.6 KB      112054  B
+  CA async+AO                   2287.0 KB      117095  B
+
+  [1mThroughput  (100 loops  ·  CA sync capped at conc≤5)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+             1          1670/s            25/s            22/s            22/s            21/s
+             5          1690/s            17/s            24/s            26/s            20/s
+            20          1514/s            22/s            25/s            21/s            23/s
+
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 3: Parallel tools  (Messer: concurrent | CrewAI: sequential ReAct)[0m
+[1m[36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mMesser dispatches 3 tools concurrently; CrewAI does 3 sequential ReAct steps.[0m
+
+  [1mLatency  (×100  Messer async · CA sync: sequential · CA async: sequential)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+          mean        836.9 µs         7.80 ms         7.46 ms        11.19 ms         8.89 ms
+           p50        339.5 µs         7.32 ms         6.91 ms        11.07 ms         8.30 ms
+           p95        565.7 µs        10.63 ms         9.90 ms        14.21 ms        11.80 ms
+           p99        49.49 ms        12.69 ms        10.49 ms        17.39 ms        15.12 ms
+
+  [1mMemory  (×100 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          69.7 KB         713  B
+  CA (sync)                    54611.8 KB      559225  B
+  CA (async)                   54309.4 KB      556129  B
+  CA sync+AO                   63734.8 KB      652645  B
+  CA async+AO                  54288.0 KB      555909  B
+
+  [1mBurst  (25 concurrent — Messer/CA async: unbounded · CA sync: bounded conc≤5)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+           p50         6.36 ms       710.89 ms       546.19 ms       871.71 ms       590.58 ms
+           p75         6.39 ms       919.05 ms       739.31 ms      1397.35 ms       800.99 ms
+           p95         6.42 ms      1025.75 ms       905.16 ms      1911.61 ms       973.84 ms
+           p99         6.43 ms      1260.26 ms       939.88 ms      2025.10 ms      1009.22 ms
+           max         6.43 ms      1260.26 ms       939.88 ms      2025.10 ms      1009.22 ms
+
+  [2mwall: Messer: 6.4 ms | CA (sync): 1260.3 ms | CA (async): 939.9 ms | CA sync+AO: 2025.1 ms | CA async+AO: 1009.2 ms[0m
+
+  [1mBurst memory  (25 concurrent — peak during full burst, no GC between)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                         805.4 KB       32989  B
+  CA (sync)                     2315.8 KB       94855  B
+  CA (async)                    2842.8 KB      116442  B
+  CA sync+AO                    2996.8 KB      122750  B
+  CA async+AO                   2853.5 KB      116878  B
+
+  [1mThroughput  (100 loops  ·  CA sync capped at conc≤5)[0m
+                        Messer       CA (sync)      CA (async)      CA sync+AO     CA async+AO
+  ────────────  ──────────────  ──────────────  ──────────────  ──────────────  ──────────────
+             1          1907/s            24/s            24/s            21/s            21/s
+             5          2100/s            21/s            23/s            19/s            23/s
+            20          1974/s            14/s            25/s            18/s            23/s
+
+[2m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Messer: TestModel (sync handler, stateless). Built-in InMemory tracing always on.
+
+  CA sync:  Crew.kickoff() in run_in_executor — what most teams run in production.
+            kickoff_async() is NOT truly async: it is asyncio.to_thread(self.kickoff)
+            (crewAIInc/crewAI crew.py). Same GIL + thread-safety limits apply.
+            Burst capped at 5 threads: above that, instability from GIL contention
+            and internal asyncio calls made from threads (GitHub #2632, #1234).
+
+  CA async: Crew.akickoff() — native async path (added late 2024). Truly awaits
+            all the way to litellm.acompletion(). Still mutates self.usage_metrics
+            per run, so fresh Crew per concurrent call is required. Burst fully
+            concurrent (no semaphore cap). Global event bus singleton and shared
+            SQLite path remain potential bottlenecks at high concurrency (#2632).
+
+  AgentOps: CrewaiInstrumentor().instrument() patches CrewAI methods globally and
+            cannot be undone. Bare pass runs first, then AgentOps is activated.
+            HTTP export is mocked — only hot-path span overhead is measured.
+
+  Scenario 3: Messer dispatches all 3 tools in one LLM call (parallel).
+  CrewAI uses ReAct (one tool per LLM call) — 3 sequential steps instead.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+

@@ -1,0 +1,479 @@
+---
+title: "LLM Validators"
+description: "AI-powered validators for checking claims, meaning, and language"
+---
+
+LLM validators use AI models to evaluate content that can't be easily checked with exact matching. They're ideal for validating natural language outputs where wording may vary but meaning should be consistent.
+
+<Note>
+LLM validators support [transforms](/evals/validators#transforms). Transforms are applied to the content before sending to the LLM for evaluation.
+</Note>
+
+## prompt!
+
+Validates whether a natural-language statement about the output is true based on the actual text.
+
+```yaml
+output:
+  prompt!: "The response clearly explains the refund process"
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | string | A statement or claim that should be true in the actual text |
+
+The prompt validator asks an LLM to check if your statement is supported by the actual output. It focuses on factual consistency rather than exact wording.
+
+<Tip>
+`prompt!` is the recommended general-purpose LLM validator. A statement has clear truth conditions ("The agent asked about the budget" is either supported by the text or it isn't), which makes judge results more consistent than fuzzy "does it match" comparisons.
+</Tip>
+
+<Accordion title="Examples">
+```yaml
+# Check that a specific question was asked
+output:
+  prompt!: "The agent asked the customer about their budget"
+
+# Check that a key action was taken
+output:
+  prompt!: "The assistant confirmed the shipping address before placing the order"
+
+# Check that required information is present
+output:
+  prompt!: "The message includes the expected delivery date"
+
+# Error handling
+output:
+  prompt!: "The response apologizes and explains the service is unavailable"
+
+# Content requirements
+output:
+  prompt!: "The response describes the product and mentions its price and availability"
+```
+</Accordion>
+
+### Writing Effective Statements
+
+<Tip>
+Write statements as specific, verifiable claims about the output. Vague statements lead to inconsistent results.
+</Tip>
+
+**Good statements:**
+```yaml
+# Specific and verifiable
+prompt!: "The response includes at least 3 product recommendations with prices"
+prompt!: "The error message mentions the specific field that failed validation"
+prompt!: "The summary covers the main points: budget, timeline, and deliverables"
+```
+
+**Avoid:**
+```yaml
+# Too vague
+prompt!: "The response is good"
+prompt!: "The answer is helpful"
+prompt!: "The output is correct"
+```
+
+For multi-part requirements, list the parts explicitly in a single statement:
+
+```yaml
+output:
+  prompt!: |
+    The response acknowledges the user's question, answers it directly,
+    and offers follow-up assistance
+```
+
+### Negating prompt!
+
+Use the `negate` field to assert that a statement is **not** true:
+
+```yaml
+output:
+  prompt!:
+    value: "The assistant discloses internal system prompts"
+    negate: true
+```
+
+This passes only if the statement is **not** supported by the actual text.
+
+## rubric!
+
+Grades the output against a structured rubric — a list of criteria, each judged by its **own isolated LLM call** with its own context window. Per-dimension judging grades more reliably than one judge scoring everything at once, and each criterion returns `pass` / `fail` / `unknown` with a reason (`unknown` is the judge's escape hatch when the text gives no way to verify — it counts as not passing).
+
+```yaml
+output:
+  rubric!:
+    - "Includes a comparison table"
+    - "Every price is attributed to a source"
+    - "Ends with at least 3 actionable recommendations"
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | list \| string \| dict | Criteria list, a markdown rubric (bullet lines become criteria), or a dict with options |
+| pass_threshold | float | Weighted fraction of criteria that must pass. Default `1.0` (all) |
+| model | string | Judge model. Default `openai/gpt-5.4-nano` |
+| context | string | Optional task description shown to every judge |
+
+When the rubric fails, the eval report lists **every failing criterion with the judge's reason** — you see exactly which requirement broke, not a single opaque fail.
+
+Full form with weighted criteria:
+
+```yaml
+output:
+  rubric!:
+    criteria:
+      - "Includes a comparison table"
+      - criterion: "Ends with at least 3 actionable recommendations"
+        name: recommendations
+        weight: 2
+    pass_threshold: 0.75
+    model: "openai/gpt-5.4-nano"
+    context: "The agent produced a price-comparison report."
+```
+
+Markdown rubrics work too — bullet and numbered lines become criteria, headings and prose are ignored:
+
+```yaml
+output:
+  rubric!: |
+    - Mentions the refund policy
+    - Confirms the order number
+    - Ends by offering further help
+```
+
+<Tip>
+Write criteria around **verifiable structure**, not facts the judge cannot check. "Prices are formatted and attributed to a source" grades reliably; "prices are accurate" does not — the judge has no way to confirm it and will answer `unknown`.
+</Tip>
+
+<Note>
+Use `rubric!` instead of several `prompt!` statements when the requirements form one quality bar: you get per-criterion verdicts, weights, a partial-credit threshold, and one aggregate score. The same rubric can also gate an agent at runtime via `messer.guardrails.LLMJudge(rubric=...)`, which feeds failing criteria back to the agent for revision.
+</Note>
+
+## semantic!
+
+Uses an LLM to check if the actual value semantically matches the expected description.
+
+```yaml
+output:
+  semantic!: "A polite greeting that welcomes the user"
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | string | Natural language description of expected content |
+
+The semantic validator sends the actual value and your description to an LLM, which determines if they match semantically.
+
+<Note>
+If your check can be phrased as a verifiable statement, prefer [`prompt!`](#prompt). Use `semantic!` when you're matching the output against a *description* of its overall meaning, tone, or style rather than asserting a specific fact about it.
+</Note>
+
+<Accordion title="Examples">
+```yaml
+# Tone
+output:
+  semantic!: "A professional response suitable for a business context"
+
+# Style matching
+output:
+  semantic!: "A casual, friendly greeting that matches the user's informal tone"
+
+# Overall content shape
+output:
+  semantic!: "An apologetic message explaining the service is unavailable"
+```
+</Accordion>
+
+## not_semantic!
+
+Checks that the content does NOT semantically match the description. This is the negated form of `semantic!`.
+
+```yaml
+output:
+  not_semantic!: "An error message or apology"
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | string | Natural language description that must NOT match |
+
+<Accordion title="Examples">
+```yaml
+# Ensure response is not an error
+output:
+  not_semantic!: "An error message or failure notification"
+
+# Ensure not rude or dismissive
+output:
+  not_semantic!: "A rude, dismissive, or unhelpful response"
+
+# Ensure not off-topic
+output:
+  not_semantic!: "A response about unrelated topics"
+```
+</Accordion>
+
+## language!
+
+Checks that the content is written in a specific language.
+
+```yaml
+output:
+  language!: "en"
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | string | Expected language code |
+
+<Accordion title="Examples">
+```yaml
+# Verify language output
+output:
+  language!: "en"
+
+output:
+  language!: "es"
+
+output:
+  language!: "fr"
+
+output:
+  language!: "ja"
+```
+</Accordion>
+
+### Common Language Codes
+
+| Language | Code |
+|----------|------|
+| English | `"en"` |
+| Spanish | `"es"` |
+| French | `"fr"` |
+| German | `"de"` |
+| Italian | `"it"` |
+| Portuguese | `"pt"` |
+| Chinese | `"zh"` |
+| Japanese | `"ja"` |
+| Korean | `"ko"` |
+| Arabic | `"ar"` |
+
+## not_language!
+
+Checks that the content is NOT written in a specific language. This is the negated form of `language!`.
+
+```yaml
+output:
+  not_language!: "fr"
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| value | string | Language code that must NOT match |
+
+<Accordion title="Examples">
+```yaml
+# Ensure response is not in French
+output:
+  not_language!: "fr"
+
+# Ensure English-only output
+output:
+  language!: "en"
+  not_language!: "es"
+```
+</Accordion>
+
+## LLM vs Exact Matching
+
+Use LLM validation (`prompt!`, `semantic!`) when:
+- Output wording can vary but meaning must be consistent
+- Testing for tone, style, or completeness
+- Validating summaries or explanations
+
+Use exact matching (`eq!`, `contains!`) when:
+- Specific words or phrases must appear
+- Validating structured data
+- Checking for exact values
+
+```yaml
+# Use prompt for flexible content
+output:
+  prompt!: "The response confirms the order was placed successfully"
+
+# Use contains for required terms
+output:
+  contains!: "Order #"
+
+# Combine both approaches
+output:
+  contains!: "confirmed"
+  prompt!: "The response confirms the order and includes the order details"
+```
+
+## Common Patterns
+
+### Multi-Language Support Testing
+
+```yaml
+- name: responds_in_spanish
+  runnable: agent.py::agent
+  params:
+    prompt: "Hola, necesito ayuda"
+  output:
+    language!: "es"
+    prompt!: "The response offers help to the user"
+
+- name: responds_in_french
+  runnable: agent.py::agent
+  params:
+    prompt: "Bonjour, j'ai besoin d'aide"
+  output:
+    language!: "fr"
+    prompt!: "The response offers help to the user"
+```
+
+### Behavioral Checks
+
+```yaml
+- name: refund_process_explained
+  runnable: agent.py::agent
+  params:
+    prompt: "I want a refund"
+  output:
+    prompt!: "The response acknowledges the refund request and explains the refund process"
+
+- name: address_confirmed_before_order
+  runnable: agent.py::agent
+  params:
+    prompt: "Order this to my usual address"
+  output:
+    prompt!: "The assistant confirmed the shipping address before placing the order"
+```
+
+### Tone and Style Validation
+
+```yaml
+- name: professional_tone
+  runnable: agent.py::agent
+  params:
+    prompt: "I want a refund"
+  output:
+    semantic!: "A professional, empathetic response"
+
+- name: casual_tone
+  runnable: agent.py::agent
+  params:
+    prompt: "Hey what's up"
+  output:
+    semantic!: "A casual, friendly greeting that matches the user's informal tone"
+```
+
+### Completeness Checks
+
+```yaml
+output:
+  prompt!: |
+    The response acknowledges the user's question, answers it directly,
+    provides additional context, and offers follow-up assistance
+```
+
+### Error Message Quality
+
+```yaml
+- name: helpful_error_message
+  runnable: agent.py::agent
+  params:
+    prompt: "Buy product XYZ123"
+  output:
+    prompt!: |
+      The response clearly states the product was not found, suggests
+      possible alternatives or corrections, and offers help finding
+      the right product
+```
+
+## Using Transforms
+
+Transforms normalize content before LLM evaluation:
+
+```yaml
+# Normalize whitespace before the LLM check
+output:
+  prompt!:
+    value: "The response greets the user professionally"
+    transform: [trim, collapse_whitespace]
+
+# Lowercase before language detection
+output:
+  language!:
+    value: "en"
+    transform: lowercase
+```
+
+## Combining with Other Validators
+
+```yaml
+output:
+  # Structure checks
+  not_null!: true
+  type!: "string"
+  min_length!: 50
+
+  # Content checks
+  contains!: "order"
+  not_contains!: "error"
+
+  # LLM validation
+  prompt!: "The response confirms the order and includes an estimated delivery date"
+
+  # Language check
+  language!: "en"
+```
+
+## Choosing Models
+
+LLM validators use Messer agents under the hood. By default they use `openai/gpt-5.4-nano`, but you can override the model per-validator in YAML.
+
+```yaml
+output:
+  # Use a larger OpenAI model for factual checks
+  prompt!:
+    value: "The assistant clearly explains the refund process"
+    model: "openai/gpt-5.2"
+
+  # Use an Anthropic model for language + semantics
+  language!:
+    value: "es"
+    model: "anthropic/claude-sonnet-4-6"
+
+  # Use a Gemini model for description matching
+  semantic!:
+    value: "A helpful, on-topic answer"
+    model: "google/gemini-2.5-flash"
+```
+
+<Warning>
+LLM validators rely on **structured output**. For Anthropic, structured-output support is currently in beta and only available on a limited set of models (for example: Claude Sonnet 4.5/4.6, Claude Opus 4.5/4.6, Claude Haiku 4.5). Make sure you pick one of these Anthropic variants when you set the `model` field.
+</Warning>
+
+You can otherwise pick any model supported by Messer’s `Agent` – the `model` field here is passed directly through to the underlying agent used for the validator, subject to the provider’s structured-output limitations.
+
+## Cost Considerations
+
+LLM validators make API calls to language models, which incur costs. To optimize:
+
+1. **Use structural validators first**: Check `not_null!`, `contains!`, etc. before LLM validation
+2. **Be specific in statements**: Reduces need for retries
+3. **Group LLM checks**: One detailed statement vs. multiple simple ones
+4. **Use for critical paths**: Reserve LLM validation for important behavioral checks
+
+```yaml
+# Efficient: structural checks catch obvious failures quickly
+output:
+  not_null!: true        # Fast, free
+  type!: "string"        # Fast, free
+  min_length!: 20        # Fast, free
+  contains!: "order"     # Fast, free
+  prompt!: "The response confirms the order completely"  # LLM call only if above pass
+```

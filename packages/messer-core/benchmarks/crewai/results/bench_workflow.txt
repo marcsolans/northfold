@@ -1,0 +1,148 @@
+Installed 61 packages in 123ms
+
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  Messer Workflow vs CrewAI Flow — DAG benchmark[0m
+  200 iters · 200 burst · 200 mem · 500 throughput ops
+  CrewAI Flow found + OpenInference
+  [2mMesser: built-in InMemory tracing always on.[0m
+  [2mFlow+OI: spans created + serialized via NullExporter (HTTP mocked).[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════[0m
+
+  [2mVerifying correctness...[0m
+  sequential: Messer=19  Flow=19  ✓
+  fanout: Messer=54  Flow=54  ✓
+  diamond: Messer=46  Flow=46  ✓
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 1: Sequential  (A → B → C → D)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mCollecting Messer...[0m
+  [2mCollecting Flow bare...[0m
+  [2mCollecting Flow+OI...[0m
+
+  [1mLatency  (×200)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+          mean        381.3 µs         1.66 ms         2.61 ms
+           p50        351.0 µs         1.59 ms         2.44 ms
+           p95        573.9 µs         2.28 ms         3.42 ms
+           p99        667.3 µs         2.78 ms         4.72 ms
+
+  [1mMemory  (×200 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          41.6 KB         213  B
+  Flow bare                      328.1 KB        1680  B
+  Flow+OI                        357.4 KB        1830  B
+
+  [1mBurst  (200 concurrent)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+           p50        31.54 ms       181.79 ms       283.99 ms
+           p75        34.54 ms       235.03 ms       338.80 ms
+           p95        36.62 ms       291.64 ms       382.56 ms
+           p99        37.16 ms       301.49 ms       390.00 ms
+           max        37.31 ms       304.64 ms       391.55 ms
+
+  [2mwall: Messer: 37.3 ms | Flow bare: 304.6 ms | Flow+OI: 391.6 ms[0m
+
+  [1mThroughput  (500 runs)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+             1          2094/s           492/s           468/s
+            10          4037/s           602/s           617/s
+            50          2897/s           656/s           615/s
+           200          4491/s           754/s           540/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 2: Fan-out/in  (A → [B, C, D] → E)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mCollecting Messer...[0m
+  [2mCollecting Flow bare...[0m
+  [2mCollecting Flow+OI...[0m
+
+  [1mLatency  (×200)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+          mean        497.6 µs         1.40 ms         1.98 ms
+           p50        455.0 µs         1.33 ms         1.94 ms
+           p95        763.5 µs         1.83 ms         2.59 ms
+           p99        891.1 µs         2.21 ms         2.99 ms
+
+  [1mMemory  (×200 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          57.2 KB         293  B
+  Flow bare                      363.2 KB        1860  B
+  Flow+OI                        389.4 KB        1994  B
+
+  [1mBurst  (200 concurrent)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+           p50        48.26 ms       132.92 ms       281.92 ms
+           p75        49.70 ms       181.32 ms       321.95 ms
+           p95        50.58 ms       215.94 ms       355.23 ms
+           p99        50.78 ms       222.68 ms       362.40 ms
+           max        50.92 ms       224.10 ms       364.49 ms
+
+  [2mwall: Messer: 50.9 ms | Flow bare: 224.1 ms | Flow+OI: 364.5 ms[0m
+
+  [1mThroughput  (500 runs)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+             1          2111/s           667/s           502/s
+            10          3190/s           877/s           586/s
+            50          2395/s           820/s           437/s
+           200          1819/s           750/s           501/s
+
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+[1m[36m  Scenario 3: Diamond  (A → [B, C] → D)[0m
+[1m[36m────────────────────────────────────────────────────────────────────────────────────────[0m
+  [2mCollecting Messer...[0m
+  [2mCollecting Flow bare...[0m
+  [2mCollecting Flow+OI...[0m
+
+  [1mLatency  (×200)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+          mean        403.2 µs         1.31 ms         1.59 ms
+           p50        372.8 µs         1.24 ms         1.55 ms
+           p95        636.1 µs         1.73 ms         1.88 ms
+           p99        814.6 µs         2.03 ms         2.38 ms
+
+  [1mMemory  (×200 runs)[0m
+  framework                         peak       per run
+  ────────────────────────  ────────────  ────────────
+  Messer                          50.3 KB         258  B
+  Flow bare                      332.3 KB        1701  B
+  Flow+OI                        358.8 KB        1837  B
+
+  [1mBurst  (200 concurrent)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+           p50        40.61 ms       101.79 ms       301.83 ms
+           p75        42.09 ms       133.50 ms       369.16 ms
+           p95        43.25 ms       155.99 ms       491.04 ms
+           p99        43.52 ms       160.99 ms       497.21 ms
+           max        43.66 ms       162.72 ms       498.53 ms
+
+  [2mwall: Messer: 43.7 ms | Flow bare: 162.7 ms | Flow+OI: 498.5 ms[0m
+
+  [1mThroughput  (500 runs)[0m
+                        Messer       Flow bare         Flow+OI
+  ────────────  ──────────────  ──────────────  ──────────────
+             1          2231/s           824/s           469/s
+            10          3985/s           818/s           553/s
+            50          2791/s           970/s           431/s
+           200          2689/s           964/s           548/s
+
+[2m────────────────────────────────────────────────────────────────────────────────────────
+  Messer: built-in InMemory tracing on every run — spans recorded per step.
+  Flow bare: @start/@listen dispatched via asyncio.gather; no instrumentation.
+  Flow+OI: OpenInference patches Flow._execute_method() — one OTel span per
+  @start/@listen invocation. NullExporter: span creation + serialization cost
+  measured, export discarded (no network I/O). suppress_flow_events=True on
+  all Flow classes — CrewAI's own event bus suppressed, OI patches directly.
+  Graph construction / Flow class definition excluded from timing.
+────────────────────────────────────────────────────────────────────────────────────────[0m
+

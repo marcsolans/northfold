@@ -1,0 +1,142 @@
+---
+title: "Quickstart"
+description: "Build your first AI Agent with Messer in a few lines of code"
+---
+
+In this quickstart guide we're going to see how to build an AI agent with Messer. We'll start from scratch and gradually enhance it with advanced features. Let's dive in!
+
+Before moving forward, ensure you've completed the [installation steps](/installation).
+
+## Create a Messer Project
+
+Run the following Messer CLI command to create a new project:
+
+```bash
+messer create my-project
+```
+
+This will prompt you interactively to choose what you want to build (Agent or Workflow) and what UI you want for your project. After making your selections, it creates a project structure with all the necessary files and dependencies to get started.
+
+### Project Structure
+
+After running the command, your project will look like this:
+
+```
+my-project/
+├── api/              - Elysia API server (Bun)
+├── workforce/        - Your messer components (Python)
+│   └── <name>/
+│       ├── agent.py  - Main app logic (or workflow.py for workflows)
+│       ├── messer.yaml    - Messer configuration
+│       └── pyproject.toml - Python dependencies
+├── ui/               - React + Vite + TypeScript + shadcn (Bun) [optional]
+├── .gitignore        - Git ignore file
+└── README.md         - Project documentation
+```
+
+| Directory/File | Purpose |
+|---------------|---------|
+| **api/** | Elysia API server running on Bun |
+| **workforce/** | Your messer components (Python). Contains subdirectories for each agent or workflow |
+| **workforce/\<name\>/agent.py** | Main application file where you define your AI agents.<br/>If you create a workflow, you'll have a `workflow.py` file instead |
+| **workforce/\<name\>/pyproject.toml** | Python project configuration and dependency management |
+| **workforce/\<name\>/messer.yaml** | Messer deployment configuration and settings |
+| **ui/** | React + Vite + TypeScript + shadcn running on Bun (only if UI is selected) |
+
+## Run locally
+
+Run `messer configure` before your first `messer start` — it stores your Messer credentials locally. For model calls, platform auth from configure is enough; otherwise set `OPENAI_API_KEY` in `<project>/.env` (or the key for whichever provider your model uses).
+
+From the project directory, start the full stack — API, workforce (your Python agents/workflows), and UI if you included one:
+
+```bash
+cd my-project
+messer start
+```
+
+`messer start` prints the local URLs and keeps services running until you quit (`q`). While it's running you can press `o` to open the UI in your browser, or `h` for other commands.
+
+If `<project>/.env` exists, `messer start` loads it automatically and injects those variables into every service (UI, API, and all workforce members). Per-member overrides can live in `workforce/<name>/.env`. See [Environment variables](/deployment#environment-variables) for scoping, precedence, and overrides.
+
+<Tip>
+To test a workforce member in isolation, you can also run its Python file directly: `uv run python workforce/<name>/agent.py` (the scaffold includes a small terminal REPL).
+</Tip>
+
+## Customize your agent
+
+`messer create` scaffolds a starter `agent.py` (or `workflow.py`) under `workforce/<name>/`. Open that file and edit the `Agent` definition.
+
+A minimal agent needs only a **name** and **model**:
+
+```python agent.py icon="python"
+from messer import Agent
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-5-mini"
+)
+```
+
+<Info>
+If you use your own provider key instead of platform auth, set it in a `.env` file at the project root (e.g. `OPENAI_API_KEY` for OpenAI models) — `messer start` picks it up automatically. Never commit `.env` to version control.
+</Info>
+
+The scaffold already includes a terminal REPL (`main()` at the bottom of `agent.py`). After editing, restart with `messer start` to pick up changes in the full app, or run the file directly for a quick loop.
+
+You can learn more about the Agent class and all the available options in the [Agents](/agents) section.
+
+## Adding Tools
+
+Agents become powerful with tools.
+In Messer, you can use both **baked-in tools** (pre-built and ready to use) and **custom tools** (functions you write yourself).
+
+### Baked-in Tools
+
+Messer includes several ready-to-use tools. For example, the `WebSearch` tool allows your agent to search the internet for real-time information:
+
+```python agent.py icon="python"
+from messer import Agent
+from messer.tools import WebSearch
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-5-mini",
+    tools=[WebSearch()]
+)
+```
+
+### Custom Tools
+
+Creating custom tools is straightforward—just write a function. Here's a simple example that returns the current date and time:
+
+```python agent.py icon="python"
+from datetime import datetime
+
+from messer import Agent
+from messer.tools import WebSearch
+
+def get_datetime() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+agent = Agent(
+    name="my_agent",
+    model="openai/gpt-5-mini",
+    tools=[WebSearch(), get_datetime]
+)
+```
+
+You can combine any number of tools to create powerful, specialized agents. 
+Mix and match baked-in and custom tools to fit your specific use case.
+You can even use agents and workflows as tools!
+
+<Tip>
+**Congratulations!** You've built a fully functional AI agent with tools in just a few lines of code.
+
+Ready to explore more? Check out our [examples](/examples), or browse the latest code samples on <a href="https://github.com/marcsolans/northfold" target="_blank" rel="noopener noreferrer">GitHub</a>.
+</Tip>
+
+## Moving to Production
+
+Ready to take your agent to production? Messer provides enterprise-grade deployment options designed for real-world applications.
+
+Whether you need fully managed hosting or complete infrastructure control, we've got you covered. Check out our comprehensive [deployment guide](/deployment) to explore your options and choose the best approach for your needs.

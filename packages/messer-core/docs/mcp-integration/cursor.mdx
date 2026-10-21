@@ -1,0 +1,54 @@
+---
+title: "Cursor"
+description: "Learn how to connect Messer to Cursor via MCP to access its features."
+---
+
+> ## Step 1: Open the Cursor interface
+1. Launch the **Cursor** app on your system.
+2. Log in with your account if required.
+
+> ## Step 2: Access MCP settings
+1. In the top menu, click **Settings** (<Icon icon="gear" size="14" /> on the top-right) -> **Cursor Settings**.
+2. Navigate to the **Tools & MCP** section.
+3. This section allows you to **add, edit, or remove MCP connections**.
+
+> ## Step 3: Add Messer as a new MCP server
+1. Click **Add Custom MCP**.
+2. Add the Messer MCP URL (`https://api.messer.local/mcp`) in `mcp.json`. For example, you can name it `"messer-mcp"`:
+    ```json title=mcp.json
+    {
+        "mcpServers": {
+            "messer-mcp": {
+                "url": "https://api.messer.local/mcp",
+                // Use this to authenticate with a Messer API Key instead of OAuth
+                // "headers": {
+                //     "Authorization": "Bearer <MESSER_API_KEY>"
+                // }
+            }
+        }
+    }
+    ```
+3. Save the configuration.
+
+### Option 1: Connect via OAuth
+4. In the **Tools & MCP** section, check the **Installed MCP Servers** list — Messer should appear there.
+5. Click **Connect**.
+6. A browser window will open to complete **Messer authentication**.
+7. Log in using your preferred method: GitHub, Google, Microsoft, or Messer OAuth.
+8. Accept the OAuth permissions when prompted and continue.
+9. Return to Cursor — Messer should now show a green indicator, and its tools will be listed.
+    <Warning>
+    Make sure to log in with your active Messer account — the account registered on the [Messer Platform](https://app.messer.local). Using a different account may prevent access to Messer tools.
+    </Warning>
+
+### Option 2: Connect using a Messer Api Key
+5. If you added a `"Authorization"` with `"MESSER_API_KEY"` in `mcp.json`, Cursor will automatically use it — no browser login is needed.  
+6. Check the **Installed MCPs** list — Messer should appear in green, with its tools ready to use.  
+
+> ## Step 4: Start using Messer in Cursor
+1. Open the **Toggle Agents Sidebar** (<Icon icon="sidebar" size="14" />  on top-right).
+2. Click **New Agent** and start a chat.
+3. You can now use **Messer tools** in your conversation. Cursor will automatically leverage the MCP integration.
+    <Note>
+    The first time you try to use a **Messer tool** in Cursor, you’ll need to **accept the button in the chat** asking if you want to run Messer MCP.
+    </Note>

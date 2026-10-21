@@ -1,0 +1,65 @@
+[1mMesser vs Google ADK - Agent Loop Benchmark[0m
+[2mmode=full; no API calls; sessions pre-created outside timing[0m
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Scenario 1: single tool[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency[0m
+    Messer     mean    226.3 us  p50    222.8 us  p95    230.5 us
+    ADK        mean     2.56 ms  p50     2.43 ms  p95     3.23 ms
+
+  [1mMemory[0m
+    Messer          308 B/run
+    ADK          21,026 B/run
+
+  [1mBurst[0m
+    Messer     p50    234.0 us  wall    12.88 ms
+    ADK        p50    92.07 ms  wall    95.64 ms
+
+  [1mThroughput[0m
+    c=1   Messer     4025/s   ADK      351/s
+    c=10  Messer     4044/s   ADK      500/s
+    c=50  Messer     3292/s   ADK      492/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Scenario 2: 3-step chain[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency[0m
+    Messer     mean    503.3 us  p50    476.9 us  p95    663.0 us
+    ADK        mean     5.83 ms  p50     5.73 ms  p95     7.58 ms
+
+  [1mMemory[0m
+    Messer          521 B/run
+    ADK          43,064 B/run
+
+  [1mBurst[0m
+    Messer     p50    500.0 us  wall    16.22 ms
+    ADK        p50   123.88 ms  wall   126.32 ms
+
+  [1mThroughput[0m
+    c=1   Messer     1973/s   ADK      153/s
+    c=10  Messer     1671/s   ADK      213/s
+    c=50  Messer     1931/s   ADK      243/s
+
+[1m[36m------------------------------------------------------------------------------------------------[0m
+[1m[36m  Scenario 3: parallel tools[0m
+[1m[36m------------------------------------------------------------------------------------------------[0m
+
+  [1mLatency[0m
+    Messer     mean    443.6 us  p50    411.7 us  p95    629.7 us
+    ADK        mean     3.11 ms  p50     2.97 ms  p95     3.73 ms
+
+  [1mMemory[0m
+    Messer          427 B/run
+    ADK          27,194 B/run
+
+  [1mBurst[0m
+    Messer     p50     9.89 ms  wall    16.68 ms
+    ADK        p50    94.22 ms  wall    97.28 ms
+
+  [1mThroughput[0m
+    c=1   Messer     2287/s   ADK      365/s
+    c=10  Messer     2664/s   ADK      401/s
+    c=50  Messer     2883/s   ADK      478/s

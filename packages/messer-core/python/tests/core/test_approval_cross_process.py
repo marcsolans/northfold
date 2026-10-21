@@ -1,0 +1,1026 @@
+"""Cross-process / cross-restart proof for the human-in-the-loop approval gate.
+
+Real HITL is:
+
+    1. process A runs the agent, persists trace to durable storage,
+       hits a gate, exits.
+    2. some external system (queue, DB, UI) holds the ``approval_id``.
+    3. process B starts fresh, asks the trace store for pending
+       approvals, then calls the runnable again with
+       ``resume=...`` and ``parent_id=...``.
+
+If that flow doesn't work, the whole feature is an in-memory toy.
+
+The tests in this file pin the contract by using on-disk providers
+(:class:`JsonlTracingProvider` and :class:`SqliteTracingProvider`) as
+the only path between turns. The autouse fixture in ``conftest`` clears
+``InMemoryTracingProvider._storage`` between tests, so any silent
+reliance on shared in-memory state would fail here.
+
+Every test is parametrised across both providers via the ``backend``
+fixture. The final test boots a real subprocess to literally prove the
+resume loop works across Python processes — not just across
+``RunContext`` instances within one interpreter.
+"""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+import subprocess
+import sys
+import textwrap
+import time
+from pathlib import Path
+
+import pytest
+from messer import Agent, Tool, Workflow
+from messer.core.test_model import TestModel
+from messer.state.tracing.providers.jsonl import JsonlTracingProvider
+from messer.state.tracing.providers.sqlite import SqliteTracingProvider
+from messer.types.approval import ApprovalResolution
+from messer.types.content import ToolUseContent
+from messer.types.events import ApprovalEvent, OutputEvent
+from messer.types.message import Message
+
+
+def _approval_events(events) -> list[ApprovalEvent]:
+    return [e for e in events if isinstance(e, ApprovalEvent)]
+
+
+def _final_output(events) -> OutputEvent:
+    return next(e for e in reversed(events) if isinstance(e, OutputEvent))
+
+
+# ---------------------------------------------------------------------------
+# Backend-agnostic durable-store fixture
+# ---------------------------------------------------------------------------
+
+
+class _Backend:
+    """Provider + raw-record reader, abstracted over backend storage."""
+
+    def __init__(self, name: str, path: Path, provider, load_records, script_setup: str):
+        self.name = name
+        self.path = path
+        self.provider = provider
+        self._load_records = load_records
+        self.script_setup = script_setup  # python snippet for subprocess scripts
+
+    def load_records(self) -> list[dict]:
+        """Return [{run_id, parent_id, spans}, ...] regardless of backend."""
+        return self._load_records()
+
+
+def _make_jsonl_backend(tmp_path: Path) -> _Backend:
+    path = tmp_path / "traces.jsonl"
+    provider = JsonlTracingProvider.configured(_path=path)
+
+    def load() -> list[dict]:
+        if not path.exists():
+            return []
+        return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+    script_setup = textwrap.dedent(
+        f"""
+        from pathlib import Path
+        from messer.state.tracing.providers.jsonl import JsonlTracingProvider
+        TRACE_PATH = Path(r"{path.as_posix()}")
+        provider = JsonlTracingProvider.configured(_path=TRACE_PATH)
+        """
+    ).strip()
+    return _Backend("jsonl", path, provider, load, script_setup)
+
+
+def _make_sqlite_backend(tmp_path: Path) -> _Backend:
+    path = tmp_path / "traces.db"
+    provider = SqliteTracingProvider.configured(_path=path)
+
+    def load() -> list[dict]:
+        if not path.exists():
+            return []
+        conn = sqlite3.connect(str(path))
+        try:
+            rows = conn.execute(
+                "SELECT run_id, parent_id, spans FROM runs"
+            ).fetchall()
+        except sqlite3.OperationalError:
+            return []
+        finally:
+            conn.close()
+        return [
+            {"run_id": r[0], "parent_id": r[1], "spans": json.loads(r[2])}
+            for r in rows
+        ]
+
+    script_setup = textwrap.dedent(
+        f"""
+        from pathlib import Path
+        from messer.state.tracing.providers.sqlite import SqliteTracingProvider
+        TRACE_PATH = Path(r"{path.as_posix()}")
+        provider = SqliteTracingProvider.configured(_path=TRACE_PATH)
+        """
+    ).strip()
+    return _Backend("sqlite", path, provider, load, script_setup)
+
+
+@pytest.fixture(params=["jsonl", "sqlite"])
+def backend(request, tmp_path) -> _Backend:
+    return {
+        "jsonl": _make_jsonl_backend,
+        "sqlite": _make_sqlite_backend,
+    }[request.param](tmp_path)
+
+
+def _agent_with_tool(provider, *, responses, tool_name, handler, requires_approval=True):
+    tool = Tool(name=tool_name, handler=handler, requires_approval=requires_approval)
+    return Agent(
+        name="cross_process_agent",
+        model=TestModel(responses=responses),
+        tools=[tool],
+        tracing_provider=provider,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Single tool gate
+# ---------------------------------------------------------------------------
+
+
+class TestSingleToolGate:
+    @pytest.mark.asyncio
+    async def test_gate_persists_then_resumes_from_durable_store(self, backend):
+        """Turn 1 hits the gate, turn 2 resumes via parent_id + decision.
+
+        The provider's ``get()`` only reads from disk/SQLite, so the second
+        run cannot rely on any in-memory state from turn 1.
+        """
+        calls: list[int] = []
+
+        def wire(amount: int) -> str:
+            calls.append(amount)
+            return f"wired {amount}"
+
+        agent = _agent_with_tool(
+            backend.provider,
+            responses=[
+                Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="t1", name="wire", input={"amount": 500})],
+                    stop_reason="tool_use",
+                ),
+                "done",
+            ],
+            tool_name="wire",
+            handler=wire,
+        )
+
+        events1 = [e async for e in agent(prompt="wire 500")]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+
+        assert out1.status.code == "cancelled"
+        assert out1.status.reason == "approval_required"
+        assert len(approvals) == 1
+        assert calls == []
+
+        # Sanity: trace really hit durable storage before we resume.
+        assert backend.path.exists()
+        records = backend.load_records()
+        assert any(r["run_id"] == out1.run_id for r in records)
+
+        out2 = await agent(
+            prompt="wire 500",
+            parent_id=out1.run_id,
+            resume={approvals[0].approval_id: True},
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert calls == [500], "tool must execute exactly once after resume"
+
+    @pytest.mark.asyncio
+    async def test_denial_persists(self, backend):
+        calls: list[int] = []
+
+        def charge(amount: int) -> str:
+            calls.append(amount)
+            return "charged"
+
+        agent = _agent_with_tool(
+            backend.provider,
+            responses=[
+                Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="t1", name="charge", input={"amount": 999})],
+                    stop_reason="tool_use",
+                ),
+                "I will not charge $999.",
+            ],
+            tool_name="charge",
+            handler=charge,
+        )
+
+        events1 = [e async for e in agent(prompt="charge 999")]
+        approval = _approval_events(events1)[0]
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+
+        out2 = await agent(
+            prompt="charge 999",
+            parent_id=out1.run_id,
+            resume={
+                approval.approval_id: {"approved": False, "reason": "policy"},
+            },
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert "will not charge" in out2.output.collect_text().lower()
+        assert calls == [], "denied tool must never execute"
+
+    @pytest.mark.asyncio
+    async def test_pending_approval_recoverable_from_storage_only(self, backend):
+        """A 'queue worker' should be able to discover the pending approval
+        without ever importing the original RunContext — just by reading the
+        durable store and pulling ``metadata['approval']``."""
+
+        def deploy(env: str) -> str:
+            return f"deployed {env}"
+
+        tool = Tool(
+            name="deploy",
+            handler=deploy,
+            requires_approval=True,
+            approval_prompt="Promote to prod?",
+            approval_description="Production deploy",
+        )
+        wf = Workflow(name="deploy_wf", tracing_provider=backend.provider).step(tool)
+
+        events1 = [e async for e in wf(env="prod")]
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+
+        records = backend.load_records()
+        run_record = next(r for r in records if r["run_id"] == out1.run_id)
+        approval_spans = [
+            s for s in run_record["spans"]
+            if (s.get("metadata") or {}).get("approval", {}).get("id")
+        ]
+        assert len(approval_spans) == 1
+        approval_meta = approval_spans[0]["metadata"]["approval"]
+        assert approval_meta["prompt"] == "Promote to prod?"
+        assert approval_meta["description"] == "Production deploy"
+
+        ev_id = _approval_events(events1)[0].approval_id
+        assert approval_meta["id"] == ev_id
+
+
+# ---------------------------------------------------------------------------
+# Expired-resolution
+# ---------------------------------------------------------------------------
+
+
+class TestExpiredResolution:
+    @pytest.mark.asyncio
+    async def test_expired_decision_emits_fresh_event(self, backend):
+        calls: list[int] = []
+
+        def transfer(amount: int) -> str:
+            calls.append(amount)
+            return "ok"
+
+        agent = _agent_with_tool(
+            backend.provider,
+            responses=[
+                Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="t1", name="transfer", input={"amount": 50})],
+                    stop_reason="tool_use",
+                ),
+                Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="t2", name="transfer", input={"amount": 50})],
+                    stop_reason="tool_use",
+                ),
+                "done",
+            ],
+            tool_name="transfer",
+            handler=transfer,
+        )
+
+        events1 = [e async for e in agent(prompt="transfer 50")]
+        approval = _approval_events(events1)[0]
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+
+        already_expired = ApprovalResolution(
+            approved=True,
+            expires_at=int(time.time() * 1000) - 1,
+        )
+        events2 = [
+            e async for e in agent(
+                prompt="transfer 50",
+                parent_id=out1.run_id,
+                resume={approval.approval_id: already_expired},
+            )
+        ]
+        approvals2 = _approval_events(events2)
+        out2 = _final_output(events2)
+
+        assert out2.status.reason == "approval_required", "expired decision must NOT execute"
+        assert calls == []
+        assert len(approvals2) >= 1
+        assert approvals2[0].approval_id == approval.approval_id
+
+        records = backend.load_records()
+        run2 = next(r for r in records if r["run_id"] == out2.run_id)
+        approval_meta = next(
+            (s["metadata"] or {}).get("approval", {})
+            for s in run2["spans"]
+            if (s.get("metadata") or {}).get("approval", {}).get("id")
+        )
+        assert approval_meta.get("expired") is True
+
+
+# ---------------------------------------------------------------------------
+# Parallel gates
+# ---------------------------------------------------------------------------
+
+
+class TestParallelGatesResume:
+    @pytest.mark.asyncio
+    async def test_workflow_two_parallel_steps_resume_via_storage(self, backend):
+        calls: list[str] = []
+
+        def step_a(x: int) -> str:
+            calls.append(f"a={x}")
+            return "a"
+
+        def step_b(y: int) -> str:
+            calls.append(f"b={y}")
+            return "b"
+
+        a = Tool(name="step_a", handler=step_a, requires_approval=True)
+        b = Tool(name="step_b", handler=step_b, requires_approval=True)
+        wf = Workflow(name="parallel_wf", tracing_provider=backend.provider).step(a).step(b)
+
+        events1 = [e async for e in wf(x=1, y=2)]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+
+        assert len(approvals) == 2
+        assert out1.status.reason == "approval_required"
+        assert calls == []
+
+        decisions = {a.approval_id: True for a in approvals}
+        out2 = await wf(
+            x=1, y=2,
+            parent_id=out1.run_id,
+            resume=decisions,
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert sorted(calls) == ["a=1", "b=2"], "both gated steps must execute on resume"
+
+    @pytest.mark.asyncio
+    async def test_workflow_partial_resume_persists_remaining_gate(self, backend):
+        calls: list[str] = []
+
+        def step_a(x: int) -> str:
+            calls.append(f"a={x}")
+            return "a"
+
+        def step_b(y: int) -> str:
+            calls.append(f"b={y}")
+            return "b"
+
+        a = Tool(name="step_a", handler=step_a, requires_approval=True)
+        b = Tool(name="step_b", handler=step_b, requires_approval=True)
+        wf = Workflow(name="parallel_wf", tracing_provider=backend.provider).step(a).step(b)
+
+        events1 = [e async for e in wf(x=1, y=2)]
+        approvals = {e.runnable_path: e for e in _approval_events(events1)}
+        out1 = _final_output(events1)
+
+        events2 = [
+            e async for e in wf(
+                x=1, y=2,
+                parent_id=out1.run_id,
+                resume={approvals["parallel_wf.step_a"].approval_id: True},
+            )
+        ]
+        out2 = _final_output(events2)
+        approvals2 = _approval_events(events2)
+
+        assert calls == ["a=1"], "only the approved step must run"
+        assert out2.status.reason == "approval_required"
+
+        records = backend.load_records()
+        run2 = next(r for r in records if r["run_id"] == out2.run_id)
+        pending = [
+            (s.get("metadata") or {}).get("approval", {}).get("id")
+            for s in run2["spans"]
+            if (
+                isinstance(s.get("status"), dict)
+                and s["status"].get("code") == "cancelled"
+                and s["status"].get("reason") == "approval_required"
+            )
+        ]
+        assert approvals["parallel_wf.step_b"].approval_id in pending
+        assert {a.approval_id for a in approvals2} == {
+            approvals["parallel_wf.step_b"].approval_id
+        }
+
+
+# ---------------------------------------------------------------------------
+# True process restart — second Python interpreter resumes through storage.
+# ---------------------------------------------------------------------------
+
+
+_GATE_BODY = textwrap.dedent(
+    """
+    import asyncio, json, sys
+    from pathlib import Path
+    from messer import Agent, Tool
+    from messer.core.test_model import TestModel
+    from messer.types.content import ToolUseContent
+    from messer.types.events import ApprovalEvent
+    from messer.types.message import Message
+
+    SIDE_EFFECT_FILE = Path(sys.argv[1])
+
+    def wire(amount: int) -> str:
+        SIDE_EFFECT_FILE.write_text(f"wired {amount}")
+        return f"wired {amount}"
+
+    agent = Agent(
+        name="cp_agent",
+        model=TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="t1", name="wire", input={"amount": 42})],
+                stop_reason="tool_use",
+            ),
+            "done",
+        ]),
+        tools=[Tool(name="wire", handler=wire, requires_approval=True)],
+        tracing_provider=provider,
+    )
+
+    async def main():
+        approval_id = None
+        run_id = None
+        async for event in agent(prompt="wire 42"):
+            if isinstance(event, ApprovalEvent):
+                approval_id = event.approval_id
+                run_id = event.run_id
+        sys.stdout.write(
+            "<<<RESULT>>>"
+            + json.dumps({"approval_id": approval_id, "run_id": run_id})
+            + "<<<END>>>"
+        )
+
+    asyncio.run(main())
+    """
+).strip()
+
+
+_RESUME_BODY = textwrap.dedent(
+    """
+    import asyncio, sys
+    from pathlib import Path
+    from messer import Agent, Tool
+    from messer.core.test_model import TestModel
+    from messer.types.content import ToolUseContent
+    from messer.types.message import Message
+
+    SIDE_EFFECT_FILE = Path(sys.argv[1])
+    RUN_ID = sys.argv[2]
+    APPROVAL_ID = sys.argv[3]
+
+    def wire(amount: int) -> str:
+        SIDE_EFFECT_FILE.write_text(f"wired {amount}")
+        return f"wired {amount}"
+
+    agent = Agent(
+        name="cp_agent",
+        model=TestModel(responses=[
+            Message(
+                role="assistant",
+                content=[ToolUseContent(id="t1", name="wire", input={"amount": 42})],
+                stop_reason="tool_use",
+            ),
+            "done",
+        ]),
+        tools=[Tool(name="wire", handler=wire, requires_approval=True)],
+        tracing_provider=provider,
+    )
+
+    async def main():
+        out = await agent(
+            prompt="wire 42",
+            parent_id=RUN_ID,
+            resume={APPROVAL_ID: True},
+        ).collect()
+        sys.stdout.write("<<<RESULT>>>" + out.status.code + "<<<END>>>")
+
+    asyncio.run(main())
+    """
+).strip()
+
+
+def _extract_result(stdout: str) -> str:
+    start = stdout.find("<<<RESULT>>>")
+    end = stdout.find("<<<END>>>")
+    assert start != -1 and end != -1, f"sentinel not found in stdout:\n{stdout}"
+    return stdout[start + len("<<<RESULT>>>"):end]
+
+
+class TestRealSubprocessResume:
+    """Hard proof: gate happens in process A, resume happens in process B.
+
+    Parametrised across both durable-store backends.
+    """
+
+    def test_gate_in_one_process_resume_in_another(self, backend, tmp_path):
+        side_effect = tmp_path / "side_effect.txt"
+        gate_script = backend.script_setup + "\n" + _GATE_BODY
+        resume_script = backend.script_setup + "\n" + _RESUME_BODY
+
+        gate = subprocess.run(  # noqa: S603
+            [sys.executable, "-c", gate_script, str(side_effect)],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert gate.returncode == 0, f"gate failed:\nstdout={gate.stdout}\nstderr={gate.stderr}"
+        payload = json.loads(_extract_result(gate.stdout))
+        assert payload["approval_id"], gate.stderr
+        assert payload["run_id"], gate.stderr
+        assert backend.path.exists(), gate.stderr
+        assert not side_effect.exists(), "tool must NOT have run before approval"
+
+        resume = subprocess.run(  # noqa: S603
+            [
+                sys.executable, "-c", resume_script,
+                str(side_effect),
+                payload["run_id"], payload["approval_id"],
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert resume.returncode == 0, f"resume failed:\nstdout={resume.stdout}\nstderr={resume.stderr}"
+        assert _extract_result(resume.stdout) == "success", resume.stderr
+        assert side_effect.read_text() == "wired 42", "tool must run after cross-process resume"
+
+
+# ---------------------------------------------------------------------------
+# Memory compaction must not eat the pending tool_use on the resume turn
+# ---------------------------------------------------------------------------
+
+
+class TestCompactionDoesNotDropPendingToolUseOnResume:
+    """Regression: compaction runs inside resolve_memory on *every* turn,
+    including the resume turn. On resume the loaded memory ends with the
+    gated tool_use that has no tool_result yet — exactly what
+    _find_pending_tool_uses needs to re-execute the gated call without
+    re-calling the LLM.
+
+    Every structure-aware compactor treats that trailing unresolved tool_use
+    as an orphan (drop mode strips it; keep_last_n*/summarize run it through
+    _remove_orphaned_tool_parts which drops tool_use without a matching
+    tool_result). If compaction fires on resume, the pending tool_use is
+    erased, _find_pending_tool_uses returns nothing, and the agent re-plans
+    from scratch — which is nondeterministic in the real world and silently
+    drops the human's decision.
+
+    We model that nondeterminism: the second planning pass proposes a
+    *different* amount, so a re-plan produces a fresh approval_id that the
+    original resume value can't satisfy. With the bug the run pauses again
+    (decision lost); with the fix the original pending call is re-executed
+    and the decision lands.
+    """
+
+    @pytest.mark.asyncio
+    async def test_drop_mode_compaction_on_resume_preserves_decision(self, backend):
+        from messer.core.memory_compaction import compact_tool_results
+
+        calls: list[int] = []
+        plans: dict[str, int] = {"n": 0}
+
+        def wire(amount: int) -> str:
+            calls.append(amount)
+            return f"wired {amount}"
+
+        def model_handler(messages):
+            # A planning-from-scratch call has no assistant message in memory.
+            # If compaction ate the pending tool_use, we land here a 2nd time
+            # and (like a real LLM) propose a different amount.
+            if not any(m.role == "assistant" for m in messages):
+                plans["n"] += 1
+                amount = 500 if plans["n"] == 1 else 999
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id=f"t{plans['n']}", name="wire", input={"amount": amount})],
+                    stop_reason="tool_use",
+                )
+            return "done"
+
+        agent = Agent(
+            name="compaction_resume_agent",
+            model=TestModel(handler=model_handler),
+            tools=[Tool(name="wire", handler=wire, requires_approval=True)],
+            tracing_provider=backend.provider,
+            # ratio<=0 forces compaction unconditionally so the resume turn
+            # always tries to compact the loaded memory.
+            memory_compaction=compact_tool_results(),
+            memory_compaction_ratio=0.0,
+        )
+
+        events1 = [e async for e in agent(prompt="wire money")]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+        assert len(approvals) == 1
+        assert approvals[0].input == {"amount": 500}
+        assert calls == []
+        assert plans["n"] == 1, "exactly one planning pass on turn 1"
+
+        out2 = await agent(
+            prompt="wire money",
+            parent_id=out1.run_id,
+            resume={approvals[0].approval_id: True},
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert calls == [500], (
+            "the originally-gated call must execute on resume; if compaction ate "
+            "the pending tool_use the agent re-planned (amount=999) and the "
+            "decision was lost"
+        )
+        assert plans["n"] == 1, "resume must NOT trigger a fresh planning pass"
+
+    @pytest.mark.asyncio
+    async def test_keep_last_n_messages_compaction_on_resume_preserves_decision(self, backend):
+        from messer.core.memory_compaction import keep_last_n_messages
+
+        calls: list[int] = []
+        plans: dict[str, int] = {"n": 0}
+
+        def wire(amount: int) -> str:
+            calls.append(amount)
+            return f"wired {amount}"
+
+        def model_handler(messages):
+            if not any(m.role == "assistant" for m in messages):
+                plans["n"] += 1
+                amount = 500 if plans["n"] == 1 else 999
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id=f"t{plans['n']}", name="wire", input={"amount": amount})],
+                    stop_reason="tool_use",
+                )
+            return "done"
+
+        agent = Agent(
+            name="compaction_resume_agent_keepn",
+            model=TestModel(handler=model_handler),
+            tools=[Tool(name="wire", handler=wire, requires_approval=True)],
+            tracing_provider=backend.provider,
+            memory_compaction=keep_last_n_messages(10),
+            memory_compaction_ratio=0.0,
+        )
+
+        events1 = [e async for e in agent(prompt="wire money")]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+        assert calls == []
+
+        out2 = await agent(
+            prompt="wire money",
+            parent_id=out1.run_id,
+            resume={approvals[0].approval_id: True},
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert calls == [500]
+        assert plans["n"] == 1, "resume must not re-plan; orphan cleanup must not eat the pending tool_use"
+
+    @pytest.mark.asyncio
+    async def test_resume_compacts_history_before_the_gate_but_keeps_pending(self, backend):
+        """Deferred resume compaction: a long paused thread must compact the history
+        *before* the gated tool_use (so the continuation LLM call doesn't carry the full
+        uncompacted thread) while leaving the pending tool_use intact so the decision lands.
+
+        The agent runs a completed (non-gated) tool call and then a gated one in the same
+        turn, so at pause time memory is [user, assistant(lookup), tool(lookup_result),
+        assistant(wire pending)]. On resume, drop-mode compaction must strip the lookup
+        pair (head) but preserve the trailing wire tool_use (tail).
+        """
+        from messer.core.memory_compaction import compact_tool_results
+
+        wire_calls: list[int] = []
+        lookup_calls: list[str] = []
+
+        def lookup(q: str) -> str:
+            lookup_calls.append(q)
+            return "rate is 1.0"
+
+        def wire(amount: int) -> str:
+            wire_calls.append(amount)
+            return f"wired {amount}"
+
+        def model_handler(messages):
+            has_assistant = any(m.role == "assistant" for m in messages)
+            has_wire_use = any(
+                isinstance(c, ToolUseContent) and c.name == "wire"
+                for m in messages
+                for c in m.content
+            )
+            if not has_assistant:
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="look1", name="lookup", input={"q": "rate"})],
+                    stop_reason="tool_use",
+                )
+            if not has_wire_use:
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="wire1", name="wire", input={"amount": 500})],
+                    stop_reason="tool_use",
+                )
+            return "done"
+
+        agent = Agent(
+            name="compaction_history_agent",
+            model=TestModel(handler=model_handler),
+            tools=[
+                Tool(name="lookup", handler=lookup),  # non-gated
+                Tool(name="wire", handler=wire, requires_approval=True),
+            ],
+            tracing_provider=backend.provider,
+            memory_compaction=compact_tool_results(),  # drop mode
+            memory_compaction_ratio=0.0,
+        )
+
+        events1 = [e async for e in agent(prompt="look up the rate then wire")]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+        assert lookup_calls == ["rate"], "the non-gated lookup must run on turn 1"
+        assert wire_calls == [], "the gated wire must not run before approval"
+        assert approvals[0].input == {"amount": 500}
+
+        out2 = await agent(
+            prompt="look up the rate then wire",
+            parent_id=out1.run_id,
+            resume={approvals[0].approval_id: True},
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert wire_calls == [500], "the gated decision must land on resume"
+        assert lookup_calls == ["rate"], "lookup must not re-run (history was compacted, not replayed)"
+
+        # The resume run's agent span must record that compaction fired on the history,
+        # and the persisted continuation memory must no longer contain the lookup tool pair.
+        records = backend.load_records()
+        run2 = next(r for r in records if r["run_id"] == out2.run_id)
+        agent_span = next(
+            s for s in run2["spans"]
+            if s.get("path") == "compaction_history_agent" and (s.get("metadata") or {}).get("compaction")
+        )
+        assert agent_span["metadata"]["compaction"]["triggered"] is True
+        steps = agent_span["metadata"]["compaction"]["steps"]
+        assert any(step["after"] < step["before"] for step in steps), (
+            "compaction must have actually dropped messages from the pre-gate history"
+        )
+
+        def _has_tool_use(spans, name: str) -> bool:
+            for s in spans:
+                for msg in s.get("memory") or []:
+                    for c in msg.get("content") or []:
+                        if isinstance(c, dict) and c.get("type") == "tool_use" and c.get("name") == name:
+                            return True
+            return False
+
+        # The lookup tool_use lived in the pre-gate history → must be gone after compaction.
+        assert not _has_tool_use(run2["spans"], "lookup"), (
+            "the pre-gate lookup tool_use must be compacted out of the resume memory"
+        )
+        # The gated wire call must still be present (re-executed on resume).
+        assert _has_tool_use(run2["spans"], "wire"), "the resumed wire tool_use must survive compaction"
+
+    @pytest.mark.asyncio
+    async def test_resume_merges_trailing_assistant_into_pending_to_keep_alternation(self, backend):
+        """Cover the merge/alternation branch of _compact_on_resume.
+
+        The message before the pending assistant is always user/tool, so head normally ends
+        with one of those. But when the pre-gate assistant message is *mixed* (text + a
+        non-gated tool_use), drop-mode compaction strips the tool_use and keeps the text —
+        leaving head ending in an assistant message. Re-attaching the pending assistant tail
+        would then produce two consecutive assistant messages, which providers reject. The
+        fix folds head's trailing assistant into the pending message; this test asserts that
+        merge happens (single assistant carrying both the leftover text and the pending
+        tool_use) and the decision still lands.
+        """
+        from messer.core.memory_compaction import compact_tool_results
+
+        wire_calls: list[int] = []
+        lookup_calls: list[str] = []
+
+        def lookup(q: str) -> str:
+            lookup_calls.append(q)
+            return "rate is 1.0"
+
+        def wire(amount: int) -> str:
+            wire_calls.append(amount)
+            return f"wired {amount}"
+
+        def model_handler(messages):
+            has_assistant = any(m.role == "assistant" for m in messages)
+            has_wire_use = any(
+                isinstance(c, ToolUseContent) and c.name == "wire"
+                for m in messages
+                for c in m.content
+            )
+            if not has_assistant:
+                # Mixed message: text + non-gated tool_use. Drop-mode keeps the text.
+                from messer.types.content import TextContent
+                return Message(
+                    role="assistant",
+                    content=[
+                        TextContent(text="let me check the rate"),
+                        ToolUseContent(id="look1", name="lookup", input={"q": "rate"}),
+                    ],
+                    stop_reason="tool_use",
+                )
+            if not has_wire_use:
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="wire1", name="wire", input={"amount": 500})],
+                    stop_reason="tool_use",
+                )
+            return "done"
+
+        agent = Agent(
+            name="merge_branch_agent",
+            model=TestModel(handler=model_handler),
+            tools=[
+                Tool(name="lookup", handler=lookup),
+                Tool(name="wire", handler=wire, requires_approval=True),
+            ],
+            tracing_provider=backend.provider,
+            memory_compaction=compact_tool_results(),  # drop mode
+            memory_compaction_ratio=0.0,
+        )
+
+        events1 = [e async for e in agent(prompt="check then wire")]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+        assert lookup_calls == ["rate"]
+        assert wire_calls == []
+
+        out2 = await agent(
+            prompt="check then wire",
+            parent_id=out1.run_id,
+            resume={approvals[0].approval_id: True},
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert wire_calls == [500], "decision must land after the merge"
+        assert lookup_calls == ["rate"], "lookup must not re-run"
+
+        # Assert the merge actually happened: a single assistant message in the persisted
+        # resume memory carries BOTH the leftover text and the pending wire tool_use, and
+        # there are no two consecutive assistant messages anywhere.
+        records = backend.load_records()
+        run2 = next(r for r in records if r["run_id"] == out2.run_id)
+        agent_span = next(
+            s for s in run2["spans"]
+            if s.get("path") == "merge_branch_agent" and (s.get("metadata") or {}).get("compaction")
+        )
+        memory = agent_span.get("memory") or []
+
+        def _roles(mem):
+            return [m.get("role") for m in mem]
+
+        roles = _roles(memory)
+        assert not any(
+            roles[i] == "assistant" and roles[i + 1] == "assistant" for i in range(len(roles) - 1)
+        ), f"no two consecutive assistant messages allowed, got roles={roles}"
+
+        merged = next(
+            m for m in memory
+            if m.get("role") == "assistant"
+            and any(isinstance(c, dict) and c.get("type") == "text" for c in (m.get("content") or []))
+            and any(
+                isinstance(c, dict) and c.get("type") == "tool_use" and c.get("name") == "wire"
+                for c in (m.get("content") or [])
+            )
+        )
+        text_block = next(c for c in merged["content"] if c.get("type") == "text")
+        assert "let me check the rate" in text_block["text"]
+
+    @pytest.mark.asyncio
+    async def test_summarize_compactor_runs_on_resume_and_keeps_pending(self, backend):
+        """The async summarize compactor must work on the resume path too: it summarizes the
+        pre-gate history (a live LLM call inside resolve_memory) while the pending tool_use is
+        protected so the decision still lands."""
+        from messer.core.memory_compaction import _SUMMARY_MARKER, summarize
+
+        wire_calls: list[int] = []
+        lookup_calls: list[str] = []
+        summarizer_calls: list[str] = []
+
+        def lookup(q: str) -> str:
+            lookup_calls.append(q)
+            return "rate is 1.0"
+
+        def wire(amount: int) -> str:
+            wire_calls.append(amount)
+            return f"wired {amount}"
+
+        def summarizer_handler(messages):
+            summarizer_calls.append(messages[-1].collect_text())
+            return "user asked to look up the rate (got 1.0) and then wire money"
+
+        def model_handler(messages):
+            has_assistant = any(m.role == "assistant" for m in messages)
+            has_wire_use = any(
+                isinstance(c, ToolUseContent) and c.name == "wire"
+                for m in messages
+                for c in m.content
+            )
+            if not has_assistant:
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="look1", name="lookup", input={"q": "rate"})],
+                    stop_reason="tool_use",
+                )
+            if not has_wire_use:
+                return Message(
+                    role="assistant",
+                    content=[ToolUseContent(id="wire1", name="wire", input={"amount": 500})],
+                    stop_reason="tool_use",
+                )
+            return "done"
+
+        agent = Agent(
+            name="summarize_resume_agent",
+            model=TestModel(handler=model_handler),
+            tools=[
+                Tool(name="lookup", handler=lookup),
+                Tool(name="wire", handler=wire, requires_approval=True),
+            ],
+            tracing_provider=backend.provider,
+            # Explicit summarizer model (TestModel) so no real LLM is hit; threshold low so it
+            # fires on the small pre-gate head.
+            memory_compaction=summarize(
+                threshold=1,
+                keep_last_n=1,
+                model=TestModel(handler=summarizer_handler),
+            ),
+            memory_compaction_ratio=0.0,
+        )
+
+        events1 = [e async for e in agent(prompt="check then wire")]
+        approvals = _approval_events(events1)
+        out1 = _final_output(events1)
+        assert out1.status.reason == "approval_required"
+        assert lookup_calls == ["rate"]
+        assert wire_calls == []
+
+        out2 = await agent(
+            prompt="check then wire",
+            parent_id=out1.run_id,
+            resume={approvals[0].approval_id: True},
+        ).collect()
+
+        assert out2.status.code == "success", out2.error
+        assert wire_calls == [500], "decision must land even though summarize rewrote the history"
+        assert lookup_calls == ["rate"], "lookup must not re-run"
+        assert summarizer_calls, "the summarize compactor must have run on the resume turn"
+
+        # The persisted resume memory must contain the summary marker (history was summarized)
+        # and still carry the pending wire tool_use.
+        records = backend.load_records()
+        run2 = next(r for r in records if r["run_id"] == out2.run_id)
+        agent_span = next(
+            s for s in run2["spans"]
+            if s.get("path") == "summarize_resume_agent" and (s.get("metadata") or {}).get("compaction")
+        )
+        memory = agent_span.get("memory") or []
+        all_text = " ".join(
+            c.get("text", "")
+            for m in memory
+            for c in (m.get("content") or [])
+            if isinstance(c, dict) and c.get("type") == "text"
+        )
+        assert _SUMMARY_MARKER in all_text, "the summarized history marker must be present"
+        assert any(
+            isinstance(c, dict) and c.get("type") == "tool_use" and c.get("name") == "wire"
+            for m in memory
+            for c in (m.get("content") or [])
+        ), "the pending wire tool_use must survive summarization"

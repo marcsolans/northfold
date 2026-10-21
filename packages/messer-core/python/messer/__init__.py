@@ -1,0 +1,36 @@
+# pyright: reportUnsupportedDunderAll=false
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .core import Agent, FallbackModel, ModelEntry, Tool, Workflow
+    from .state import suspend
+
+try:
+    from ._version import __version__  # type: ignore
+except ImportError:
+    __version__ = "0.0.0.dev0"
+
+__all__ = ["Agent", "FallbackModel", "ModelEntry", "Tool", "Workflow", "suspend"]
+
+_LAZY_IMPORTS = {
+    "Agent": ".core",
+    "FallbackModel": ".core",
+    "ModelEntry": ".core",
+    "Tool": ".core",
+    "Workflow": ".core",
+    "suspend": ".state",
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_IMPORTS:
+        import importlib
+
+        mod = importlib.import_module(_LAZY_IMPORTS[name], __name__)
+        val = getattr(mod, name)
+        globals()[name] = val  # cache to bypass __getattr__ on subsequent access
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

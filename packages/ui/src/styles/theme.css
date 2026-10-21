@@ -1,0 +1,137 @@
+/* Messer design tokens — Swiss precision: neutral warm grays, near-black #111, one accent (Swiss red). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 36px;
+  --text-3xl: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --subtle: #f7f6f4;
+  --muted: #efede9;
+  --border: #e7e5e1;
+  --border-strong: #d6d3cd;
+  --fg: #111111;
+  --fg-muted: #57534e;
+  --fg-subtle: #78716c;
+  --accent: #d52b1e;
+  --accent-hover: #b82418;
+  --accent-fg: #ffffff;
+  --accent-soft: #fbe9e7;
+  --success: #15803d;
+  --success-soft: #e8f5ec;
+  --warning: #b45309;
+  --warning-soft: #fdf3e2;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --info: #1d4ed8;
+  --info-soft: #e8efff;
+  --ring: #d52b1e;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0f0f0f;
+  --surface: #161616;
+  --subtle: #1b1b1a;
+  --muted: #232321;
+  --border: #2a2a28;
+  --border-strong: #3a3a37;
+  --fg: #f2f1ee;
+  --fg-muted: #b5b1aa;
+  --fg-subtle: #8f8a83;
+  --accent: #e5463a;
+  --accent-hover: #f05c50;
+  --accent-fg: #ffffff;
+  --accent-soft: #3a1714;
+  --success: #4ade80;
+  --success-soft: #11291a;
+  --warning: #fbbf24;
+  --warning-soft: #2e2208;
+  --danger: #f87171;
+  --danger-soft: #331414;
+  --info: #93b4ff;
+  --info-soft: #141f38;
+  --ring: #e5463a;
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes messer-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes messer-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
