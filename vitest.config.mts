@@ -45,6 +45,7 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "node",
+          setupFiles: ["./tests/setup-unit.ts"],
           include: ["src/**/*.test.ts"],
           exclude: ["src/**/*.int.test.ts"],
         },

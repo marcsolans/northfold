@@ -46,9 +46,9 @@ Conventional Commit.
 
 ## Phase 5 — Cart
 
-- [ ] Zustand store with `persist` + `skipHydration`
-- [ ] Cart page with totals (shipping threshold, tax constant)
-- [ ] Server revalidation of the cart (archived, stock clamp, price refresh) with change notices
+- [x] Zustand store with `persist` + `skipHydration`
+- [x] Cart page with totals (shipping threshold, tax constant)
+- [x] Server revalidation of the cart (archived, stock clamp, price refresh) with change notices
 
 ## Phase 6 — Checkout + COD
 
