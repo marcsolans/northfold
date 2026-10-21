@@ -98,8 +98,9 @@ Stripe webhooks locally:
 ## Testing
 
 - Unit tests sit next to the code as `*.test.ts`; integration tests (real Postgres) are
-  `*.int.test.ts` and run against `northfold_test`, which the Vitest global setup resets
-  with `prisma migrate reset`.
+  `*.int.test.ts` and run against `northfold_test`: the Vitest global setup applies
+  migrations with `prisma migrate deploy` (refusing any database not named `*_test`/`*_e2e`)
+  and every test starts from truncated tables (`tests/db.ts`).
 - E2E tests live in `e2e/` and run against a production build on `northfold_e2e`.
 - Before committing a phase: run the full gate, and check each new page in a browser at
   375px and 1440px.
