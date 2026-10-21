@@ -43,8 +43,8 @@ async function seedProduct(product: SeedProduct, index: number): Promise<void> {
     create: {
       slug: product.slug,
       ...fields,
-      // Spread creation dates so "newest" sorting is meaningful and stable.
-      createdAt: new Date(Date.UTC(2026, 0, 1 + index * 3)),
+      // Interleave creation dates across categories so "newest" is a realistic mix.
+      createdAt: new Date(Date.UTC(2026, 0, 1 + ((index * 7) % SEED_PRODUCTS.length) * 3)),
     },
     update: fields,
   });

@@ -39,10 +39,10 @@ Conventional Commit.
 
 ## Phase 4 — Catalog
 
-- [ ] Home: hero, featured, bestsellers, shop by category
-- [ ] Shop: URL-driven filters, search, sort, pagination, empty state, skeletons
-- [ ] Product page: gallery, variant selectors, quantity cap, related products, `generateMetadata`
-- [ ] `sitemap.ts`, `robots.ts`, Open Graph
+- [x] Home: hero, featured, bestsellers, shop by category
+- [x] Shop: URL-driven filters, search, sort, pagination, empty state, skeletons
+- [x] Product page: gallery, variant selectors, quantity cap, related products, `generateMetadata`
+- [x] `sitemap.ts`, `robots.ts`, Open Graph
 
 ## Phase 5 — Cart
 
