@@ -4,7 +4,7 @@ import { addressSchema } from "./address";
 import { changePasswordSchema, safeRedirectPath, signInSchema, signUpSchema } from "./auth";
 import { cartLinesSchema } from "./cart";
 import { parseShopFilters } from "./catalog";
-import { placeOrderSchema } from "./checkout";
+import { checkoutFormSchema, EMPTY_ADDRESS, placeOrderSchema, toPlaceOrderInput } from "./checkout";
 import { productFormSchema } from "./product";
 
 const validAddress = {
@@ -214,5 +214,37 @@ describe("productFormSchema", () => {
     expect(
       productFormSchema.safeParse({ ...product, images: Array(7).fill(product.images[0]) }).success,
     ).toBe(false);
+  });
+});
+
+describe("checkoutFormSchema", () => {
+  const base = {
+    shippingChoice: "new",
+    address: { ...validAddress, line2: "" },
+    saveAddress: true,
+    paymentMethod: "CASH_ON_DELIVERY",
+  } as const;
+
+  it("validates a new address with the shared address rules", () => {
+    expect(checkoutFormSchema.safeParse(base).success).toBe(true);
+    const bad = checkoutFormSchema.safeParse({ ...base, address: { ...base.address, phone: "x" } });
+    expect(bad.error?.issues[0]?.path).toEqual(["address", "phone"]);
+  });
+
+  it("ignores the address fields when a saved address is chosen", () => {
+    const parsed = checkoutFormSchema.safeParse({
+      ...base,
+      shippingChoice: "addr_1",
+      address: EMPTY_ADDRESS,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("maps to a placeOrder payload the server schema accepts", () => {
+    const items = [{ variantId: "v1", quantity: 2 }];
+    const values = checkoutFormSchema.parse(base);
+    expect(placeOrderSchema.safeParse(toPlaceOrderInput(values, items)).success).toBe(true);
+    const saved = toPlaceOrderInput({ ...values, shippingChoice: "addr_9" }, items);
+    expect(saved.shipping).toEqual({ type: "saved", addressId: "addr_9" });
   });
 });

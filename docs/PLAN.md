@@ -52,11 +52,11 @@ Conventional Commit.
 
 ## Phase 6 — Checkout + COD
 
-- [ ] Checkout requires sign-in (redirect back)
-- [ ] Address selection / new address (+ save), Zod on client and server
-- [ ] `placeOrder` server action (server-side pricing, COD transaction with conditional stock decrement)
-- [ ] Rate limit on `placeOrder`
-- [ ] Success page reading the real order state
+- [x] Checkout requires sign-in (redirect back)
+- [x] Address selection / new address (+ save), Zod on client and server
+- [x] `placeOrder` server action (server-side pricing, COD transaction with conditional stock decrement)
+- [x] Rate limit on `placeOrder`
+- [x] Success page reading the real order state
 
 ## Phase 7 — Stripe
 

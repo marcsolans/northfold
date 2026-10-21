@@ -33,3 +33,8 @@ One line per decision: **decision** — reason.
 - **Shop filters use `useOptimistic` + `router.push`** — clicks reflect instantly while the server re-renders from the URL; without JavaScript the filter panel is a plain GET form.
 - **`validateCart` is a public Server Action (guest carts allowed)** — it is read-only, validates input with Zod and returns only catalog data; `knownPrice`/`label` from the browser are used solely to describe changes.
 - **The cart re-validates whenever the cart page becomes visible** — Activity re-runs effects when a hidden route is shown, so returning to the bag always shows live stock and prices.
+- **Stripe orders take stock only when payment is confirmed (webhook); COD orders take it at placement** — abandoned card checkouts never hold inventory; the conditional decrement at payment time catches the rare oversell and flags the order for review.
+- **Stock decrements run in variant-id order** — concurrent transactions lock rows in the same order, avoiding deadlocks.
+- **`placeOrder` returns a redirect URL instead of calling `redirect()`** — the client decides between client navigation (COD confirmation) and leaving for Stripe, and the action stays easy to test.
+- **The rate limit is consumed before input validation** — malformed requests count against the limit too.
+- **Saved addresses are re-validated with `addressSchema` when used at checkout** — an address stored under older rules cannot slip through.

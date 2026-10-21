@@ -28,3 +28,9 @@ export const CATALOG = {
 } as const;
 
 export const STRIPE_CHECKOUT_TTL_MINUTES = 30;
+
+/** Application rate limits (window in seconds). Auth limits live in the Better Auth config. */
+export const RATE_LIMITS = {
+  /** Order attempts per user. */
+  placeOrder: { window: 60, max: 5 },
+} as const;

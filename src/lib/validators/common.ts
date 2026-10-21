@@ -46,3 +46,13 @@ export type RawParam = z.infer<typeof rawParam>;
 export function firstParam(raw: RawParam): string | undefined {
   return Array.isArray(raw) ? raw[0] : raw;
 }
+
+/** Field errors keyed by dotted path ("shipping.address.city"), for forms and ActionResult. */
+export function fieldErrorsFrom(error: z.ZodError): Record<string, string[]> {
+  const errors: Record<string, string[]> = {};
+  for (const issue of error.issues) {
+    const key = issue.path.map(String).join(".") || "_form";
+    (errors[key] ??= []).push(issue.message);
+  }
+  return errors;
+}

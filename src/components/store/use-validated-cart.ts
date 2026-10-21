@@ -17,8 +17,14 @@ const EMPTY: CartValidation = { lines: [], changes: [] };
  * and replaces it with the authoritative result. Runs again whenever the page becomes visible
  * after a client navigation, because effects re-run when a hidden route is shown.
  */
-export function useValidatedCart(): { status: CartValidationStatus; changes: CartChange[] } {
+export function useValidatedCart(): {
+  status: CartValidationStatus;
+  changes: CartChange[];
+  /** Validates again, e.g. after checkout reported a stock problem. */
+  revalidate: () => void;
+} {
   const hydrated = useCartHydrated();
+  const [round, setRound] = useState(0);
   const [state, setState] = useState<{ status: CartValidationStatus; changes: CartChange[] }>({
     status: "validating",
     changes: [],
@@ -57,7 +63,7 @@ export function useValidatedCart(): { status: CartValidationStatus; changes: Car
     return () => {
       cancelled = true;
     };
-  }, [hydrated]);
+  }, [hydrated, round]);
 
-  return state;
+  return { ...state, revalidate: () => setRound((value) => value + 1) };
 }
