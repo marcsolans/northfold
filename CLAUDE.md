@@ -25,6 +25,12 @@ make a new one.
 | Seed (idempotent)            | `pnpm db:seed`                                           |
 | Format                       | `pnpm format`                                            |
 
+Prisma 7 refuses `migrate reset` when run by an AI agent: test databases are prepared with
+`prisma migrate deploy` + `tsx scripts/reset-test-db.ts` (truncate; only `*_test`/`*_e2e` names).
+After changing Better Auth options that affect the schema, regenerate with
+`pnpm dlx auth@1.7.12 generate` (the CLI cannot load files importing `server-only`, so point it at
+a temporary copy of `src/server/auth/auth.ts`) and keep the `@@map`/`@map` naming.
+
 Local PostgreSQL: `service postgresql start`. Databases: `northfold` (dev),
 `northfold_test` (Vitest integration), `northfold_e2e` (Playwright). Role/password:
 `northfold`/`northfold`.

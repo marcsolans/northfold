@@ -16,11 +16,11 @@ Conventional Commit.
 
 ## Phase 1 — Database
 
-- [ ] Prisma 7 + driver adapters (Neon in production, `pg` locally)
-- [ ] Full schema (enums, models, indexes, snake_case `@@map`)
-- [ ] First migration committed (+ `stock >= 0` CHECK constraint)
-- [ ] `src/lib/money.ts` decimal-safe helper + tests
-- [ ] Idempotent seed script (`pnpm db:seed`): ~24 products, images, variants, admins
+- [x] Prisma 7 + driver adapters (Neon in production, `pg` locally)
+- [x] Full schema (enums, models, indexes, snake_case `@@map`)
+- [x] First migration committed (+ `stock >= 0` CHECK constraint)
+- [x] `src/lib/money.ts` decimal-safe helper + tests
+- [x] Idempotent seed script (`pnpm db:seed`): ~24 products, images, variants, admins
 
 ## Phase 2 — Auth
 

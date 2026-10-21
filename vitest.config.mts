@@ -2,21 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 
-const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ??
-  "postgresql://northfold:northfold@localhost:5432/northfold_test?schema=public";
-
-// Deterministic, non-secret values so tests never depend on a developer's .env file.
-const testEnv = {
-  DATABASE_URL: TEST_DATABASE_URL,
-  DIRECT_URL: TEST_DATABASE_URL,
-  BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0123456789",
-  BETTER_AUTH_URL: "http://localhost:3000",
-  NEXT_PUBLIC_APP_URL: "http://localhost:3000",
-  STRIPE_SECRET_KEY: "sk_test_northfold_unit_tests",
-  STRIPE_WEBHOOK_SECRET: "whsec_northfold_unit_tests",
-  ADMIN_EMAILS: "admin@northfold.test",
-};
+import { testEnv } from "./tests/test-env";
 
 const serverOnlyStub = fileURLToPath(new URL("./tests/stubs/server-only.ts", import.meta.url));
 

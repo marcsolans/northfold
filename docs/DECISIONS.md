@@ -12,3 +12,11 @@ One line per decision: **decision** — reason.
 - **Vitest config is `.mts`** — the package is CommonJS (Next.js default) and Vite's native config loader warns about ESM in `.ts`.
 - **GitHub Actions pinned to major tags (`checkout@v5`, `setup-node@v5`, `pnpm/action-setup@v4`, `upload-artifact@v4`)** — release pages are not reachable from the build VM to confirm newer majors; these are known-good.
 - **Free shipping applies at subtotal ≥ $100** — "free over $100" is treated as inclusive, the customer-friendly reading.
+- **Test databases are migrated with `prisma migrate deploy` and emptied with `TRUNCATE`, never `migrate reset`** — Prisma blocks destructive commands when driven by an AI agent; the deploy + truncate flow is also faster. `scripts/reset-test-db.ts` refuses any database not named `*_test`/`*_e2e`.
+- **Better Auth models keep their default Prisma names and get snake_case via `@@map`/`@map`** — Better Auth's `modelName`/`fields` options rename the Prisma client API itself.
+- **One Postgres-backed fixed-window rate limiter (`rate_limit_windows`, single atomic upsert)** — shared by Better Auth (`rateLimit.customStorage.consume`) and `placeOrder`; in-memory limits are per serverless instance and useless on Vercel.
+- **Re-seeding never overwrites stock** — variants are upserted by SKU and stock is only set on creation, so `pnpm db:seed` is safe on a database with real inventory.
+- **Shoes and kids' items reuse the `Size` enum (XS–XXL) with a size guide in the description** — the spec fixes the enum; a separate shoe-size enum would be a schema change outside it.
+- **`OrderItem.variantId` is nullable (`ON DELETE SET NULL`)** — removing a variant in the admin must never break order history, which relies on snapshots anyway.
+- **Orders carry `stockDeducted`, `needsReview` and `reviewReason`** — restocking on cancel must only return stock that was actually taken, and oversold Stripe payments need a visible admin flag.
+- **Seed images come from images.unsplash.com (Unsplash License), each checked to load and to match its category** — the only image host reachable from the build VM; uploads go to Cloudinary.
