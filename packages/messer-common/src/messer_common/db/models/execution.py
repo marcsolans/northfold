@@ -50,7 +50,10 @@ class Run(Base, OrgScoped):
     external_user_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     channel: Mapped[str] = mapped_column(String(20), default="studio", server_default="studio")
     source: Mapped[str] = mapped_column(String(20), default="runtime", server_default="runtime")
-    trace: Mapped[dict[str, Any] | None] = mapped_column(nullable=True)  # full engine trace (for resume/memory)
+    # Full engine trace (list of span records) for resume and conversation memory.
+    trace: Mapped[Any] = mapped_column(JSONB, nullable=True)
+    git_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rerun_of: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     started_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
     ended_at: Mapped[datetime | None] = mapped_column(nullable=True)
 

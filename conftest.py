@@ -4,4 +4,4 @@ from messer_common.testing import configure_test_env
 
 configure_test_env()
 
-pytest_plugins = ["messer_common.testing.fixtures"]
+pytest_plugins = ["messer_common.testing.fixtures", "messer_runtime.testing"]

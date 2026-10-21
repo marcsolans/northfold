@@ -21,6 +21,10 @@ TEST_ENV_DEFAULTS = {
     "MESSER_API_URL": "http://localhost:8000",
     "MESSER_EMBEDDINGS_PROVIDER": "hash",
     "ANTHROPIC_API_KEY": "",
+    # Host-level cloud credentials (e.g. the build machine's own) must not make tests talk to Bedrock.
+    "AWS_ACCESS_KEY_ID": "",
+    "AWS_SECRET_ACCESS_KEY": "",
+    "AWS_SESSION_TOKEN": "",
     "STRIPE_SECRET_KEY": "",
     "SUPABASE_URL": "",
     "SUPABASE_ANON_KEY": "",

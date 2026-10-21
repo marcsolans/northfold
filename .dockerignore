@@ -1,0 +1,13 @@
+**/node_modules
+**/.next
+**/__pycache__
+**/*.pyc
+.venv
+.data
+.git
+.env
+.env.*
+!.env.example
+tests/e2e/test-results
+tests/e2e/playwright-report
+packages/messer-core/docs

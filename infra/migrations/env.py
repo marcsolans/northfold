@@ -34,7 +34,9 @@ def _do_run(connection) -> None:  # type: ignore[no-untyped-def]
 
 
 async def run_migrations_online() -> None:
-    engine = create_async_engine(_url())
+    # The owner role is named "messer" like the helper-function schema, so the default search path
+    # ("$user", public) would put unqualified tables into that schema. Migrations always target public.
+    engine = create_async_engine(_url(), connect_args={"options": "-c search_path=public"})
     async with engine.connect() as connection:
         await connection.run_sync(_do_run)
     await engine.dispose()

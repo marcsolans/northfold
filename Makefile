@@ -25,6 +25,15 @@ seed: ## Re-seed reference data (idempotent)
 api: ## Run the platform API on :8000
 	$(DB_ENV) $(PY) uvicorn messer_api.main:app --reload --port 8000
 
+runtime: ## Run the runtime (sandboxes, model gateway) on :8100
+	$(DB_ENV) $(PY) python -m messer_runtime
+
+worker: ## Run the background job worker
+	$(DB_ENV) $(PY) python -m messer_worker
+
+scheduler: ## Run the scheduler (periodic tasks, triggers)
+	$(DB_ENV) $(PY) python -m messer_scheduler
+
 web: ## Run the web app on :3000
 	pnpm --filter @messer/web dev
 
@@ -34,7 +43,7 @@ test-core: ## Engine (messer-core) test suite
 	cd packages/messer-core && ../../.venv/bin/python -m pytest -q --no-cov -n 4 -o addopts="" -m "not integration" python/tests
 
 test-api: ## Platform tests (needs local Postgres + Redis)
-	$(PY) pytest apps/api/tests packages/messer-common/tests
+	$(PY) pytest $$(ls -d apps/api/tests packages/*/tests services/*/tests 2>/dev/null)
 
 lint: ## Ruff + ESLint
 	$(PY) ruff check $$(ls -d packages/messer-common apps/api services/* packages/connectors packages/messer-sdk-py infra/migrations 2>/dev/null)

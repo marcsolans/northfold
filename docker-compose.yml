@@ -1,5 +1,5 @@
 # Messer — full local stack: `docker compose up`
-# Web http://localhost:3000 · API http://localhost:8000/api/docs · Mailpit http://localhost:8025
+# Web http://localhost:3000 · API http://localhost:8000/api/docs · Runtime :8100 · Mailpit http://localhost:8025
 name: messer
 
 x-python-env: &python-env
@@ -17,6 +17,7 @@ x-python-env: &python-env
     MESSER_EMAIL_PROVIDER: smtp
     MESSER_WEB_URL: http://localhost:3000
     MESSER_API_URL: http://api:8000
+    MESSER_RUNTIME_URL: http://runtime:8100
     MESSER_PROJECTS_DIR: /data/projects
     MESSER_STORAGE_DIR: /data/storage
 
@@ -64,6 +65,30 @@ services:
       migrate: { condition: service_completed_successfully }
     volumes: ["appdata:/data"]
 
+  runtime:
+    <<: *python-env
+    build: { context: ., dockerfile: services/runtime/Dockerfile }
+    ports: ["8100:8100"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: ["runtimedata:/data/runtime"]
+
+  worker:
+    <<: *python-env
+    build: { context: ., dockerfile: infra/docker/python.Dockerfile, args: { PACKAGE: messer-worker } }
+    command: ["python", "-m", "messer_worker"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: ["appdata:/data"]
+
+  scheduler:
+    <<: *python-env
+    build: { context: ., dockerfile: infra/docker/python.Dockerfile, args: { PACKAGE: messer-scheduler } }
+    command: ["python", "-m", "messer_scheduler"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes: ["appdata:/data"]
+
   web:
     build:
       context: .
@@ -79,3 +104,4 @@ services:
 volumes:
   pgdata:
   appdata:
+  runtimedata:

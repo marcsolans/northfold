@@ -4,11 +4,14 @@ Revision ID: 0004
 Revises: 0003
 Create Date: 2026-10-21
 
-Reserved migration slot owned by the runtime workstream. Add DDL here; new tables must enable RLS
-with policies following the pattern in 0002 (messer.has_role(org_id, ...)).
+Runs remember the exact git commit they executed (reproducibility, re-run on the same code) and the run
+they re-executed, if any.
 """
 
 from collections.abc import Sequence
+
+import sqlalchemy as sa
+from alembic import op
 
 revision: str = "0004"
 down_revision: str | None = "0003"
@@ -17,8 +20,12 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    pass
+    op.add_column("runs", sa.Column("git_commit", sa.String(length=64), nullable=True))
+    op.add_column("runs", sa.Column("rerun_of", sa.Uuid(), nullable=True))
+    op.create_index("ix_approvals_run", "approvals", ["run_id"])
 
 
 def downgrade() -> None:
-    pass
+    op.drop_index("ix_approvals_run", table_name="approvals")
+    op.drop_column("runs", "rerun_of")
+    op.drop_column("runs", "git_commit")

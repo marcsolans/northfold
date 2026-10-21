@@ -159,14 +159,22 @@ async def test_org_a_cannot_read_org_b(two_orgs) -> None:  # type: ignore[no-unt
     assert leaks == {}, f"org A can read org B rows: {leaks}"
     assert org_rows == 0 and user_rows == 0 and chunks == 0
 
-    # Sanity: org B's owner does see its own data (the test is not vacuous).
+    # Sanity: org B's owner sees every row seeded for it (the test is not vacuous). New tables added by
+    # other areas may not be seeded by the fixture; they are still covered by the leak check above.
+    async with system_session() as s:
+        seeded = {
+            table for table in tables
+            if (await s.execute(text(f'select count(*) from public."{table}" where org_id = :b'),
+                                {"b": org_b.id})).scalar_one()
+        }
     async with rls_session(Principal(user_id=user_b.id, org_id=org_b.id)) as s:
-        visible = 0
-        for table in tables:
-            visible += (
-                await s.execute(text(f'select count(*) from public."{table}" where org_id = :b'), {"b": org_b.id})
-            ).scalar_one()
-    assert visible >= len(tables) - 1
+        visible = {
+            table for table in seeded
+            if (await s.execute(text(f'select count(*) from public."{table}" where org_id = :b'),
+                                {"b": org_b.id})).scalar_one()
+        }
+    assert len(seeded) >= 40, sorted(seeded)
+    assert visible == seeded, sorted(seeded - visible)
 
 
 async def test_org_a_cannot_write_into_org_b(two_orgs) -> None:  # type: ignore[no-untyped-def]
