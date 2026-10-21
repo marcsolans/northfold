@@ -33,6 +33,15 @@ export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   return <Badge tone={STATUS[status].tone}>{STATUS[status].label}</Badge>;
 }
 
-export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+/** Payment state; an unpaid order that was cancelled reads "Not charged", not "pending". */
+export function PaymentStatusBadge({
+  status,
+  orderStatus,
+}: {
+  status: PaymentStatus;
+  orderStatus?: OrderStatus;
+}) {
+  if (orderStatus === "CANCELLED" && status === "PENDING")
+    return <Badge tone="neutral">Not charged</Badge>;
   return <Badge tone={PAYMENT[status].tone}>{PAYMENT[status].label}</Badge>;
 }

@@ -67,10 +67,10 @@ Conventional Commit.
 
 ## Phase 8 — Customer account
 
-- [ ] Profile (name, change password for credential accounts)
-- [ ] Addresses CRUD + default
-- [ ] Order history (paginated) + detail with status timeline
-- [ ] Cancel COD order while PENDING (restock in the same transaction)
+- [x] Profile (name, change password for credential accounts)
+- [x] Addresses CRUD + default
+- [x] Order history (paginated) + detail with status timeline
+- [x] Cancel COD order while PENDING (restock in the same transaction)
 
 ## Phase 9 — Admin
 

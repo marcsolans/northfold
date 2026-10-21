@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { PaymentMethod } from "@/generated/prisma/enums";
 
-import { addressSchema, SHIPPING_COUNTRIES } from "./address";
+import { addressSchema, EMPTY_ADDRESS_INPUT } from "./address";
 import { cartLinesSchema } from "./cart";
 import { idSchema } from "./common";
 
@@ -36,16 +36,7 @@ export const addressDraftSchema = z.object({
 });
 export type AddressDraft = z.infer<typeof addressDraftSchema>;
 
-export const EMPTY_ADDRESS: AddressDraft = {
-  fullName: "",
-  phone: "",
-  line1: "",
-  line2: "",
-  city: "",
-  state: "",
-  postalCode: "",
-  country: SHIPPING_COUNTRIES[0],
-};
+export const EMPTY_ADDRESS: AddressDraft = EMPTY_ADDRESS_INPUT;
 
 /**
  * The checkout form (client). `shippingChoice` is a saved address id or "new"; only a new

@@ -22,6 +22,11 @@ export const SHIPPING_COUNTRIES = [
 ] as const;
 export type ShippingCountry = (typeof SHIPPING_COUNTRIES)[number];
 
+/** Narrows a stored country code to a supported one (falls back to the first). */
+export function toShippingCountry(code: string): ShippingCountry {
+  return SHIPPING_COUNTRIES.find((country) => country === code) ?? SHIPPING_COUNTRIES[0];
+}
+
 export const addressSchema = z.object({
   fullName: requiredText("Full name", 100),
   phone: z
@@ -39,10 +44,23 @@ export const addressSchema = z.object({
   country: z.enum(SHIPPING_COUNTRIES, { error: "Choose a country we ship to" }),
 });
 export type AddressInput = z.input<typeof addressSchema>;
+
+export const EMPTY_ADDRESS_INPUT: AddressInput = {
+  fullName: "",
+  phone: "",
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: SHIPPING_COUNTRIES[0],
+};
 export type AddressData = z.output<typeof addressSchema>;
 
-export const addressFormSchema = addressSchema.extend({
-  isDefault: z.boolean().default(false),
+/** The address book form and actions: an address plus the "default" flag. */
+export const savedAddressSchema = z.object({
+  address: addressSchema,
+  isDefault: z.boolean(),
 });
-export type AddressFormInput = z.input<typeof addressFormSchema>;
-export type AddressFormData = z.output<typeof addressFormSchema>;
+export type SavedAddressInput = z.input<typeof savedAddressSchema>;
+export type SavedAddressData = z.output<typeof savedAddressSchema>;

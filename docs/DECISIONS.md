@@ -43,3 +43,6 @@ One line per decision: **decision** — reason.
 - **The webhook also verifies `amount_total`/currency against the stored order total** — a mismatch is flagged for review instead of silently fulfilling.
 - **Checkout Sessions expire 30 minutes + 60 s after creation** — Stripe's minimum is 30 minutes measured on its own clock; the buffer avoids rejected requests.
 - **The webhook route verifies with the static `Stripe.webhooks.constructEvent`** — signature checks need only the webhook secret, not an API client.
+- **Password changes call Better Auth from the browser with `revokeOtherSessions`** — the HTTP route applies the `/change-password` rate limit, and other devices are signed out; name changes go through `auth.api.updateUser` so the session cookie cache is refreshed.
+- **Customers can cancel only PENDING cash-on-delivery orders; admins follow the full state machine** — card orders already charged need an admin (refund) decision.
+- **Exactly one default address is maintained in a transaction** — setting a default clears the previous one; deleting the default promotes the most recent remaining address.

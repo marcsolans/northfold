@@ -65,7 +65,7 @@ export function OrderDetails({
               {PAYMENT_METHOD_LABELS[order.paymentMethod]}
             </p>
             <div className="mt-2">
-              <PaymentStatusBadge status={order.paymentStatus} />
+              <PaymentStatusBadge status={order.paymentStatus} orderStatus={order.status} />
             </div>
           </div>
         </div>

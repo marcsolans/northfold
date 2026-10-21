@@ -106,3 +106,59 @@ export async function getOrderForUser(
   });
   return order ? toOrderDetail(order) : null;
 }
+
+export interface OrderListItemDTO {
+  id: string;
+  createdAt: string;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  total: MoneyString;
+  itemCount: number;
+  thumbnails: string[];
+}
+
+export interface OrderListPage {
+  orders: OrderListItemDTO[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const ACCOUNT_ORDERS_PAGE_SIZE = 10;
+
+/** The customer's orders, newest first. */
+export async function listOrdersForUser(
+  userId: string,
+  page: number,
+  pageSize = ACCOUNT_ORDERS_PAGE_SIZE,
+): Promise<OrderListPage> {
+  const where = { userId };
+  const total = await prisma.order.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const current = Math.min(Math.max(1, page), totalPages);
+  const rows = await prisma.order.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip: (current - 1) * pageSize,
+    take: pageSize,
+    include: {
+      items: { select: { quantity: true, imageUrl: true }, orderBy: { createdAt: "asc" } },
+    },
+  });
+  return {
+    total,
+    page: current,
+    totalPages,
+    orders: rows.map((order) => ({
+      id: order.id,
+      createdAt: order.createdAt.toISOString(),
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      total: toMoneyString(order.total),
+      itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      thumbnails: order.items.flatMap((item) => (item.imageUrl ? [item.imageUrl] : [])).slice(0, 3),
+    })),
+  };
+}
