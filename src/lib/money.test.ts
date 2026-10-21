@@ -57,5 +57,7 @@ describe("money", () => {
   it("formats as US dollars", () => {
     expect(formatMoney("1234.5")).toBe("$1,234.50");
     expect(formatMoney(0)).toBe("$0.00");
+    expect(formatMoney("100.00", { whole: true })).toBe("$100");
+    expect(formatMoney("99.50", { whole: true })).toBe("$99.50");
   });
 });

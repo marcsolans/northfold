@@ -62,7 +62,16 @@ const formatter = new Intl.NumberFormat(STORE.locale, {
   currency: STORE.currency.toUpperCase(),
 });
 
-export function formatMoney(value: MoneyInput): string {
+const wholeFormatter = new Intl.NumberFormat(STORE.locale, {
+  style: "currency",
+  currency: STORE.currency.toUpperCase(),
+  maximumFractionDigits: 0,
+});
+
+/** Formats an amount as currency. `whole` drops ".00" for round amounts in marketing copy. */
+export function formatMoney(value: MoneyInput, options: { whole?: boolean } = {}): string {
+  const amount = toMoneyString(value);
   // Intl formats numeric strings exactly, so no float conversion happens here.
-  return formatter.format(toMoneyString(value));
+  if (options.whole && roundToCents(amount).isInteger()) return wholeFormatter.format(amount);
+  return formatter.format(amount);
 }

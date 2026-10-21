@@ -20,10 +20,10 @@ async function AccountOverview() {
 
 export default function AccountPage() {
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
+    <div className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
       <Suspense fallback={<Skeleton className="h-24 w-full" />}>
         <AccountOverview />
       </Suspense>
-    </main>
+    </div>
   );
 }

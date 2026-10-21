@@ -25,3 +25,6 @@ One line per decision: **decision** — reason.
 - **Server Actions run inside `runAction()`** — one place maps authorization and user-facing errors to `ActionResult`, logs everything else with context and returns a generic message.
 - **`proxy.ts` only checks for the presence of a session cookie** — it cannot validate sessions without a DB hit; pages, actions and route handlers do the real check. It also never redirects signed-in users away from auth pages (a stale cookie would loop).
 - **No email verification** — no email provider is configured; Google sign-in into an existing password account therefore requires the password (Better Auth's safe default, `requireLocalEmailVerified`).
+- **The storefront navbar does not read the session** — the account icon links to `/account` (the proxy/page sends anonymous users to sign-in), so the shared shell stays fully static and prerenderable.
+- **Mobile menu and modals use the native `<dialog>` with `showModal()`** — focus trap, inert background, Escape and focus return come from the platform; the menu also closes itself when React's Activity hides its route.
+- **Admin layout gate + per-query/per-action `requireAdmin()`** — the layout redirect is UX; the checks inside every admin read and mutation are the security boundary.

@@ -33,9 +33,9 @@ Conventional Commit.
 
 ## Phase 3 — UI kit + layouts
 
-- [ ] Primitives: Button, Input, Select, Badge, Card, Modal, Table, Skeleton, EmptyState
-- [ ] Storefront layout: navbar (search, account, cart badge, accessible mobile menu), footer
-- [ ] Admin layout with sidebar (no storefront navbar)
+- [x] Primitives: Button, Input, Select, Badge, Card, Modal, Table, Skeleton, EmptyState
+- [x] Storefront layout: navbar (search, account, cart badge, accessible mobile menu), footer
+- [x] Admin layout with sidebar (no storefront navbar)
 
 ## Phase 4 — Catalog
 

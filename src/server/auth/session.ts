@@ -79,6 +79,6 @@ export async function requireUserPage(redirectTo: string): Promise<SessionUser> 
 export async function requireAdminPage(redirectTo = "/admin"): Promise<SessionUser> {
   const user = await getFreshUser();
   if (!user) redirect(signInPath(redirectTo));
-  if (user.role !== "ADMIN") redirect("/?notice=admin-only");
+  if (user.role !== "ADMIN") redirect("/");
   return user;
 }

@@ -32,7 +32,7 @@
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   --animate-fade-in: fade-in 0.4s var(--ease-out-soft) both;
-  --animate-slide-in-right: slide-in-right 0.3s var(--ease-out-soft) both;
+  --animate-slide-in-left: slide-in-left 0.3s var(--ease-out-soft) both;
 
   @keyframes fade-in {
     from {
@@ -45,9 +45,9 @@
     }
   }
 
-  @keyframes slide-in-right {
+  @keyframes slide-in-left {
     from {
-      transform: translateX(100%);
+      transform: translateX(-100%);
     }
     to {
       transform: translateX(0);
