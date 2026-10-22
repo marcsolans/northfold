@@ -1,0 +1,9 @@
+# Evals for {{name}}: they run with `messer evals run` and gate every deployment to production.
+- name: {{name}}_responde
+  description: El agente responde a un saludo sin errores
+  runnable: ../agent.py::agent
+  tags: [smoke]
+  params:
+    prompt: Hola
+  output:
+    min_length!: 1

@@ -1,0 +1,14 @@
+# Evals con juez LLM (etiqueta "llm"): se omiten mientras no hay clave de modelo (modo demo).
+- name: respuesta_whatsapp_breve
+  description: La respuesta por WhatsApp a un lead caliente es breve y propone una demo
+  runnable: _member.py::agent
+  tags: [llm, calidad]
+  params:
+    prompt: "Hola, somos una empresa de logística de 90 personas y queremos cambiar de sistema este trimestre. ¿Me contáis?"
+  output:
+    rubric!:
+      criteria:
+        - La respuesta tiene como mucho cuatro frases
+        - Propone una demo o una llamada con un comercial
+        - No inventa descuentos ni precios que no estén en el catálogo
+      model: "${model:fast}"

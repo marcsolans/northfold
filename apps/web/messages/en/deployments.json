@@ -1,0 +1,212 @@
+{
+  "title": "Deployments",
+  "description": "Publish a version of the project to development or production. Every agent's and workflow's evals act as a gate before publishing.",
+  "publishButton": "Publish",
+  "readOnly": "You have read-only access: you can see environments and history, but not publish or roll back.",
+  "environmentsLabel": "Environments",
+  "environmentsError": "We couldn't load the environments.",
+  "noEnvironments": {
+    "title": "This project has no environments",
+    "description": "Development and production environments are created with the project. If they are missing, contact support."
+  },
+  "logsTitle": "Deployment v{version} · {environment}",
+  "logsDescription": "Status, evals gate and full deployment log.",
+  "forced": "Forced",
+  "forcedHint": "An admin published this version even though evals failed. It is recorded in the audit log.",
+  "environments": {
+    "development": {
+      "label": "Development",
+      "description": "For testing with your team before it reaches users."
+    },
+    "production": {
+      "label": "Production",
+      "description": "The version used by your customers, interfaces, channels and the public API."
+    }
+  },
+  "status": {
+    "pending": "Queued",
+    "evaluating": "Evaluating",
+    "deploying": "Deploying",
+    "live": "Live",
+    "failed": "Failed",
+    "superseded": "Superseded",
+    "rolled_back": "Rolled back"
+  },
+  "errors": {
+    "deployment_in_progress": "A deployment is already running in this environment. Wait for it to finish.",
+    "force_requires_admin": "Only an admin can force a deployment.",
+    "not_rollbackable": "You can only roll back to a version that was live.",
+    "invalid_domain": "That domain is not valid or belongs to the platform.",
+    "domain_taken": "That domain is already used by another environment.",
+    "no_domain": "This environment has no domain configured.",
+    "dns_unavailable": "We couldn't query DNS. Try again in a few seconds.",
+    "forbidden": "You don't have permission for this action.",
+    "not_found": "We couldn't find it: it may have been deleted. Reload the page."
+  },
+  "progress": {
+    "regionLabel": "Deployment progress in {environment}",
+    "title": "{environment} · v{version}",
+    "by": "by {name}",
+    "stepsLabel": "Deployment stages",
+    "steps": {
+      "pending": "Queued",
+      "evaluating": "Evals",
+      "deploying": "Deploy",
+      "live": "Live",
+      "failed": "Failed",
+      "evalsSkipped": "Evals skipped"
+    },
+    "stepState": {
+      "done": "done",
+      "current": "in progress",
+      "failed": "failed",
+      "upcoming": "pending"
+    },
+    "logs": "Log",
+    "noLogs": "No entries yet.",
+    "inProgress": "In progress…",
+    "level": {
+      "info": "Info",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "liveToast": "Live in {environment}: version {version}",
+    "failedToast": "The deployment to {environment} failed",
+    "pollError": "We couldn't refresh the deployment status. We'll retry automatically."
+  },
+  "gate": {
+    "title": "Evals gate",
+    "summaryPassed": "Passed",
+    "summaryFailed": "{count, plural, one {# member failing} other {# members failing}}",
+    "forcedThrough": "The evals gate failed, but an admin forced the publication.",
+    "blocked": "The evals gate blocked the deployment. Fix the failing evals and publish again.",
+    "skipped": "Evals skipped: this rolls back to a version that already passed its gate when it was published.",
+    "queued": "Waiting for the deployment to start…",
+    "running": "Running every agent's and workflow's evals…",
+    "noMembers": "There are no agents or workflows to evaluate in this version.",
+    "counts": "{passed} passed · {failed} failed",
+    "noEvals": "No evals",
+    "viewEvals": "View evals",
+    "toggleCases": "Show the cases of {member}",
+    "kind": {
+      "agent": "Agent",
+      "workflow": "Workflow"
+    },
+    "casesError": "We couldn't load the cases of this eval run.",
+    "casesMissing": "We couldn't find the details of this eval run.",
+    "noCases": "The run has no cases.",
+    "pass": "Passed",
+    "fail": "Failed",
+    "unnamedCase": "Unnamed case",
+    "validatorsFailed": "Failed validators: {names}"
+  },
+  "publish": {
+    "title": "Publish",
+    "description": "Choose the environment and the version. Ongoing conversations are not interrupted: new runs use the published version.",
+    "submit": "Publish to {environment}",
+    "environment": "Environment",
+    "environmentHint": {
+      "development": "Team testing. URL with ?env=development.",
+      "production": "Customers, interfaces, channels and the public API."
+    },
+    "version": "Version",
+    "versionHint": "A version is a snapshot of the whole project at a commit.",
+    "latest": "Latest changes (new version)",
+    "latestHint": "Snapshots the current code and publishes it.",
+    "deployedIn": "in {environments}",
+    "versionsError": "We couldn't load previous versions; you can still publish the latest changes.",
+    "message": "Version message",
+    "messageHint": "Optional. Shown in the history.",
+    "messagePlaceholder": "e.g. New tone for support answers",
+    "gateExplanation": "Every agent's and workflow's evals run before publishing. If any fails, the deployment is blocked and the environment keeps the previous version.",
+    "force": "Force even if evals fail",
+    "forceHint": "Admins only. Publishes the version even if the evals gate fails. It is recorded in the audit log.",
+    "forceWarning": "Evals still run, but their failures won't block the publication."
+  },
+  "environment": {
+    "live": "Live",
+    "notDeployed": "Not published",
+    "version": "Published version",
+    "commit": "Commit",
+    "copyCommit": "Copy the commit",
+    "published": "Published",
+    "by": "by {name}",
+    "url": "URL",
+    "copyUrl": "Copy the URL",
+    "openUrl": "Open in a new tab",
+    "noUrl": "No URL yet",
+    "emptyHint": "Nothing has been published to {environment} yet.",
+    "publish": "Publish to {environment}"
+  },
+  "domain": {
+    "title": "Custom domain",
+    "status": {
+      "pending": "Pending",
+      "unverified": "Pending verification",
+      "verified": "Ownership verified",
+      "active": "Active",
+      "failed": "Error"
+    },
+    "inputLabel": "Domain for {environment}",
+    "inputHint": "Use one of your subdomains, e.g. assistant.yourcompany.com. We'll give you the DNS records to create.",
+    "placeholder": "assistant.yourcompany.com",
+    "add": "Add domain",
+    "invalid": "Enter a valid domain, e.g. assistant.yourcompany.com.",
+    "none": "No custom domain.",
+    "adminOnly": "Only admins can change the domain.",
+    "open": "Open",
+    "activeHint": "The domain points to Messer and the TLS certificate is issued and renewed automatically.",
+    "cnamePending": "We verified that you own the domain. The CNAME record still has to point to Messer.",
+    "recordsHint": "Create these records at your DNS provider and press Verify.",
+    "recordsLabel": "DNS records for {domain}",
+    "type": "Type",
+    "name": "Name",
+    "value": "Value",
+    "check": "Check",
+    "copyName": "Copy the {type} record name",
+    "copyValue": "Copy the {type} record value",
+    "notChecked": "Not checked",
+    "found": "Found",
+    "missing": "Not found",
+    "propagation": "DNS changes can take from a few minutes up to 48 hours to propagate. Verify again later.",
+    "verifyToSeeRecords": "Press Verify to see the DNS records to create and check their status.",
+    "pendingViewer": "An admin is setting up this domain.",
+    "verify": "Verify",
+    "recheck": "Verify again",
+    "remove": "Remove domain",
+    "removeTitle": "Remove the domain {domain}?",
+    "removeDescription": "{environment} will stop answering on this domain. You can add it again, but you'll have to verify it again.",
+    "added": "Domain {domain} added. Create the DNS records and verify it.",
+    "verifiedActive": "Domain {domain} is active",
+    "verifiedOwnership": "Ownership verified. The CNAME record is still missing.",
+    "notYet": "We can't see the DNS records yet. They may take a while to propagate.",
+    "removed": "Domain removed"
+  },
+  "history": {
+    "title": "History",
+    "description": "Every publication with its version, commit, author and log.",
+    "filterLabel": "Filter by environment",
+    "allEnvironments": "All environments",
+    "error": "We couldn't load the deployment history.",
+    "empty": {
+      "title": "Nothing published yet",
+      "filteredTitle": "Nothing published to {environment} yet",
+      "description": "Publish a version so your users, interfaces and channels use it. Every deployment shows up here and you can go back to any previous version.",
+      "action": "Publish"
+    },
+    "columns": {
+      "version": "Version",
+      "environment": "Environment",
+      "commit": "Commit",
+      "who": "Who",
+      "when": "When",
+      "status": "Status"
+    },
+    "logs": "Log",
+    "logsFor": "View the log of v{version} in {environment}",
+    "rollback": "Roll back to this version",
+    "rollbackTitle": "Roll back to version {version} in {environment}?",
+    "rollbackDescription": "Commit {commit} will be published again. Evals are skipped because this version already passed its gate. Ongoing conversations are not interrupted.",
+    "rollbackStarted": "Rolling back to version {version} in {environment}…"
+  }
+}

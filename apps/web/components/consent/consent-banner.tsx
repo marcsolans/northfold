@@ -2,6 +2,7 @@
 
 import { Button } from "@messer/ui";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
@@ -10,6 +11,8 @@ import { type Consent, readConsent, startAnalytics, writeConsent } from "@/lib/a
 export function ConsentBanner() {
   const t = useTranslations("consent");
   const [consent, setConsent] = React.useState<Consent | null | undefined>(undefined);
+  // Embedded widgets live inside customers' pages, which own the visitor's consent.
+  const embedded = usePathname()?.startsWith("/embed/") ?? false;
 
   React.useEffect(() => {
     const value = readConsent();
@@ -17,7 +20,7 @@ export function ConsentBanner() {
     if (value === "accepted") void startAnalytics();
   }, []);
 
-  if (consent !== null) return null;
+  if (consent !== null || embedded) return null;
 
   const decide = (value: Consent) => {
     writeConsent(value);

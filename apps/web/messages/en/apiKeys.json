@@ -1,0 +1,150 @@
+{
+  "title": "API keys",
+  "description": "Keys to call the Messer API from your systems: run agents and workflows, read traces or publish. They are shown once and stored only as a hash.",
+  "createButton": "Create API key",
+  "readOnly": "Only admins can create or revoke API keys. You can see the existing ones.",
+  "viewerNotice": "You need at least the Builder role to see the organization's API keys.",
+  "loadError": "We couldn't load the API keys.",
+  "tableLabel": "Organization API keys",
+  "empty": {
+    "title": "No API keys yet",
+    "description": "Create a key to integrate Messer with your applications. You can limit it to one project and specific permissions.",
+    "descriptionReadOnly": "When an admin creates a key, it will show up here."
+  },
+  "columns": {
+    "name": "Name",
+    "prefix": "Prefix",
+    "project": "Project",
+    "scopes": "Permissions",
+    "lastUsed": "Last used",
+    "created": "Created",
+    "status": "Status"
+  },
+  "allProjects": "All projects",
+  "allScopes": "Everything a Builder can do",
+  "neverUsed": "Never",
+  "status": {
+    "active": "Active",
+    "revoked": "Revoked on {date}"
+  },
+  "revoke": "Revoke",
+  "revokeFor": "Revoke the API key {name}",
+  "revokeTitle": "Revoke the API key “{name}”?",
+  "revokeDescription": "Integrations using it stop working immediately. This can't be undone: you'll need to create a new key. It is recorded in the audit log.",
+  "revoked": "API key “{name}” revoked",
+  "footnote": "Send the key in the Authorization: Bearer header. Every use updates the “Last used” column.",
+  "errors": {
+    "invalid_scopes": "A selected permission doesn't exist. Reload the page.",
+    "not_found": "The project or the key no longer exists. Reload the page.",
+    "forbidden": "Only admins can manage API keys."
+  },
+  "scopes": {
+    "runs_write": {
+      "label": "Run",
+      "description": "Start agent and workflow runs (run and stream)."
+    },
+    "runs_read": {
+      "label": "Read runs",
+      "description": "Read runs, results and traces."
+    },
+    "projects_read": {
+      "label": "Read projects",
+      "description": "List projects, agents, workflows and versions."
+    },
+    "projects_write": {
+      "label": "Edit projects",
+      "description": "Create and change projects, agents and workflows."
+    },
+    "knowledge_read": {
+      "label": "Read knowledge",
+      "description": "Search and query knowledge bases."
+    },
+    "knowledge_write": {
+      "label": "Write knowledge",
+      "description": "Upload files and update knowledge tables."
+    },
+    "deployments_write": {
+      "label": "Deploy",
+      "description": "Publish versions to development and production."
+    },
+    "evals_run": {
+      "label": "Run evals",
+      "description": "Run agent and workflow evals."
+    }
+  },
+  "create": {
+    "title": "Create API key",
+    "description": "The key acts with Builder rights, limited to the permissions you choose.",
+    "createdTitle": "API key created",
+    "submit": "Create API key",
+    "name": "Name",
+    "nameHint": "To recognise it later, e.g. the system that uses it.",
+    "namePlaceholder": "e.g. Production CRM",
+    "nameRequired": "Enter a name for the key.",
+    "project": "Project",
+    "projectHint": "Limit it to one project or let it access every project in the organization.",
+    "allProjects": "All projects",
+    "projectsError": "We couldn't load the projects; the key will work on all of them.",
+    "scopes": "Permissions",
+    "scopesHint": "Choose only what the integration needs.",
+    "scopesError": "We couldn't load the permissions. Close the dialog and try again.",
+    "noScopesWarning": "With no permissions selected, the key gets every permission of the Builder role."
+  },
+  "created": {
+    "warningTitle": "Copy it now",
+    "warning": "For security we only store its hash: it won't be shown again. If you lose it, revoke it and create another.",
+    "keyLabel": "Key for “{name}”",
+    "copy": "Copy",
+    "copiedShort": "Copied",
+    "copied": "API key copied to the clipboard",
+    "copyFailed": "We couldn't copy it; select it and copy it manually.",
+    "usage": "Send it in the Authorization header of every request:",
+    "done": "I've saved it"
+  },
+  "secrets": {
+    "title": "Secrets",
+    "description": "Credentials the project's code reads as environment variables.",
+    "scope": "Values are encrypted and only reach this project's sandbox: no other project can read them and they are never shown again. Use them in code as environment variables and in MCP server headers as $NAME.",
+    "usageLanguage": "Usage",
+    "usageExample": "# Agent or workflow code\nimport os\ntoken = os.environ[\"CRM_TOKEN\"]\n\n# MCP server header\nAuthorization: Bearer $CRM_TOKEN",
+    "readOnly": "Only builders and admins can see and manage secrets.",
+    "addTitle": "Add or replace a secret",
+    "name": "Name",
+    "nameHint": "UPPERCASE letters, digits and underscores, starting with a letter.",
+    "existsHint": "A secret with this name exists: its value will be replaced.",
+    "value": "Value",
+    "valueHint": "It is never shown again after saving.",
+    "valueRequired": "Enter the secret's value.",
+    "addSubmit": "Add secret",
+    "replaceSubmit": "Replace value",
+    "nameErrors": {
+      "required": "Enter a name, e.g. CRM_TOKEN.",
+      "format": "Use only UPPERCASE letters, digits and underscores, starting with a letter (e.g. CRM_TOKEN).",
+      "reserved": "The MESSER_, ANTHROPIC_ and AWS_ prefixes are reserved by the platform."
+    },
+    "loadError": "We couldn't load the secrets.",
+    "empty": {
+      "title": "No secrets",
+      "description": "Add tokens or passwords of your systems to use them in tools and MCP servers without writing them in code."
+    },
+    "listLabel": "Project secrets",
+    "updated": "Updated {when}",
+    "replace": "Replace",
+    "replaceFor": "Replace the value of {name}",
+    "deleteFor": "Delete the secret {name}",
+    "replaceTitle": "Replace the value of {name}",
+    "replaceDescription": "The previous value is replaced when you save; new runs use the new one.",
+    "newValue": "New value",
+    "deleteTitle": "Delete the secret {name}?",
+    "deleteDescription": "Tools and MCP servers using it stop receiving it in new runs. This can't be undone.",
+    "added": "Secret {name} added",
+    "replaced": "Value of {name} replaced",
+    "deleted": "Secret {name} deleted",
+    "errors": {
+      "invalid_name": "Use only UPPERCASE letters, digits and underscores, starting with a letter (e.g. CRM_TOKEN).",
+      "reserved_name": "That prefix is reserved by the platform.",
+      "not_found": "That secret no longer exists. Reload the page.",
+      "forbidden": "You don't have permission to manage this project's secrets."
+    }
+  }
+}

@@ -790,10 +790,19 @@ async def receive_shared_email(request: Request) -> Response:
     raw = req.json()
     if not isinstance(raw, dict):
         raise ApiError("El cuerpo debe ser un objeto JSON", code="invalid_body")
+    routed = await route_inbound_email(raw)
+    return JSONResponse({"accepted": True, "routed": routed}, status_code=202)
+
+
+async def route_inbound_email(raw: dict[str, Any]) -> int:
+    """Route an (already authenticated) inbound email to the email channels its ``ch-<token>@`` addresses name.
+
+    Shared by this webhook and the triggers' ``/api/inbound/email`` so one provider URL serves both.
+    """
     email = email_channel.normalize(raw)
     tokens = email_channel.address_tokens(str(email.get("to") or ""))
     if not tokens:
-        return JSONResponse({"accepted": True, "routed": 0}, status_code=202)
+        return 0
     async with system_session() as s:
         rows = (
             (
@@ -814,7 +823,7 @@ async def receive_shared_email(request: Request) -> Response:
     for channel in rows:
         if message is not None:
             routed += len(await record_inbound(channel, [message]))
-    return JSONResponse({"accepted": True, "routed": routed}, status_code=202)
+    return routed
 
 
 async def receive_shared_whatsapp(request: Request) -> Response:

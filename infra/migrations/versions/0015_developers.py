@@ -71,10 +71,15 @@ def upgrade() -> None:
         sa.Column("org_id", sa.UUID(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
-            ["client_id"], ["oauth_clients.id"], name=op.f("fk_oauth_grants_client_id_oauth_clients"), ondelete="CASCADE"
+            ["client_id"],
+            ["oauth_clients.id"],
+            name=op.f("fk_oauth_grants_client_id_oauth_clients"),
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(["org_id"], ["orgs.id"], name=op.f("fk_oauth_grants_org_id_orgs"), ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name=op.f("fk_oauth_grants_user_id_users"), ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], name=op.f("fk_oauth_grants_user_id_users"), ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_oauth_grants")),
         sa.UniqueConstraint("refresh_token_hash", name=op.f("uq_oauth_grants_refresh_token_hash")),
     )

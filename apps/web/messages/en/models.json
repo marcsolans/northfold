@@ -1,0 +1,28 @@
+{
+  "description": "The models your organization can use, their prices per million tokens and where they run. Agents choose a tier; Messer maps it to the configured model.",
+  "tiers": {
+    "title": "Tiers",
+    "description": "Each agent uses a tier. Changing a tier's model does not require editing the agents.",
+    "names": { "fast": "Fast", "standard": "Standard", "powerful": "Advanced" },
+    "hints": {
+      "fast": "Classification, extraction, short answers.",
+      "standard": "Most agents and workflows.",
+      "powerful": "Complex reasoning and long tasks.",
+      "custom": "Custom tier."
+    }
+  },
+  "catalog": {
+    "title": "Catalog and prices",
+    "description": "Price in US dollars per million tokens. Usage is charged in credits at the current price.",
+    "model": "Model",
+    "input": "Input / MTok",
+    "output": "Output / MTok",
+    "context": "Context (tokens)",
+    "availability": "Availability",
+    "allowed": "Allowed",
+    "blocked": "Blocked by policy",
+    "eu": "Available in the EU (Bedrock)",
+    "emptyTitle": "No models configured",
+    "emptyDescription": "A platform administrator must add the model prices."
+  }
+}

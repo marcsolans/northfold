@@ -238,6 +238,7 @@ export function WorkflowCanvas(props: CanvasProps) {
       for (const c of changes) if (c.type === "remove") removed.add(c.id);
       if (removed.size && !readOnly) {
         history.set((d) => {
+          if (!d.edges.some((e) => removed.has(edgeId(e)))) return d;
           const loopsToClear = new Set(
             d.edges.filter((e) => removed.has(edgeId(e)) && isLoopEdge(d, e) === "body").map((e) => e.source),
           );
@@ -277,7 +278,13 @@ export function WorkflowCanvas(props: CanvasProps) {
       if (source.type === "loop" && c.sourceHandle === "body") {
         history.set((d) => {
           const previous = String(source.config.body ?? "");
-          const edgesKept = d.edges.filter((e) => !(e.source === source.id && e.target === previous));
+          const edgesKept = d.edges.filter(
+            (e) =>
+              !(e.source === source.id && e.target === previous) &&
+              !(e.source === previous && e.target === source.id) &&
+              e.source !== c.target &&
+              e.target !== c.target,
+          );
           return {
             ...d,
             nodes: d.nodes.map((n) => (n.id === source.id ? { ...n, config: { ...n.config, body: c.target } } : n)),
@@ -366,14 +373,10 @@ export function WorkflowCanvas(props: CanvasProps) {
     if (!clip || readOnly) return;
     clip.pastes += 1;
     const offset = { x: 40 * clip.pastes, y: 40 * clip.pastes };
-    let created: string[] = [];
-    history.set((d) => {
-      const result = duplicate(d, clip.nodes, clip.edges, offset);
-      created = result.ids;
-      return result.config;
-    });
-    window.setTimeout(() => onSelect(created), 0);
-  }, [history, onSelect, readOnly]);
+    const result = duplicate(doc, clip.nodes, clip.edges, offset);
+    history.set(result.config);
+    onSelect(result.ids);
+  }, [doc, history, onSelect, readOnly]);
 
   const removeSelected = React.useCallback(() => {
     if (readOnly) return;

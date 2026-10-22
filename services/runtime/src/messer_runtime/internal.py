@@ -394,11 +394,25 @@ class EvalBody(BaseModel):
     tags: list[str] | None = None
 
 
+LLM_EVAL_TAG = "llm"  # evals graded by an LLM judge: skipped while the gateway serves the offline demo model
+
+
+def eval_tags(tags: list[str] | None) -> list[str] | None:
+    """Tag filter for a member's evals: ``tag`` includes, ``!tag`` excludes. Without a model provider key the
+    gateway answers with the deterministic demo model, which cannot act as a judge, so ``llm`` evals are excluded."""
+    from messer_common.settings import get_settings
+
+    settings = get_settings()
+    if settings.has_anthropic or settings.has_bedrock:
+        return tags
+    return [*(tags or []), f"!{LLM_EVAL_TAG}"]
+
+
 @router.post("/projects/{project_id}/workforce/{name}/evals", dependencies=[Depends(require_service)])
 async def member_evals(project_id: uuid.UUID, name: str, body: EvalBody, request: Request) -> JSONResponse:
     sbx, _ = await _member_sandbox(request, project_id, name, body.ref)
     async with _pool(request).lease(sbx), sbx.client(timeout=900) as c:
-        res = await c.post(f"/members/{name}/evals", json={"tags": body.tags})
+        res = await c.post(f"/members/{name}/evals", json={"tags": eval_tags(body.tags)})
     if res.status_code != 200:
         return JSONResponse({"error": {"type": "sandbox", "message": res.text[:2000]}}, status_code=502)
     return JSONResponse({**res.json(), "commit": sbx.commit})

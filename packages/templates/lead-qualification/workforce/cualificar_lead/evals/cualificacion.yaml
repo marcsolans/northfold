@@ -1,0 +1,38 @@
+# Evals deterministas del flujo (etiqueta "offline"). La rama caliente termina en un email que revisa una persona.
+- name: lead_templado_a_seguimiento
+  description: Un lead mediano de retail sin prisa pasa a seguimiento sin email
+  runnable: ../workflow.py::workflow
+  tags: [offline, puntuacion]
+  params:
+    nombre: Andrés Vidal
+    empresa: Moda Vidal S.L.
+    email: andres@modavidal.example
+    sector: Retail
+    empleados: 35
+    presupuesto_eur: 9000
+    plazo_meses: 6
+  output:
+    categoria:
+      eq!: templado
+    puntuacion:
+      eq!: 55
+    comercial:
+      eq!: Sergio Navas
+
+- name: lead_frio_descartado
+  description: Un lead pequeño sin presupuesto es frío y no recibe seguimiento comercial
+  runnable: ../workflow.py::workflow
+  tags: [offline, puntuacion]
+  params:
+    nombre: Laura Méndez
+    empresa: Hostal La Plaza
+    email: laura@hostallaplaza.example
+    sector: Hostelería
+    empleados: 8
+    presupuesto_eur: 1500
+    plazo_meses: 18
+  output:
+    categoria:
+      eq!: frio
+    siguiente_paso:
+      contains!: plan Básico

@@ -224,6 +224,11 @@ class CallLog:
             call.turns = self._turn_rows()
             call.transcript = self._transcript()
             call.model_cost_usd = self._model_cost()
+            first = next((t.user_text for t in self.finished.values() if t.user_text), "")
+            if call.conversation_id is not None and first:
+                conv = await s.get(Conversation, call.conversation_id)
+                if conv is not None and conv.org_id == call.org_id and not conv.title:
+                    conv.title = first[:80]
 
     async def _maybe_write_span(self, run_id: str) -> None:
         if run_id in self.spans_written or run_id not in self.metrics or run_id not in self.finished:

@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "name": "Panel de facturación",
+  "slug": "panel-facturas",
+  "kind": "app",
+  "description": "Facturas pendientes, consultas de clientes del mes y abonos que esperan aprobación.",
+  "auth": {"required": true},
+  "screens": [
+    {
+      "id": "resumen",
+      "title": "Resumen",
+      "components": [
+        {
+          "id": "kpi-pendiente",
+          "type": "kpi",
+          "title": "Pendiente de cobro",
+          "grid": {"x": 0, "y": 0, "w": 3, "h": 2},
+          "props": {"value": "importe", "format": "currency", "currency": "EUR", "decimals": 2, "hint": "Facturas pendientes y vencidas"},
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT coalesce(sum(importe), 0) AS importe FROM facturas WHERE estado IN ('pendiente', 'vencida')"
+          }
+        },
+        {
+          "id": "kpi-facturas-pendientes",
+          "type": "kpi",
+          "title": "Facturas pendientes",
+          "grid": {"x": 3, "y": 0, "w": 3, "h": 2},
+          "props": {"value": "facturas", "format": "number", "hint": "Pendientes y vencidas"},
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT count(*) AS facturas FROM facturas WHERE estado IN ('pendiente', 'vencida')"
+          }
+        },
+        {
+          "id": "kpi-consultas-mes",
+          "type": "kpi",
+          "title": "Consultas este mes",
+          "grid": {"x": 6, "y": 0, "w": 3, "h": 2},
+          "props": {"value": "consultas", "format": "number", "hint": "Todas las vías de contacto"},
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT count(*) AS consultas FROM consultas WHERE fecha >= $1::date",
+            "params": [{"context": "month_start"}]
+          }
+        },
+        {
+          "id": "kpi-sin-resolver",
+          "type": "kpi",
+          "title": "Consultas sin resolver",
+          "grid": {"x": 9, "y": 0, "w": 3, "h": 2},
+          "props": {"value": "abiertas", "format": "number", "trend": "down_is_good", "hint": "Este mes"},
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT count(*) AS abiertas FROM consultas WHERE fecha >= $1::date AND NOT resuelta",
+            "params": [{"context": "month_start"}]
+          }
+        },
+        {
+          "id": "tabla-pendientes",
+          "type": "data_table",
+          "title": "Facturas pendientes",
+          "description": "Ordenadas por vencimiento",
+          "grid": {"x": 0, "y": 2, "w": 7, "h": 6},
+          "props": {
+            "columns": [
+              {"key": "numero", "label": "Factura"},
+              {"key": "cliente", "label": "Cliente"},
+              {"key": "fecha_vencimiento", "label": "Vence", "format": "date"},
+              {"key": "importe", "label": "Importe", "format": "currency", "align": "right"},
+              {"key": "estado", "label": "Estado", "format": "badge"}
+            ],
+            "page_size": 10,
+            "searchable": true,
+            "filters": [
+              {"name": "estado", "label": "Estado", "type": "select", "default": "todas", "options": [
+                {"value": "todas", "label": "Todas"},
+                {"value": "pendiente", "label": "Pendientes"},
+                {"value": "vencida", "label": "Vencidas"}
+              ]}
+            ],
+            "empty_text": "No hay facturas pendientes"
+          },
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT numero, cliente, fecha_vencimiento, importe, estado FROM facturas WHERE estado IN ('pendiente', 'vencida') AND ($1 = 'todas' OR estado = $1) ORDER BY fecha_vencimiento",
+            "params": [{"input": "estado", "default": "todas"}]
+          }
+        },
+        {
+          "id": "grafico-consultas",
+          "type": "chart",
+          "title": "Consultas del mes por canal",
+          "grid": {"x": 7, "y": 2, "w": 5, "h": 6},
+          "props": {"chart": "bar", "x": "canal", "y": ["consultas"], "legend": false},
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT canal, count(*) AS consultas FROM consultas WHERE fecha >= $1::date GROUP BY canal ORDER BY consultas DESC",
+            "params": [{"context": "month_start"}]
+          }
+        },
+        {
+          "id": "aprobaciones",
+          "type": "approvals_inbox",
+          "title": "Abonos pendientes de aprobación",
+          "grid": {"x": 0, "y": 8, "w": 7, "h": 5},
+          "props": {"page_size": 5},
+          "binding": {"kind": "approvals", "status": "pending"}
+        },
+        {
+          "id": "solicitar-abono",
+          "type": "form",
+          "title": "Solicitar un abono",
+          "description": "Lanza el flujo de abono: por encima de 500 € espera aprobación.",
+          "grid": {"x": 7, "y": 8, "w": 5, "h": 5},
+          "props": {
+            "fields": [
+              {"name": "numero_factura", "label": "Número de factura", "type": "text", "required": true, "placeholder": "F-2026-0142"},
+              {"name": "importe", "label": "Importe (€)", "type": "number", "required": true, "min": 0.01},
+              {"name": "motivo", "label": "Motivo", "type": "textarea", "required": true, "max_length": 500}
+            ],
+            "submit_label": "Solicitar abono",
+            "success_message": "Solicitud enviada. Si supera 500 €, aparecerá en las aprobaciones."
+          },
+          "binding": {
+            "kind": "workflow",
+            "workforce": "abono_factura",
+            "input_mapping": {"numero_factura": "$form.numero_factura", "importe": "$form.importe", "motivo": "$form.motivo"}
+          }
+        }
+      ]
+    },
+    {
+      "id": "consultas",
+      "title": "Consultas",
+      "components": [
+        {
+          "id": "evolucion-consultas",
+          "type": "chart",
+          "title": "Consultas por día este mes",
+          "grid": {"x": 0, "y": 0, "w": 12, "h": 5},
+          "props": {"chart": "line", "x": "dia", "y": ["consultas"], "legend": false},
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT to_char(date_trunc('day', fecha), 'YYYY-MM-DD') AS dia, count(*) AS consultas FROM consultas WHERE fecha >= $1::date GROUP BY 1 ORDER BY 1",
+            "params": [{"context": "month_start"}]
+          }
+        },
+        {
+          "id": "tabla-consultas",
+          "type": "data_table",
+          "title": "Consultas de este mes",
+          "grid": {"x": 0, "y": 5, "w": 12, "h": 7},
+          "props": {
+            "columns": [
+              {"key": "fecha", "label": "Fecha", "format": "datetime"},
+              {"key": "canal", "label": "Canal", "format": "badge"},
+              {"key": "cliente", "label": "Cliente"},
+              {"key": "numero_factura", "label": "Factura"},
+              {"key": "tema", "label": "Tema"},
+              {"key": "resuelta", "label": "Resuelta", "format": "boolean"}
+            ],
+            "page_size": 15,
+            "searchable": true,
+            "empty_text": "Todavía no hay consultas este mes"
+          },
+          "binding": {
+            "kind": "knowledge_sql",
+            "kb_id": "${kb:facturacion}",
+            "sql": "SELECT fecha, canal, cliente, numero_factura, tema, resuelta FROM consultas WHERE fecha >= $1::date ORDER BY fecha DESC",
+            "params": [{"context": "month_start"}]
+          }
+        }
+      ]
+    }
+  ]
+}

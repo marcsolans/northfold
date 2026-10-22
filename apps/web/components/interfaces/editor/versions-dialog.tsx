@@ -124,7 +124,10 @@ export function VersionsDialog({
           confirmLabel={t("restore")}
           cancelLabel={tc("cancel")}
           loading={restore.isPending}
-          onConfirm={() => (selected ? restore.mutateAsync(selected.sha).then(() => undefined) : undefined)}
+          onConfirm={() => (selected ? restore.mutateAsync(selected.sha).then(
+              () => undefined,
+              () => undefined,
+            ) : undefined)}
         />
       </DialogContent>
     </Dialog>

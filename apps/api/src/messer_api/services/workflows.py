@@ -165,7 +165,8 @@ async def create_workflow(
     issues = validate_workflow(cfg, members=members, custom_functions=functions)
     if issues:
         raise _invalid(issues)
-    cfg = with_positions(cfg.model_copy(update={"custom_nodes": functions}), auto_layout(cfg))
+    given = {n.id: n.position for n in cfg.nodes if n.position is not None}
+    cfg = with_positions(cfg.model_copy(update={"custom_nodes": functions}), {**auto_layout(cfg), **given})
     member = Workforce(
         org_id=project.org_id,
         project_id=project.id,

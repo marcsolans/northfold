@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "name": "Chat de facturación",
+  "slug": "chat-facturas",
+  "kind": "chat",
+  "description": "Chat público para que los clientes consulten sus facturas y soliciten abonos.",
+  "auth": {"required": false},
+  "screens": [
+    {
+      "id": "chat",
+      "title": "Chat",
+      "components": [
+        {
+          "id": "asistente",
+          "type": "chat",
+          "title": "Asistente de facturación",
+          "grid": {"x": 0, "y": 0, "w": 12, "h": 12},
+          "props": {
+            "greeting": "Hola, soy el asistente de facturación. Dime el número de tu factura o tu duda sobre pagos y abonos.",
+            "placeholder": "Escribe tu consulta…",
+            "suggestions": ["¿Cuándo vence mi factura?", "Me habéis cobrado dos veces", "¿Cómo pido un abono?"]
+          },
+          "binding": {"kind": "agent", "workforce": "asistente_facturas"}
+        }
+      ]
+    }
+  ]
+}

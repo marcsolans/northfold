@@ -1,0 +1,82 @@
+name: cualificar_lead
+description: >-
+  Puntúa cada lead que entra por el formulario web, asigna el comercial y, si es caliente, redacta la respuesta y la
+  envía por email tras la revisión de una persona.
+inputs:
+  - {name: nombre, type: string, description: Nombre de la persona de contacto, required: true}
+  - {name: empresa, type: string, description: Empresa, required: true}
+  - {name: email, type: string, description: Email de contacto, required: true}
+  - {name: sector, type: string, description: Sector de la empresa}
+  - {name: empleados, type: number, description: Número de empleados}
+  - {name: presupuesto_eur, type: number, description: Presupuesto anual aproximado en euros}
+  - {name: plazo_meses, type: number, description: Plazo de decisión en meses}
+  - {name: mensaje, type: string, description: Mensaje del lead}
+nodes:
+  - id: entrada
+    type: input
+    label: Lead del formulario
+    position: {x: 80, y: 200}
+  - id: puntuar
+    type: custom
+    label: Puntuar y asignar comercial
+    position: {x: 360, y: 200}
+    config:
+      function: puntuar_lead
+      args:
+        empresa: "{{input.empresa}}"
+        sector: "{{input.sector}}"
+        empleados: "{{input.empleados}}"
+        presupuesto_eur: "{{input.presupuesto_eur}}"
+        plazo_meses: "{{input.plazo_meses}}"
+  - id: es_caliente
+    type: condition
+    label: ¿Lead caliente?
+    position: {x: 640, y: 200}
+    config:
+      expression: '{{puntuar.output.categoria}} == "caliente"'
+  - id: redactar
+    type: llm
+    label: Redactar respuesta
+    position: {x: 920, y: 80}
+    config:
+      model_tier: fast
+      system: >-
+        Redactas el primer email a un lead siguiendo la guía comercial: agradece el contacto, resume lo que pide en
+        una frase, propone una demo de 30 minutos con su comercial y firma con el nombre del comercial. Sin
+        descuentos ni adjuntos. Solo el cuerpo del email.
+      prompt: |-
+        Lead: {{input.nombre}} de {{input.empresa}} ({{puntuar.output.sector}}).
+        Mensaje: {{input.mensaje}}
+        Comercial asignado: {{puntuar.output.comercial}}
+      max_tokens: 600
+  - id: enviar
+    type: tool
+    label: Enviar email (revisión humana)
+    position: {x: 1200, y: 80}
+    config:
+      tool: send_email
+      args:
+        to: "{{input.email}}"
+        subject: "{{input.empresa}}: ¿te enseñamos Nordia en una demo de 30 minutos?"
+        body: "{{redactar.output}}"
+      requires_approval: true
+      approver_role: builder
+  - id: resultado
+    type: output
+    label: Resultado
+    position: {x: 1480, y: 200}
+    config:
+      value:
+        empresa: "{{input.empresa}}"
+        puntuacion: "{{puntuar.output.puntuacion}}"
+        categoria: "{{puntuar.output.categoria}}"
+        comercial: "{{puntuar.output.comercial}}"
+        siguiente_paso: "{{puntuar.output.siguiente_paso}}"
+        email_enviado: "{{enviar.output}}"
+edges:
+  - {source: entrada, target: puntuar}
+  - {source: puntuar, target: es_caliente}
+  - {source: es_caliente, target: redactar, condition: "true"}
+  - {source: es_caliente, target: resultado, condition: "false"}
+  - {source: redactar, target: enviar}
+  - {source: enviar, target: resultado}

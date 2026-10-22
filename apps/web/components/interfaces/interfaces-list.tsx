@@ -166,7 +166,10 @@ export function InterfacesList({ projectId }: { projectId: string }) {
         confirmLabel={tc("delete")}
         cancelLabel={tc("cancel")}
         loading={remove.isPending}
-        onConfirm={() => (deleting ? remove.mutateAsync(deleting.id).then(() => undefined) : undefined)}
+        onConfirm={() => (deleting ? remove.mutateAsync(deleting.id).then(
+            () => undefined,
+            () => undefined,
+          ) : undefined)}
       />
     </div>
   );

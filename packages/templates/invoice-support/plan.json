@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "goal": "Responder a los clientes sobre sus facturas con las condiciones en PDF y la tabla de facturas, emitir abonos con aprobación humana por encima de 500 €, atender por WhatsApp y teléfono y ofrecer un panel con las facturas pendientes y las consultas del mes.",
+  "summary": "Un agente con voz consulta la tabla de facturas y las condiciones (citando el documento), emite abonos y deja los de más de 500 € pendientes de aprobación. Un flujo de abono hace lo mismo para solicitudes que llegan del ERP o del panel. Un panel muestra lo pendiente de cobro, las consultas del mes y la bandeja de aprobaciones.",
+  "template_id": "invoice-support",
+  "agents": [
+    {
+      "name": "asistente_facturas",
+      "title": "Asistente de facturación",
+      "description": "Atiende a los clientes por chat, WhatsApp y teléfono sobre facturas, condiciones y abonos.",
+      "instructions": "Consulta la factura por su número antes de dar cualquier dato; responde dudas de condiciones citando el documento; para un abono necesita número de factura, importe y motivo, nunca supera el importe de la factura y, si pasa de 500 €, lo deja pendiente de la aprobación de un responsable. No inventa datos.",
+      "tools": ["knowledge_search"],
+      "connector_actions": [],
+      "knowledge": ["facturacion"],
+      "approvals": [
+        {"action": "emitir_abono", "condition": "importe > 500 €", "threshold": 500, "field": "importe", "approver_role": "admin"}
+      ],
+      "voice": true,
+      "greeting": "Hola, soy el asistente de facturación. ¿En qué puedo ayudarte con tus facturas?",
+      "model_tier": "standard"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "abono_factura",
+      "title": "Abono de factura",
+      "description": "Valida la solicitud contra la factura, pide aprobación si supera 500 € y emite el abono.",
+      "trigger": {"kind": "webhook", "timezone": "Europe/Madrid", "description": "Solicitud firmada desde el ERP o el panel"},
+      "steps": [
+        {"id": "entrada", "kind": "input", "title": "Solicitud de abono", "config": {"fields": ["numero_factura", "importe", "motivo"]}},
+        {"id": "validar", "kind": "sql_query", "title": "Validar contra la factura", "description": "La factura existe, no está abonada y el abono no supera su importe"},
+        {"id": "requiere_aprobacion", "kind": "condition", "title": "¿Más de 500 €?"},
+        {"id": "aprobar", "kind": "approval", "title": "Aprobación de administración"},
+        {"id": "emitir", "kind": "transform", "title": "Emitir abono"},
+        {"id": "resultado", "kind": "output", "title": "Resultado"}
+      ],
+      "approvals": [
+        {"action": "aprobar", "condition": "importe > 500 €", "threshold": 500, "field": "importe", "approver_role": "admin"}
+      ]
+    }
+  ],
+  "knowledge_bases": [
+    {
+      "name": "facturacion",
+      "title": "Facturación",
+      "description": "Condiciones generales, política de abonos, preguntas frecuentes y tablas de facturas y consultas.",
+      "documents": ["Condiciones generales de venta (PDF)", "Política de abonos y devoluciones (PDF)", "Preguntas frecuentes de facturación (PDF)"],
+      "tables": [
+        {"name": "facturas", "description": "Facturas emitidas", "columns": [
+          {"name": "numero", "type": "text"}, {"name": "cliente", "type": "text"}, {"name": "fecha_emision", "type": "date"},
+          {"name": "fecha_vencimiento", "type": "date"}, {"name": "importe", "type": "numeric"}, {"name": "estado", "type": "text"}
+        ]},
+        {"name": "consultas", "description": "Consultas de clientes por canal", "columns": [
+          {"name": "fecha", "type": "timestamp"}, {"name": "canal", "type": "text"}, {"name": "tema", "type": "text"}, {"name": "resuelta", "type": "boolean"}
+        ]}
+      ]
+    }
+  ],
+  "connectors": [
+    {"key": "postgres", "purpose": "Leer las facturas directamente del ERP o de su base de datos", "required": false}
+  ],
+  "interface": {
+    "kind": "app",
+    "title": "Panel de facturación",
+    "justification": "El equipo de administración necesita ver de un vistazo lo pendiente de cobro, el volumen de consultas del mes y los abonos que esperan su aprobación.",
+    "screens": [
+      {"title": "Resumen", "components": [
+        {"type": "kpi", "title": "Pendiente de cobro", "source": "kb:facturacion.facturas"},
+        {"type": "kpi", "title": "Consultas este mes", "source": "kb:facturacion.consultas"},
+        {"type": "data_table", "title": "Facturas pendientes", "source": "kb:facturacion.facturas"},
+        {"type": "chart", "title": "Consultas del mes por canal", "source": "kb:facturacion.consultas"},
+        {"type": "approvals_inbox", "title": "Abonos pendientes de aprobación", "source": "approvals"},
+        {"type": "form", "title": "Solicitar un abono", "source": "workflow:abono_factura"}
+      ]},
+      {"title": "Consultas", "components": [
+        {"type": "chart", "title": "Consultas por día", "source": "kb:facturacion.consultas"},
+        {"type": "data_table", "title": "Consultas del mes", "source": "kb:facturacion.consultas"}
+      ]}
+    ]
+  },
+  "channels": [
+    {"provider": "whatsapp", "agent": "asistente_facturas", "purpose": "Consultas de clientes por WhatsApp"},
+    {"provider": "phone", "agent": "asistente_facturas", "purpose": "Atención telefónica con voz"},
+    {"provider": "web", "agent": "asistente_facturas", "purpose": "Chat web público"}
+  ],
+  "evals": [
+    {"member": "asistente_facturas", "name": "estado_de_una_factura", "input": {"prompt": "Consultar el estado de la factura F-2026-0142"}, "expect": "tool_called", "value": "consultar_factura"},
+    {"member": "asistente_facturas", "name": "recargo_por_demora_con_fuente", "input": {"prompt": "¿Qué recargo se aplica si pago tarde según las condiciones generales?"}, "expect": "contains", "value": "1,5 %"},
+    {"member": "asistente_facturas", "name": "abono_grande_con_aprobacion", "input": {"prompt": "Quiero emitir un abono de 900 € en la factura F-2026-0137 por «cobro duplicado»"}, "expect": "approval_required", "value": "emitir_abono"},
+    {"member": "abono_factura", "name": "abono_menor_de_500_se_emite", "input": {"numero_factura": "F-2026-0129", "importe": 120, "motivo": "Error en el precio"}, "expect": "contains", "value": "no necesaria"}
+  ],
+  "risks": [
+    "Los datos de facturas y consultas son de ejemplo: conecta tu ERP o sustituye las tablas antes de usarlo con clientes.",
+    "El número de abono es local: registra los abonos en tu ERP con un conector antes de producción.",
+    "WhatsApp y el teléfono funcionan en modo demo hasta que configures sus credenciales."
+  ]
+}

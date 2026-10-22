@@ -416,8 +416,15 @@ def web_search() -> Any:
 # ------------------------------------------------------------------------------------------ helpers
 
 
-def require_approval(tool: Tool, *, prompt: str | None = None) -> Tool:
-    """Mark any tool as requiring human approval before it runs (the run pauses on an approval gate)."""
+def require_approval(tool: Any, *, prompt: str | None = None) -> Any:
+    """Mark any tool as requiring human approval before it runs (the run pauses on an approval gate).
+
+    Plain functions are wrapped in a :class:`Tool` first, so the gate survives the agent's own conversion.
+    """
+    from ..core.runnable import Runnable
+
+    if not isinstance(tool, Runnable):
+        tool = Tool(handler=tool)
     tool.requires_approval = True
     if prompt:
         tool.approval_prompt = prompt

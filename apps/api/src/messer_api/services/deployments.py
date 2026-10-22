@@ -21,6 +21,7 @@ from messer_common.db.models import (
     Deployment,
     Environment,
     EvalRun,
+    Interface,
     Membership,
     Notification,
     Org,
@@ -56,6 +57,22 @@ def environment_url(org: Org, project: Project, env: Environment) -> str:
     base = get_settings().messer_web_url.rstrip("/")
     suffix = "" if env.name == "production" else "?env=development"
     return f"{base}/{org.slug}/{project.slug}{suffix}"
+
+
+async def project_home(session: AsyncSession, project_id: uuid.UUID) -> str | None:
+    """Path (relative to ``/{org}/{project}``) of the project's public home: its first published interface,
+    apps before chats. ``None`` when nothing is published."""
+    home = (
+        await session.execute(
+            select(Interface.kind, Interface.slug, Interface.workforce_name)
+            .where(Interface.project_id == project_id, Interface.published_at.is_not(None))
+            .order_by(Interface.kind, Interface.published_at)
+            .limit(1)
+        )
+    ).first()
+    if home is None:
+        return None
+    return f"/app/{home.slug}" if home.kind == "app" else f"/chat/{home.workforce_name or home.slug}"
 
 
 async def get_environment(session: AsyncSession, project_id: uuid.UUID, name: str) -> Environment:
@@ -109,6 +126,7 @@ async def request_deployment(
         f"Despliegue solicitado: versión {version.version} ({version.git_commit[:8]}) → {environment}",
         force=force,
         skip_evals=skip_evals,
+        note=message.strip() or None,
     )
     session.add(deployment)
     await session.flush()

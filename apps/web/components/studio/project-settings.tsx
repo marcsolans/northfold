@@ -25,6 +25,7 @@ import * as React from "react";
 
 import { ExportCard } from "@/components/projects/export-card";
 import { GithubSettings } from "@/components/projects/github-settings";
+import { SecretsCard } from "@/components/projects/secrets-card";
 import { http } from "@/lib/api";
 import { formatDate, localeTag } from "@/lib/format";
 import { useRole } from "@/lib/hooks/use-me";
@@ -192,6 +193,7 @@ export function ProjectSettings({ projectId }: { projectId: string }) {
 
       <GithubSettings projectId={projectId} />
       <ExportCard projectId={projectId} />
+      <SecretsCard projectId={projectId} />
 
       {isAdmin ? (
         <Card className="border-danger/30">

@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from messer_common import audit
 from messer_common.db import Principal, system_session
-from messer_common.db.models import Deployment, Environment, Interface, Org, Project, Version
+from messer_common.db.models import Deployment, Environment, Org, Project, Version
 from messer_common.settings import get_settings
 
 from ..deps import ensure_project_access, get_db, require_role
@@ -50,6 +50,13 @@ class DeploymentOut(BaseModel):
     finished_at: datetime | None
 
 
+def _note(dep: Deployment) -> str | None:
+    """The message given when publishing (kept in the first log entry; also set for existing versions)."""
+    first = (dep.logs or [None])[0]
+    note = first.get("note") if isinstance(first, dict) else None
+    return str(note) if note else None
+
+
 async def _out(session: AsyncSession, dep: Deployment) -> DeploymentOut:
     env = await session.get(Environment, dep.environment_id)
     version = await session.get(Version, dep.version_id)
@@ -59,7 +66,7 @@ async def _out(session: AsyncSession, dep: Deployment) -> DeploymentOut:
         version_id=dep.version_id,
         version=version.version if version else None,
         git_commit=version.git_commit if version else None,
-        message=version.message if version else None,
+        message=_note(dep) or (version.message if version else None),
         status=dep.status,
         logs=list(dep.logs or []),
         eval_run_id=dep.eval_run_id,
@@ -174,6 +181,18 @@ def _domain_view(env: Environment) -> dict[str, Any]:
     }
 
 
+@router.get("/projects/{project_id}/environments/{name}/domain")
+async def get_domain(
+    project_id: uuid.UUID,
+    name: str,
+    principal: Principal = Depends(require_role("viewer")),
+    session: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """The environment's custom domain, its status and the DNS records to create."""
+    ensure_project_access(principal, project_id)
+    return _domain_view(await svc.get_environment(session, project_id, name))
+
+
 @router.put("/projects/{project_id}/environments/{name}/domain")
 async def set_domain(
     project_id: uuid.UUID,
@@ -279,6 +298,11 @@ async def remove_domain(
     env.custom_domain = None
     env.domain_status = None
     env.domain_verification_token = None
+    if env.url:  # back to the platform URL (only environments that were deployed have one)
+        project = await session.get(Project, env.project_id)
+        org = await session.get(Org, env.org_id)
+        if project is not None and org is not None:
+            env.url = svc.environment_url(org, project, env)
 
 
 @public_router.get("/api/internal/domains/allowed")
@@ -312,16 +336,26 @@ async def resolve_domain(host: str) -> dict[str, Any]:
         org = await s.get(Org, env.org_id)
         if project is None or org is None:
             raise NotFound("Dominio desconocido")
-        # The domain root opens the project's first published interface (app before chat).
-        home = (
-            await s.execute(
-                select(Interface.kind, Interface.slug, Interface.workforce_name)
-                .where(Interface.project_id == project.id, Interface.published_at.is_not(None))
-                .order_by(Interface.kind, Interface.published_at)
-                .limit(1)
-            )
-        ).first()
-        home_path = None
-        if home is not None:
-            home_path = f"/app/{home.slug}" if home.kind == "app" else f"/chat/{home.workforce_name or home.slug}"
+        home_path = await svc.project_home(s, project.id)
         return {"org": org.slug, "project": project.slug, "environment": env.name, "home": home_path}
+
+
+@public_router.get("/api/public/v1/projects/{org_slug}/{project_slug}")
+async def public_project(org_slug: str, project_slug: str) -> dict[str, Any]:
+    """Public landing of a project (``/{org}/{project}``): its name and home page once something is published."""
+    async with system_session() as s:
+        org = (await s.execute(select(Org).where(Org.slug == org_slug))).scalar_one_or_none()
+        project = (
+            (
+                await s.execute(
+                    select(Project).where(
+                        Project.org_id == org.id, Project.slug == project_slug, Project.archived_at.is_(None)
+                    )
+                )
+            ).scalar_one_or_none()
+            if org is not None
+            else None
+        )
+        if org is None or project is None:
+            raise NotFound("Proyecto no encontrado")
+        return {"name": project.name, "home": await svc.project_home(s, project.id)}

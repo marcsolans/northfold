@@ -9,7 +9,9 @@ import type * as React from "react";
 
 import { ApiError } from "@/lib/api";
 
-type Kind = "not_deployed" | "login" | "forbidden" | "not_found" | "unavailable" | "error";
+export type PublicStateKind = "not_deployed" | "login" | "forbidden" | "not_found" | "unavailable" | "error";
+
+type Kind = PublicStateKind;
 
 function kindOf(err: unknown): Kind {
   if (!(err instanceof ApiError)) return "error";
@@ -32,9 +34,19 @@ const ICONS: Record<Kind, React.ReactNode> = {
 };
 
 /** Friendly full-page states of public apps and chats (not published yet, login, no access, not found…). */
-export function PublicState({ error, onRetry, compact = false }: { error: unknown; onRetry?: () => void; compact?: boolean }) {
+export function PublicState({
+  error,
+  kind: forced,
+  onRetry,
+  compact = false,
+}: {
+  error?: unknown;
+  kind?: PublicStateKind;
+  onRetry?: () => void;
+  compact?: boolean;
+}) {
   const t = useTranslations("interfaces.public");
-  const kind = kindOf(error);
+  const kind = forced ?? kindOf(error);
   const next = usePathname() || "/";
   return (
     <div className={compact ? "flex h-full flex-col items-center justify-center p-6" : "flex min-h-screen flex-col bg-subtle"}>

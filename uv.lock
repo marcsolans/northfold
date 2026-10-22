@@ -9,13 +9,16 @@ resolution-markers = [
 [manifest]
 members = [
     "messer-api",
+    "messer-cli",
     "messer-common",
     "messer-connector-agent",
     "messer-connectors",
     "messer-core",
+    "messer-mcp",
     "messer-monorepo",
     "messer-runtime",
     "messer-scheduler",
+    "messer-sdk",
     "messer-voice",
     "messer-worker",
 ]
@@ -1316,6 +1319,25 @@ requires-dist = [
 ]
 
 [[package]]
+name = "messer-cli"
+version = "1.0.0"
+source = { editable = "packages/messer-cli" }
+dependencies = [
+    { name = "httpx" },
+    { name = "messer-core", extra = ["evals", "server"] },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "messer-core", extras = ["server", "evals"], editable = "packages/messer-core" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+]
+
+[[package]]
 name = "messer-common"
 version = "1.0.0"
 source = { editable = "packages/messer-common" }
@@ -1543,6 +1565,27 @@ dev = [
 ]
 
 [[package]]
+name = "messer-mcp"
+version = "1.0.0"
+source = { editable = "services/mcp" }
+dependencies = [
+    { name = "httpx" },
+    { name = "mcp" },
+    { name = "messer-common" },
+    { name = "starlette" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "mcp", specifier = ">=1.26,<2" },
+    { name = "messer-common", editable = "packages/messer-common" },
+    { name = "starlette", specifier = ">=0.40" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34" },
+]
+
+[[package]]
 name = "messer-monorepo"
 version = "0.0.0"
 source = { virtual = "." }
@@ -1552,12 +1595,15 @@ dev = [
     { name = "httpx" },
     { name = "lancedb" },
     { name = "messer-api" },
+    { name = "messer-cli" },
     { name = "messer-common" },
     { name = "messer-connector-agent" },
     { name = "messer-connectors", extra = ["mcp"] },
     { name = "messer-core", extra = ["all"] },
+    { name = "messer-mcp" },
     { name = "messer-runtime" },
     { name = "messer-scheduler" },
+    { name = "messer-sdk" },
     { name = "messer-voice" },
     { name = "messer-worker" },
     { name = "pyngrok" },
@@ -1577,12 +1623,15 @@ dev = [
     { name = "httpx", specifier = ">=0.28" },
     { name = "lancedb", specifier = ">=0.25.3" },
     { name = "messer-api", editable = "apps/api" },
+    { name = "messer-cli", editable = "packages/messer-cli" },
     { name = "messer-common", editable = "packages/messer-common" },
     { name = "messer-connector-agent", editable = "services/connector-agent" },
     { name = "messer-connectors", extras = ["mcp"], editable = "packages/connectors" },
     { name = "messer-core", extras = ["all"], editable = "packages/messer-core" },
+    { name = "messer-mcp", editable = "services/mcp" },
     { name = "messer-runtime", editable = "services/runtime" },
     { name = "messer-scheduler", editable = "services/scheduler" },
+    { name = "messer-sdk", editable = "packages/messer-sdk-py" },
     { name = "messer-voice", editable = "services/voice" },
     { name = "messer-worker", editable = "services/worker" },
     { name = "pyngrok", specifier = ">=7.2.3" },
@@ -1637,6 +1686,21 @@ requires-dist = [
     { name = "croniter", specifier = ">=6.0" },
     { name = "messer-api", editable = "apps/api" },
     { name = "messer-common", editable = "packages/messer-common" },
+]
+
+[[package]]
+name = "messer-sdk"
+version = "1.0.0"
+source = { editable = "packages/messer-sdk-py" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "pydantic", specifier = ">=2.10" },
 ]
 
 [[package]]

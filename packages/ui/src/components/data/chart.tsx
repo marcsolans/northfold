@@ -46,7 +46,12 @@ const MAX_SLICES = 8;
 
 function compact(value: number, locale: string, format: ChartValueFormat, currency: string): string {
   if (format === "percent") return formatValue(value, "percent", { locale });
-  const opts: Intl.NumberFormatOptions = { notation: Math.abs(value) >= 1000 ? "compact" : "standard", maximumFractionDigits: 1 };
+  const big = Math.abs(value) >= 1000;
+  const opts: Intl.NumberFormatOptions = {
+    notation: big ? "compact" : "standard",
+    maximumFractionDigits: big ? 1 : Number.isInteger(value) ? 0 : 2,
+    minimumFractionDigits: 0,
+  };
   if (format === "currency") Object.assign(opts, { style: "currency", currency });
   return new Intl.NumberFormat(locale, opts).format(value);
 }

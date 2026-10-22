@@ -14,6 +14,8 @@ import { errorMessage, studioKeys, useConversations, useCredits } from "@/lib/st
 import { type StreamEvent, chatStream, decisionStream, isAbortError } from "@/lib/studio/stream";
 import type { Approval, ApprovalPage, Conversation, DecisionBody, Upload } from "@/lib/studio/types";
 
+import { VoiceButton } from "@/components/voice";
+
 import { Composer } from "./composer";
 import { AssistantTurnView, UserTurnView } from "./turn-view";
 
@@ -146,8 +148,8 @@ export function Playground({
     dispatch({ type: "reset" });
   };
 
-  const openConversation = async (id: string) => {
-    if (streaming || id === state.conversationId) return;
+  const openConversation = async (id: string, reload = false) => {
+    if (streaming || (id === state.conversationId && !reload)) return;
     setLoadingConversation(true);
     setLoadError(null);
     try {
@@ -219,6 +221,19 @@ export function Playground({
           <MessageSquarePlus />
           {t("newConversation")}
         </Button>
+        <VoiceButton
+          projectId={projectId}
+          workforce={member}
+          conversationId={state.conversationId}
+          disabled={!canChat || streaming}
+          disabledReason={canChat ? null : t("needsBuilder")}
+          onCallEnded={(summary) => {
+            // The call continues the same conversation: show its turns in the transcript.
+            void qc.invalidateQueries({ queryKey: studioKeys.conversations(projectId, member) });
+            const id = summary?.conversation_id ?? state.conversationId;
+            if (id) void openConversation(id, true);
+          }}
+        />
         {state.conversationId && canChat ? (
           <Button size="icon-sm" variant="ghost" aria-label={t("deleteConversation")} disabled={streaming} onClick={() => setDeleteOpen(true)}>
             <Trash2 />

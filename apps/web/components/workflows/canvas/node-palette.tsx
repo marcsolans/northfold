@@ -87,18 +87,28 @@ export function NodePalette({
                   const Icon = NODE_ICONS[item.payload.type];
                   return (
                     <li key={item.key}>
-                      <button
-                        type="button"
+                      <div
+                        role="button"
+                        tabIndex={disabled ? -1 : 0}
+                        aria-disabled={disabled || undefined}
                         draggable={!disabled}
-                        disabled={disabled}
+                        data-node-type={item.key}
                         onDragStart={(e) => {
                           e.dataTransfer.setData(DRAG_MIME, JSON.stringify(item.payload));
                           e.dataTransfer.effectAllowed = "move";
                         }}
-                        onClick={() => onAdd(item.payload)}
+                        onClick={() => {
+                          if (!disabled) onAdd(item.payload);
+                        }}
+                        onKeyDown={(e) => {
+                          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+                            e.preventDefault();
+                            onAdd(item.payload);
+                          }
+                        }}
                         className={cn(
-                          "flex w-full items-start gap-2 rounded-md border border-border bg-surface px-2 py-1.5 text-left transition-colors hover:border-border-strong hover:bg-subtle disabled:cursor-not-allowed disabled:opacity-50",
-                          !disabled && "cursor-grab active:cursor-grabbing",
+                          "flex w-full items-start gap-2 rounded-md border border-border bg-surface px-2 py-1.5 text-left transition-colors hover:border-border-strong hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
+                          disabled ? "cursor-not-allowed opacity-50" : "cursor-grab active:cursor-grabbing",
                         )}
                         title={item.description}
                       >
@@ -109,7 +119,7 @@ export function NodePalette({
                           </span>
                           <span className="line-clamp-2 text-[11px] leading-4 text-fg-subtle">{item.description}</span>
                         </span>
-                      </button>
+                      </div>
                     </li>
                   );
                 })}

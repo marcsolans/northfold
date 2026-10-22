@@ -287,6 +287,13 @@ class Settings(BaseSettings):
             ("SALESFORCE_CLIENT_ID", bool(self.salesforce_client_id), "Conector de Salesforce"),
             ("NOTION_CLIENT_ID", bool(self.notion_client_id), "Conector de Notion"),
             ("WHATSAPP_ACCESS_TOKEN", bool(self.whatsapp_access_token), "Canal de WhatsApp"),
+            ("SLACK_SIGNING_SECRET", bool(self.slack_signing_secret), "Firma de webhooks del canal de Slack"),
+            ("TEAMS_APP_ID", bool(self.teams_app_id), "Canal de Microsoft Teams"),
+            ("TELEGRAM_BOT_TOKEN", bool(self.telegram_bot_token), "Canal de Telegram"),
+            ("MESSER_INBOUND_EMAIL_SECRET", bool(self.messer_inbound_email_secret), "Email entrante (flujos y canal)"),
+            ("VOYAGE_API_KEY", bool(self.voyage_api_key), "Embeddings Voyage (embeddings locales activos)"),
+            ("DEEPGRAM_API_KEY", bool(self.deepgram_api_key), "Voz: transcripción en streaming"),
+            ("ELEVENLABS_API_KEY", bool(self.elevenlabs_api_key), "Voz: síntesis"),
             ("TWILIO_ACCOUNT_SID / TELNYX_API_KEY", bool(self.twilio_account_sid or self.telnyx_api_key), "Telefonía"),
             ("LIVEKIT_URL", bool(self.livekit_url), "Salas LiveKit"),
         ]

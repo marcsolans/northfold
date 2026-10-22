@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-sdk"
+version = "1.0.0"
+description = "Python SDK for the Messer platform API (generated from the OpenAPI document): sync and async clients, typed models and Server-Sent Events."
+requires-python = ">=3.12"
+dependencies = [
+  "httpx>=0.28",
+  "pydantic>=2.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/messer_sdk"]

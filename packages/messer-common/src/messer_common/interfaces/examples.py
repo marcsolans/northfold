@@ -132,7 +132,7 @@ def invoices_dashboard(
             "id": "kpi_pendientes",
             "type": "kpi",
             "title": "Facturas pendientes",
-            "grid": _grid(0, 0, 4, 3),
+            "grid": _grid(0, 0, 4, 2),
             "props": {"value": "total", "format": "number", "hint": "Pendientes de cobro"},
             "binding": {
                 "kind": "knowledge_sql",
@@ -145,7 +145,7 @@ def invoices_dashboard(
             "id": "kpi_importe",
             "type": "kpi",
             "title": "Importe pendiente",
-            "grid": _grid(4, 0, 4, 3),
+            "grid": _grid(4, 0, 4, 2),
             "props": {"value": "importe", "format": "currency", "currency": "EUR", "decimals": 2},
             "binding": {
                 "kind": "knowledge_sql",
@@ -158,7 +158,7 @@ def invoices_dashboard(
             "id": "kpi_vencidas",
             "type": "kpi",
             "title": "Vencidas",
-            "grid": _grid(8, 0, 4, 3),
+            "grid": _grid(8, 0, 4, 2),
             "props": {"value": "total", "format": "number", "trend": "down_is_good", "hint": "Vencimiento superado"},
             "binding": {
                 "kind": "knowledge_sql",
@@ -171,7 +171,7 @@ def invoices_dashboard(
             "id": "tabla_pendientes",
             "type": "data_table",
             "title": "Facturas pendientes",
-            "grid": _grid(0, 3, 7, 8),
+            "grid": _grid(0, 2, 7, 8),
             "props": {
                 "columns": [
                     {"key": "numero", "label": "Número"},
@@ -208,7 +208,7 @@ def invoices_dashboard(
             "id": "grafico_mensual",
             "type": "chart",
             "title": "Facturado por mes",
-            "grid": _grid(7, 3, 5, 8),
+            "grid": _grid(7, 2, 5, 8),
             "props": {"chart": "bar", "x": "mes", "y": ["importe"], "format": "currency", "legend": False},
             "binding": {
                 "kind": "knowledge_sql",
@@ -225,7 +225,7 @@ def invoices_dashboard(
                 "id": "asistente",
                 "type": "chat",
                 "title": "Pregunta al asistente",
-                "grid": _grid(0, 11, 12, 8),
+                "grid": _grid(0, 10, 12, 8),
                 "props": {"greeting": "Pregúntame por cualquier factura.", "suggestions": []},
                 "binding": {"kind": "agent", "workforce": agent},
             }
@@ -253,7 +253,7 @@ def table_dashboard(*, name: str, slug: str, kb_id: str, table: str, columns: li
             "id": "kpi_total",
             "type": "kpi",
             "title": "Registros",
-            "grid": _grid(0, 0, 4, 3),
+            "grid": _grid(0, 0, 4, 2),
             "props": {"value": "total", "format": "number", "hint": table},
             "binding": {
                 "kind": "knowledge_sql",
@@ -270,7 +270,7 @@ def table_dashboard(*, name: str, slug: str, kb_id: str, table: str, columns: li
                 "id": "kpi_suma",
                 "type": "kpi",
                 "title": f"Total {col}",
-                "grid": _grid(4, 0, 4, 3),
+                "grid": _grid(4, 0, 4, 2),
                 "props": {"value": "total", "format": "number", "decimals": 2},
                 "binding": {
                     "kind": "knowledge_sql",
@@ -288,7 +288,7 @@ def table_dashboard(*, name: str, slug: str, kb_id: str, table: str, columns: li
             "id": "tabla",
             "type": "data_table",
             "title": table,
-            "grid": _grid(0, 3, 12 if not (numeric and (text_cols or dates)) else 7, 8),
+            "grid": _grid(0, 2, 12 if not (numeric and (text_cols or dates)) else 7, 8),
             "props": {
                 "columns": [
                     {
@@ -317,7 +317,7 @@ def table_dashboard(*, name: str, slug: str, kb_id: str, table: str, columns: li
                 "id": "grafico",
                 "type": "chart",
                 "title": f"{value} por {group}",
-                "grid": _grid(7, 3, 5, 8),
+                "grid": _grid(7, 2, 5, 8),
                 "props": {"chart": "bar", "x": group, "y": [value], "legend": False},
                 "binding": {
                     "kind": "knowledge_sql",

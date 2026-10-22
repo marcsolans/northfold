@@ -143,7 +143,7 @@ export function NodePanel({
     </PanelField>
   );
 
-  let form: React.ReactNode = null;
+  let form: React.ReactNode;
   switch (node.type) {
     case "input":
       form = (

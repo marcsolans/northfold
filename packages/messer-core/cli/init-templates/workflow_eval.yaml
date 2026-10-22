@@ -1,0 +1,9 @@
+# Evals for {{name}}: they run with `messer evals run` and gate every deployment to production.
+- name: {{name}}_saluda
+  description: El flujo devuelve un saludo
+  runnable: ../workflow.py::workflow
+  tags: [smoke]
+  params:
+    nombre: Messer
+  output:
+    contains!: Messer

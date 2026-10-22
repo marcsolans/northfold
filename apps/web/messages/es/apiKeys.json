@@ -1,0 +1,150 @@
+{
+  "title": "API keys",
+  "description": "Claves para llamar a la API de Messer desde tus sistemas: ejecutar agentes y flujos, leer trazas o publicar. Se muestran una sola vez y se guardan cifradas como hash.",
+  "createButton": "Crear API key",
+  "readOnly": "Solo los administradores pueden crear o revocar API keys. Puedes ver las existentes.",
+  "viewerNotice": "Necesitas al menos el rol Constructor para ver las API keys de la organización.",
+  "loadError": "No hemos podido cargar las API keys.",
+  "tableLabel": "API keys de la organización",
+  "empty": {
+    "title": "Todavía no hay API keys",
+    "description": "Crea una clave para integrar Messer con tus aplicaciones. Puedes limitarla a un proyecto y a unos permisos concretos.",
+    "descriptionReadOnly": "Cuando un administrador cree una clave, aparecerá aquí."
+  },
+  "columns": {
+    "name": "Nombre",
+    "prefix": "Prefijo",
+    "project": "Proyecto",
+    "scopes": "Permisos",
+    "lastUsed": "Último uso",
+    "created": "Creada",
+    "status": "Estado"
+  },
+  "allProjects": "Todos los proyectos",
+  "allScopes": "Todos los del rol Constructor",
+  "neverUsed": "Nunca",
+  "status": {
+    "active": "Activa",
+    "revoked": "Revocada el {date}"
+  },
+  "revoke": "Revocar",
+  "revokeFor": "Revocar la API key {name}",
+  "revokeTitle": "¿Revocar la API key «{name}»?",
+  "revokeDescription": "Las integraciones que la usen dejarán de funcionar inmediatamente. No se puede deshacer: tendrás que crear una clave nueva. Queda registrado en la auditoría.",
+  "revoked": "API key «{name}» revocada",
+  "footnote": "Envía la clave en la cabecera Authorization: Bearer. Cada uso actualiza la columna «Último uso».",
+  "errors": {
+    "invalid_scopes": "Algún permiso seleccionado no existe. Recarga la página.",
+    "not_found": "El proyecto o la clave ya no existe. Recarga la página.",
+    "forbidden": "Solo los administradores pueden gestionar API keys."
+  },
+  "scopes": {
+    "runs_write": {
+      "label": "Ejecutar",
+      "description": "Lanza ejecuciones de agentes y flujos (run y stream)."
+    },
+    "runs_read": {
+      "label": "Leer ejecuciones",
+      "description": "Consulta ejecuciones, resultados y trazas."
+    },
+    "projects_read": {
+      "label": "Leer proyectos",
+      "description": "Lista proyectos, agentes, flujos y versiones."
+    },
+    "projects_write": {
+      "label": "Editar proyectos",
+      "description": "Crea y modifica proyectos, agentes y flujos."
+    },
+    "knowledge_read": {
+      "label": "Leer conocimiento",
+      "description": "Busca y consulta las bases de conocimiento."
+    },
+    "knowledge_write": {
+      "label": "Escribir conocimiento",
+      "description": "Sube archivos y actualiza tablas de conocimiento."
+    },
+    "deployments_write": {
+      "label": "Desplegar",
+      "description": "Publica versiones en desarrollo y producción."
+    },
+    "evals_run": {
+      "label": "Ejecutar evals",
+      "description": "Lanza las evals de agentes y flujos."
+    }
+  },
+  "create": {
+    "title": "Crear API key",
+    "description": "La clave actúa con permisos de Constructor dentro de los permisos que elijas.",
+    "createdTitle": "API key creada",
+    "submit": "Crear API key",
+    "name": "Nombre",
+    "nameHint": "Para reconocerla después, p. ej. el sistema que la usa.",
+    "namePlaceholder": "p. ej. CRM de producción",
+    "nameRequired": "Escribe un nombre para la clave.",
+    "project": "Proyecto",
+    "projectHint": "Limítala a un proyecto o deja que acceda a todos los de la organización.",
+    "allProjects": "Todos los proyectos",
+    "projectsError": "No hemos podido cargar los proyectos; la clave podrá usarse en todos.",
+    "scopes": "Permisos",
+    "scopesHint": "Elige solo lo que la integración necesita.",
+    "scopesError": "No hemos podido cargar la lista de permisos. Cierra y vuelve a intentarlo.",
+    "noScopesWarning": "Sin permisos seleccionados, la clave tendrá todos los permisos del rol Constructor."
+  },
+  "created": {
+    "warningTitle": "Cópiala ahora",
+    "warning": "Por seguridad solo guardamos su hash: no se volverá a mostrar. Si la pierdes, revócala y crea otra.",
+    "keyLabel": "Clave de «{name}»",
+    "copy": "Copiar",
+    "copiedShort": "Copiada",
+    "copied": "API key copiada al portapapeles",
+    "copyFailed": "No hemos podido copiarla; selecciónala y cópiala a mano.",
+    "usage": "Envíala en la cabecera Authorization de cada petición:",
+    "done": "Ya la he guardado"
+  },
+  "secrets": {
+    "title": "Secretos",
+    "description": "Credenciales que el código del proyecto lee como variables de entorno.",
+    "scope": "Los valores se cifran y solo llegan al sandbox de este proyecto: ningún otro proyecto puede leerlos y no se vuelven a mostrar. Úsalos en el código como variables de entorno y en las cabeceras de los servidores MCP como $NOMBRE.",
+    "usageLanguage": "Uso",
+    "usageExample": "# Código del agente o flujo\nimport os\ntoken = os.environ[\"CRM_TOKEN\"]\n\n# Cabecera de un servidor MCP\nAuthorization: Bearer $CRM_TOKEN",
+    "readOnly": "Solo los constructores y administradores pueden ver y gestionar los secretos.",
+    "addTitle": "Añadir o reemplazar un secreto",
+    "name": "Nombre",
+    "nameHint": "MAYÚSCULAS, números y guiones bajos, empezando por una letra.",
+    "existsHint": "Ya existe un secreto con este nombre: se reemplazará su valor.",
+    "value": "Valor",
+    "valueHint": "No se vuelve a mostrar después de guardarlo.",
+    "valueRequired": "Escribe el valor del secreto.",
+    "addSubmit": "Añadir secreto",
+    "replaceSubmit": "Reemplazar valor",
+    "nameErrors": {
+      "required": "Escribe un nombre, p. ej. CRM_TOKEN.",
+      "format": "Usa solo MAYÚSCULAS, números y guiones bajos, empezando por una letra (p. ej. CRM_TOKEN).",
+      "reserved": "Los prefijos MESSER_, ANTHROPIC_ y AWS_ están reservados por la plataforma."
+    },
+    "loadError": "No hemos podido cargar los secretos.",
+    "empty": {
+      "title": "Sin secretos",
+      "description": "Añade tokens o contraseñas de tus sistemas para usarlos en herramientas y servidores MCP sin escribirlos en el código."
+    },
+    "listLabel": "Secretos del proyecto",
+    "updated": "Actualizado {when}",
+    "replace": "Reemplazar",
+    "replaceFor": "Reemplazar el valor de {name}",
+    "deleteFor": "Eliminar el secreto {name}",
+    "replaceTitle": "Reemplazar el valor de {name}",
+    "replaceDescription": "El valor anterior se sustituye al guardar; las ejecuciones nuevas usarán el nuevo.",
+    "newValue": "Nuevo valor",
+    "deleteTitle": "¿Eliminar el secreto {name}?",
+    "deleteDescription": "Las herramientas y servidores MCP que lo usen dejarán de recibirlo en las ejecuciones nuevas. No se puede deshacer.",
+    "added": "Secreto {name} añadido",
+    "replaced": "Valor de {name} reemplazado",
+    "deleted": "Secreto {name} eliminado",
+    "errors": {
+      "invalid_name": "Usa solo MAYÚSCULAS, números y guiones bajos, empezando por una letra (p. ej. CRM_TOKEN).",
+      "reserved_name": "Ese prefijo está reservado por la plataforma.",
+      "not_found": "Ese secreto ya no existe. Recarga la página.",
+      "forbidden": "No tienes permisos para gestionar los secretos de este proyecto."
+    }
+  }
+}

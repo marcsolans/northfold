@@ -563,3 +563,107 @@ def test_custom_nodes_parse_add_and_remove() -> None:
         remove_custom_function(code, "nada")
     with pytest.raises(SyntaxError):
         parse_custom_nodes("def roto(:\n")
+
+
+async def test_every_node_type_generates_imports_and_parses_back(project: Project) -> None:
+    kb = "0b7e3c0e-55d4-4a39-9a43-3c51e2b0c001"
+    child = WorkflowConfig(
+        name="hijo",
+        nodes=[node("entrada", "input"), node("salida", "output", value="ok")],
+        edges=[edge("entrada", "salida")],
+    )
+    cfg = WorkflowConfig(
+        name="todos",
+        inputs=[WorkflowInput(name="email", type="string"), WorkflowInput(name="lineas", type="object")],
+        nodes=[
+            node("entrada", "input"),
+            node("agente", "agent", agent="soporte", prompt="Hola {{input.email}}"),
+            node("modelo", "llm", model_tier="fast", prompt="Resume {{agente.output}}", json_output=True),
+            node(
+                "correo",
+                "tool",
+                tool="send_email",
+                args={"to": "{{input.email}}", "subject": "Hola", "body": "{{modelo.output.resumen}}"},
+            ),
+            node(
+                "crm",
+                "connector_action",
+                connection_id="c-1",
+                action="crear_contacto",
+                args={"from": "{{input.email}}", "e-mail": "{{input.email}}"},
+                requires_approval=True,
+                approver_role="builder",
+            ),
+            node("buscar", "knowledge_search", kb_ids=[kb], query="{{input.email}}", k=3),
+            node(
+                "consulta",
+                "sql_query",
+                kb_id=kb,
+                sql="select * from clientes where email = $1",
+                params=["{{input.email}}"],
+            ),
+            node(
+                "api",
+                "http_request",
+                method="GET",
+                url="https://api.example.com/c/{{input.email}}",
+                headers={"Authorization": "Bearer $API_TOKEN"},
+                query={"q": "{{buscar.output.results}}"},
+            ),
+            node("esperar", "wait", seconds=1),
+            node("cada", "loop", items="{{input.lineas}}", body="fila"),
+            node("fila", "custom", function="contar", args={"valor": "{{cada.item}}"}),
+            node("hijo_run", "sub_workflow", workflow="hijo", args={"nombre": "{{input.email}}"}),
+            node("si", "condition", expression='len({{consulta.output.rows}}) > 0 and lower({{input.email}}) != ""'),
+            node("aprobar", "approval", prompt="¿Seguir con {{input.email}}?", payload={"email": "{{input.email}}"}),
+            node("fin", "output", value={"api": "{{api.output.status}}", "filas": "{{cada.output}}"}),
+            node("fin_no", "output", value="no"),
+        ],
+        edges=[
+            edge("entrada", "agente"),
+            edge("agente", "modelo"),
+            edge("modelo", "correo"),
+            edge("entrada", "crm"),
+            edge("entrada", "buscar"),
+            edge("entrada", "consulta"),
+            edge("buscar", "api"),
+            edge("entrada", "esperar"),
+            edge("entrada", "cada"),
+            edge("cada", "fila"),
+            edge("entrada", "hijo_run"),
+            edge("consulta", "si"),
+            edge("si", "aprobar", "true"),
+            edge("si", "fin_no", "false"),
+            edge("aprobar", "fin"),
+            edge("api", "fin"),
+            edge("cada", "fin"),
+            edge("correo", "fin"),
+            edge("crm", "fin"),
+            edge("esperar", "fin"),
+            edge("hijo_run", "fin"),
+        ],
+        custom_nodes=["lento", "contar"],
+    )
+    assert validate_workflow(cfg, members={"soporte": "agent", "hijo": "workflow"}, custom_functions=["contar"]) == []
+    code = render_workflow_code(cfg)
+    assert 'aliases={"from_": "from", "e_mail": "e-mail"}' in code
+    assert "wf.active(" in code and 'when=lambda: wf.active(get_run_context().step_span("si", None), True)' in code
+    parsed = parse_workflow_code(code)
+    assert parsed is not None and normalized(parsed).model_dump() == normalized(cfg).model_dump()
+
+    project.add_file("workforce/soporte/messer.yaml", "_type: agent\nfqn: agent.py::agent\n")
+    project.add_file("workforce/soporte/__init__.py", "")
+    project.add_file(
+        "workforce/soporte/agent.py",
+        "from messer import Agent\nagent = Agent(name='soporte', model='anthropic/claude-haiku-5-5', tools=[], max_tokens=64)\n",
+    )
+    project.add(child)
+    project.add(cfg, nodes_code=PARALLEL_NODES)
+    workflow = project.load("todos")
+    assert set(workflow._steps) == {n.id for n in cfg.nodes} - {"fila"}
+    params = workflow.params_model_schema["properties"]
+    assert set(params) == {"email", "lineas", "event"}
+    from messer.codegen.flow import get_flow
+
+    flow = get_flow(project.root / "workforce" / "todos")
+    assert len(flow["nodes"]) == len(cfg.nodes) - 1

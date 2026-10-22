@@ -1,16 +1,59 @@
 {
-  "kinds": { "app": "App", "chat": "Chat" },
+  "kinds": {
+    "app": "App",
+    "chat": "Chat"
+  },
   "types": {
-    "data_table": { "name": "Tabla de datos", "short": "Filas con búsqueda y orden", "description": "Muestra filas de una consulta SQL, una búsqueda o datos estáticos, con orden, búsqueda, filtros y una acción por fila." },
-    "chart": { "name": "Gráfico", "short": "Barras, líneas, áreas o sectores", "description": "Visualiza una consulta: una columna para el eje X y una o varias series numéricas." },
-    "kpi": { "name": "KPI", "short": "Una cifra destacada", "description": "Un número clave (con variación opcional) a partir de la primera fila de una consulta." },
-    "form": { "name": "Formulario", "short": "Envía datos a un flujo o agente", "description": "Campos validados que, al enviarse, ejecutan un flujo (con mapeo de entradas) o envían un mensaje a un agente." },
-    "chat": { "name": "Chat", "short": "Conversación con un agente", "description": "Chat en streaming con un agente, con memoria por usuario y aviso cuando una respuesta espera aprobación." },
-    "record_list": { "name": "Lista de registros", "short": "Elementos con título y detalles", "description": "Lista compacta de registros con título, subtítulo, campos y etiqueta." },
-    "calendar": { "name": "Calendario", "short": "Registros con fecha", "description": "Vista mensual o de agenda a partir de una columna de fecha." },
-    "file_upload": { "name": "Subida de archivos", "short": "Ingesta en una base de conocimiento", "description": "Los archivos se indexan en una base de conocimiento y, opcionalmente, lanzan un flujo." },
-    "action_button": { "name": "Botón de acción", "short": "Ejecuta un flujo o un agente", "description": "Un botón (con confirmación opcional) que ejecuta un flujo o pide algo a un agente." },
-    "approvals_inbox": { "name": "Bandeja de aprobaciones", "short": "Aprobar o rechazar", "description": "Las aprobaciones pendientes del proyecto, con aprobar y rechazar según el rol." }
+    "data_table": {
+      "name": "Tabla de datos",
+      "short": "Filas con búsqueda y orden",
+      "description": "Muestra filas de una consulta SQL, una búsqueda o datos estáticos, con orden, búsqueda, filtros y una acción por fila."
+    },
+    "chart": {
+      "name": "Gráfico",
+      "short": "Barras, líneas, áreas o sectores",
+      "description": "Visualiza una consulta: una columna para el eje X y una o varias series numéricas."
+    },
+    "kpi": {
+      "name": "KPI",
+      "short": "Una cifra destacada",
+      "description": "Un número clave (con variación opcional) a partir de la primera fila de una consulta."
+    },
+    "form": {
+      "name": "Formulario",
+      "short": "Envía datos a un flujo o agente",
+      "description": "Campos validados que, al enviarse, ejecutan un flujo (con mapeo de entradas) o envían un mensaje a un agente."
+    },
+    "chat": {
+      "name": "Chat",
+      "short": "Conversación con un agente",
+      "description": "Chat en streaming con un agente, con memoria por usuario y aviso cuando una respuesta espera aprobación."
+    },
+    "record_list": {
+      "name": "Lista de registros",
+      "short": "Elementos con título y detalles",
+      "description": "Lista compacta de registros con título, subtítulo, campos y etiqueta."
+    },
+    "calendar": {
+      "name": "Calendario",
+      "short": "Registros con fecha",
+      "description": "Vista mensual o de agenda a partir de una columna de fecha."
+    },
+    "file_upload": {
+      "name": "Subida de archivos",
+      "short": "Ingesta en una base de conocimiento",
+      "description": "Los archivos se indexan en una base de conocimiento y, opcionalmente, lanzan un flujo."
+    },
+    "action_button": {
+      "name": "Botón de acción",
+      "short": "Ejecuta un flujo o un agente",
+      "description": "Un botón (con confirmación opcional) que ejecuta un flujo o pide algo a un agente."
+    },
+    "approvals_inbox": {
+      "name": "Bandeja de aprobaciones",
+      "short": "Aprobar o rechazar",
+      "description": "Las aprobaciones pendientes del proyecto, con aprobar y rechazar según el rol."
+    }
   },
   "list": {
     "title": "Interfaces",
@@ -102,16 +145,23 @@
     "identity": "Interfaz",
     "name": "Nombre",
     "slug": "Identificador",
-    "slugHint": "Carpeta interfaces/<identificador>/ y parte de la URL pública.",
+    "slugHint": "Nombre de la carpeta en interfaces/ y parte de la URL pública.",
     "description": "Descripción",
     "theme": "Tema",
     "accent": "Color de acento",
     "accentHint": "Botones principales y estados clave.",
     "accentHex": "Color de acento en hexadecimal",
     "mode": "Modo",
-    "modes": { "system": "Según el sistema", "light": "Claro", "dark": "Oscuro" },
+    "modes": {
+      "system": "Según el sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
     "density": "Densidad",
-    "densities": { "comfortable": "Cómoda", "compact": "Compacta" },
+    "densities": {
+      "comfortable": "Cómoda",
+      "compact": "Compacta"
+    },
     "logo": "Logo",
     "logoHint": "URL https:// de tu logo (opcional).",
     "access": "Acceso",
@@ -120,7 +170,12 @@
     "loginRequiredChatHint": "Sin inicio de sesión, cada visitante anónimo tiene su propia conversación.",
     "roles": "Roles con acceso",
     "rolesHint": "Sin marcar ninguno, cualquier miembro puede entrar.",
-    "roleNames": { "viewer": "Lector", "builder": "Constructor", "admin": "Administrador", "owner": "Propietario" },
+    "roleNames": {
+      "viewer": "Lector",
+      "builder": "Constructor",
+      "admin": "Administrador",
+      "owner": "Propietario"
+    },
     "screens": "Pantallas",
     "addScreen": "Añadir pantalla",
     "screenTitle": "Título de la pantalla",
@@ -177,13 +232,17 @@
     "queryInput": "Entrada de búsqueda",
     "queryInputHint": "Nombre de la caja de búsqueda que sustituye a la búsqueda por defecto (vacío = sin caja).",
     "mode": "Modo",
-    "modes": { "hybrid": "Híbrida", "vector": "Semántica", "keyword": "Palabras clave" },
+    "modes": {
+      "hybrid": "Híbrida",
+      "vector": "Semántica",
+      "keyword": "Palabras clave"
+    },
     "results": "Resultados",
     "noAgents": "Este proyecto no tiene agentes todavía.",
     "agent": "Agente",
     "chooseAgent": "Elige un agente",
     "prompt": "Mensaje",
-    "promptHint": "Plantilla opcional: {{form.campo}}, {{row.columna}}, {{file.filename}}, {{user.email}}. Vacío = un resumen de los campos.",
+    "promptHint": "Plantilla opcional: '{{form.campo}}', '{{row.columna}}', '{{file.filename}}', '{{user.email}}'. Vacío = un resumen de los campos.",
     "noWorkflows": "Este proyecto no tiene flujos todavía.",
     "workflow": "Flujo",
     "chooseWorkflow": "Elige un flujo",
@@ -213,7 +272,12 @@
     "badgeField": "Columna de la etiqueta",
     "chart": "Gráfico",
     "chartKind": "Tipo",
-    "chartKinds": { "bar": "Barras", "line": "Líneas", "area": "Áreas", "pie": "Sectores" },
+    "chartKinds": {
+      "bar": "Barras",
+      "line": "Líneas",
+      "area": "Áreas",
+      "pie": "Sectores"
+    },
     "xAxis": "Eje X",
     "xAxisHint": "Columna de categorías o fechas (por defecto, la primera).",
     "series": "Series",
@@ -266,7 +330,11 @@
     "help": "Ayuda",
     "button": "Botón",
     "variant": "Estilo",
-    "variants": { "primary": "Principal", "secondary": "Secundario", "danger": "Peligro" },
+    "variants": {
+      "primary": "Principal",
+      "secondary": "Secundario",
+      "danger": "Peligro"
+    },
     "description": "Descripción",
     "confirm": "Confirmación",
     "confirmHint": "Si lo rellenas, se pide confirmar con este texto antes de ejecutar.",
@@ -281,11 +349,16 @@
     "addColumn": "Añadir columna",
     "options": "Opciones",
     "optionsHint": "Una por línea: valor=texto (o solo el valor).",
-    "filtersHint": "Cada filtro es una entrada: úsalo en la consulta como parámetro {\"input\": nombre}.",
+    "filtersHint": "Cada filtro es una entrada: úsalo en la consulta como parámetro de tipo «Filtro» con su nombre.",
     "filterName": "Nombre",
     "filterLabel": "Etiqueta",
     "filterType": "Tipo de filtro",
-    "filterTypes": { "text": "Texto", "select": "Lista", "date": "Fecha", "number": "Número" },
+    "filterTypes": {
+      "text": "Texto",
+      "select": "Lista",
+      "date": "Fecha",
+      "number": "Número"
+    },
     "default": "Valor por defecto",
     "newFilter": "Filtro",
     "addFilter": "Añadir filtro",
@@ -308,8 +381,9 @@
     "addField": "Añadir campo",
     "rowActionDefault": "Ejecutar",
     "addRowAction": "Añadir acción por fila",
-    "rowActionHint": "Usa $row.columna en las entradas del flujo o {{row.columna}} en el mensaje al agente.",
-    "removeRowAction": "Quitar la acción por fila"
+    "rowActionHint": "Usa $row.columna en las entradas del flujo o '{{row.columna}}' en el mensaje al agente.",
+    "removeRowAction": "Quitar la acción por fila",
+    "chat": "Chat"
   },
   "publish": {
     "publish": "Publicar",
@@ -360,7 +434,7 @@
     "embedUrl": "Página para insertar",
     "embedHint": "Puede mostrarse dentro de un iframe en cualquier web.",
     "widget": "Widget",
-    "widgetHint": "Pega esta línea antes de </body> en tu web: añade un botón que abre el chat."
+    "widgetHint": "Pega esta línea al final del body de tu web: añade un botón que abre el chat."
   },
   "renderer": {
     "emptyScreen": "Esta pantalla no tiene componentes.",
@@ -419,7 +493,12 @@
     "denyTitle": "¿Rechazar esta acción?",
     "comment": "Comentario (opcional)",
     "cancel": "Cancelar",
-    "approvalStatus": { "pending": "Pendiente", "approved": "Aprobada", "denied": "Rechazada", "expired": "Caducada" },
+    "approvalStatus": {
+      "pending": "Pendiente",
+      "approved": "Aprobada",
+      "denied": "Rechazada",
+      "expired": "Caducada"
+    },
     "expires": "Caduca {when}",
     "noPermission": "Tu rol no puede decidir esta aprobación",
     "all": "Todos",
@@ -439,11 +518,30 @@
     "retry": "Reintentar",
     "poweredBy": "Hecho con Messer",
     "aiNotice": "Respuestas generadas con IA: pueden contener errores.",
-    "not_deployed": { "title": "Todavía no está publicado", "description": "Este proyecto aún no se ha publicado en producción. Vuelve a intentarlo más tarde." },
-    "login": { "title": "Inicia sesión para continuar", "description": "Esta página es privada para los miembros de la organización.", "action": "Iniciar sesión" },
-    "forbidden": { "title": "No tienes acceso", "description": "Tu cuenta no tiene permiso para ver esta página. Pide acceso a un administrador de la organización." },
-    "not_found": { "title": "Esta página no existe", "description": "Comprueba la dirección o pide el enlace correcto a quien te lo envió." },
-    "unavailable": { "title": "Servicio no disponible", "description": "Este servicio no está disponible en este momento." },
-    "error": { "title": "Algo ha fallado", "description": "No hemos podido cargar esta página. Inténtalo de nuevo." }
+    "not_deployed": {
+      "title": "Todavía no está publicado",
+      "description": "Este proyecto aún no se ha publicado en producción. Vuelve a intentarlo más tarde."
+    },
+    "login": {
+      "title": "Inicia sesión para continuar",
+      "description": "Esta página es privada para los miembros de la organización.",
+      "action": "Iniciar sesión"
+    },
+    "forbidden": {
+      "title": "No tienes acceso",
+      "description": "Tu cuenta no tiene permiso para ver esta página. Pide acceso a un administrador de la organización."
+    },
+    "not_found": {
+      "title": "Esta página no existe",
+      "description": "Comprueba la dirección o pide el enlace correcto a quien te lo envió."
+    },
+    "unavailable": {
+      "title": "Servicio no disponible",
+      "description": "Este servicio no está disponible en este momento."
+    },
+    "error": {
+      "title": "Algo ha fallado",
+      "description": "No hemos podido cargar esta página. Inténtalo de nuevo."
+    }
   }
 }

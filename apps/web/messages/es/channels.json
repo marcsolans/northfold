@@ -1,0 +1,335 @@
+{
+  "title": "Canales",
+  "description": "Conecta un agente a WhatsApp, Slack, Teams, Telegram o email. Responde con las mismas herramientas, reglas y memoria que en el resto de canales.",
+  "connectAction": "Conectar canal",
+  "refresh": "Actualizar",
+  "empty": {
+    "title": "Todavía no hay canales",
+    "description": "Conecta un canal para que tus clientes hablen con el agente desde WhatsApp, Slack, Teams, Telegram o email. Sin credenciales funciona en modo demo con el simulador."
+  },
+  "providers": {
+    "whatsapp": "WhatsApp",
+    "slack": "Slack",
+    "teams": "Microsoft Teams",
+    "telegram": "Telegram",
+    "email": "Email",
+    "phone": "Teléfono",
+    "voice": "Voz",
+    "web": "Chat web",
+    "api": "API",
+    "studio": "Studio"
+  },
+  "providerHints": {
+    "whatsapp": "Meta Cloud API, con plantillas para responder pasadas 24 h",
+    "slack": "Menciones, mensajes directos y respuestas en hilo",
+    "teams": "Bot de Azure Bot Service (Bot Framework)",
+    "telegram": "Bot de Telegram; el webhook se registra solo",
+    "email": "Dirección de entrada propia y respuestas en el mismo hilo"
+  },
+  "status": {
+    "active": "Activo",
+    "demo": "Demo",
+    "error": "Error",
+    "disabled": "Pausado"
+  },
+  "environments": {
+    "production": "Producción",
+    "development": "Desarrollo"
+  },
+  "fields": {
+    "access_token": "Token de acceso",
+    "app_secret": "App Secret de Meta",
+    "phone_number_id": "Phone Number ID",
+    "business_account_id": "WhatsApp Business Account ID",
+    "template_name": "Plantilla para pasadas 24 h",
+    "template_language": "Idioma de la plantilla",
+    "bot_token": "Bot Token",
+    "signing_secret": "Signing Secret",
+    "app_password": "Contraseña de la app (client secret)",
+    "app_id": "Microsoft App ID",
+    "tenant_id": "Tenant ID (bots de un solo inquilino)",
+    "from_name": "Nombre del remitente",
+    "subject_prefix": "Prefijo del asunto",
+    "group_mode": "En grupos"
+  },
+  "list": {
+    "agent": "Agente: {name}",
+    "demo": "Modo demo",
+    "platformCredentials": "Credenciales de la plataforma",
+    "managedElsewhere": "Este canal se gestiona desde Voz.",
+    "developmentFallback": "El proyecto no está desplegado: este canal demo responde con la versión en desarrollo.",
+    "conversations": "Conversaciones",
+    "messages24h": "Mensajes 24 h",
+    "failed24h": "Fallos 24 h",
+    "lastMessage": "Último mensaje {when}",
+    "noMessages": "Sin mensajes todavía",
+    "simulate": "Simular",
+    "open": "Abrir"
+  },
+  "connect": {
+    "title": "Conectar canal",
+    "description": "Elige el proveedor y el agente que responderá. Puedes empezar en modo demo y añadir las credenciales después.",
+    "provider": "Proveedor",
+    "agent": "Agente",
+    "agentHint": "Responde con sus herramientas, reglas y memoria.",
+    "name": "Nombre del canal",
+    "environment": "Entorno",
+    "environmentHint": "Producción usa la versión desplegada.",
+    "locale": "Idioma de los avisos",
+    "localeHint": "Para los avisos de aprobación pendiente y de error.",
+    "locales": {
+      "es": "Español",
+      "en": "Inglés"
+    },
+    "demo": "Modo demo",
+    "demoOn": "No se envía nada al proveedor: las respuestas se guardan en la conversación y puedes probar con el simulador.",
+    "demoOff": "Las respuestas se envían de verdad con las credenciales del canal.",
+    "platformValue": "Ya configurado en la plataforma (opcional)",
+    "templateHint": "Plantilla aprobada en Meta con un parámetro '{{1}}' para el texto. Opcional.",
+    "missing": "Faltan datos para conectar en vivo: {fields}",
+    "noAgentsTitle": "Este proyecto no tiene agentes",
+    "noAgentsBody": "Crea un agente en la pestaña Agentes para conectarlo a un canal.",
+    "submit": "Conectar"
+  },
+  "setup": {
+    "title": "Configura «{name}»",
+    "description": "Completa la conexión en el proveedor con estos datos.",
+    "continue": "Ir al canal",
+    "demoTitle": "Canal en modo demo",
+    "demoBody": "Nada sale de Messer: usa el simulador para chatear como un usuario del canal. Para probar el webhook a mano, llama a la URL con el token del canal.",
+    "inboundAddress": "Dirección de entrada",
+    "urlLabel": {
+      "whatsapp": "Callback URL (webhook de Meta)",
+      "slack": "Request URL (Event Subscriptions)",
+      "teams": "Messaging endpoint (Azure Bot)",
+      "telegram": "URL del webhook (registrada automáticamente)",
+      "email": "URL del webhook de entrada de tu proveedor de email"
+    },
+    "secretLabel": {
+      "demo": "Token del canal (para llamar al webhook en modo demo)",
+      "whatsapp": "Verify token",
+      "slack": "Secreto del canal",
+      "teams": "Secreto del canal",
+      "telegram": "Secret token de Telegram",
+      "email": "Token del webhook de email"
+    },
+    "secretOnce": "Cópialo ahora: no se volverá a mostrar. Puedes generar otro en Configuración.",
+    "secretHidden": "El secreto solo se muestra al conectar o al regenerarlo.",
+    "demoCurl": "Ejemplo de llamada",
+    "stepsTitle": "Pasos en el proveedor",
+    "steps": {
+      "whatsapp": {
+        "1": "En developers.facebook.com abre tu app con el producto WhatsApp.",
+        "2": "En WhatsApp → Configuración, pega la Callback URL y el Verify token, y verifica.",
+        "3": "Suscríbete al campo «messages» del webhook.",
+        "4": "Para responder pasadas 24 horas, crea y aprueba una plantilla y añádela en la configuración del canal."
+      },
+      "slack": {
+        "1": "En api.slack.com/apps, activa Event Subscriptions y pega la Request URL.",
+        "2": "Suscribe el bot a app_mention, message.im y message.channels.",
+        "3": "Añade los scopes app_mentions:read, chat:write, im:history y channels:history, y reinstala la app.",
+        "4": "Invita al bot a los canales donde deba responder."
+      },
+      "teams": {
+        "1": "En Azure, crea un Azure Bot con el Microsoft App ID y su secreto.",
+        "2": "Pega la URL como Messaging endpoint.",
+        "3": "Activa el canal Microsoft Teams del bot e instala la app en tu organización."
+      },
+      "telegram": {
+        "1": "Crea el bot con @BotFather y copia su token.",
+        "2": "Messer registra el webhook al conectar; requiere que MESSER_WEB_URL sea una URL HTTPS pública.",
+        "3": "En grupos, el bot responde cuando lo mencionan o le contestan."
+      },
+      "email": {
+        "1": "Los clientes escriben a la dirección de entrada; las respuestas salen con Reply-To a esa dirección.",
+        "2": "Configura el webhook de entrada de tu proveedor (formato Postmark) con esta URL y su token.",
+        "3": "Las respuestas mantienen el hilo con In-Reply-To y References."
+      }
+    },
+    "sharedEmail": "Si tu proveedor envía todo el dominio de entrada a un único webhook, usa /api/channels/inbound/email con MESSER_INBOUND_EMAIL_SECRET: se enruta por dirección."
+  },
+  "detail": {
+    "back": "Canales",
+    "agent": "Agente: {name}",
+    "demo": "Modo demo",
+    "conversations": "Ver conversaciones",
+    "test": "Probar conexión",
+    "testOk": "Conexión verificada con el proveedor",
+    "testDemo": "Canal en modo demo: listo para el simulador",
+    "testFailed": "La prueba de conexión ha fallado",
+    "fallbackTitle": "Usando la versión en desarrollo",
+    "fallbackBody": "El proyecto no está desplegado en producción, así que este canal demo responde con la última versión en desarrollo.",
+    "errorTitle": "El canal tiene un problema",
+    "disabledBody": "El canal está pausado: los mensajes que lleguen no se procesan.",
+    "unsupported": "Este canal se gestiona desde la sección de Voz.",
+    "notFoundTitle": "Canal no encontrado",
+    "notFoundDescription": "Puede que se haya desconectado o que no tengas acceso.",
+    "setupTitle": "Conexión con el proveedor",
+    "setupDescription": "URLs y pasos para completar la conexión.",
+    "tabs": {
+      "simulator": "Simulador",
+      "setup": "Conexión",
+      "activity": "Actividad",
+      "settings": "Configuración"
+    }
+  },
+  "simulator": {
+    "title": "Simulador de {provider}",
+    "subtitle": "Escribe como un usuario del canal",
+    "agent": "Agente",
+    "from": "Usuario simulado",
+    "fromHint": "Cada usuario tiene su conversación y su memoria.",
+    "name": "Nombre visible",
+    "newConversation": "Nueva conversación",
+    "demoNote": "Canal demo: las respuestas se guardan en la conversación y no se envían a nadie.",
+    "liveNote": "Los mensajes simulados no se envían al proveedor, aunque el canal esté en vivo.",
+    "emptyTitle": "Empieza la conversación",
+    "emptyDescription": "Escribe un mensaje como lo haría un cliente. Verás la respuesta del agente y el enlace a su traza.",
+    "typing": "{agent} está respondiendo…",
+    "queued": "Mensaje en cola…",
+    "slowQueue": "El mensaje sigue en cola. Los mensajes se procesan en el servicio worker: comprueba que está en marcha.",
+    "message": "Mensaje",
+    "placeholder": "Escribe un mensaje…",
+    "disabled": "El canal está pausado",
+    "readOnly": "Necesitas el rol de constructor para simular",
+    "send": "Enviar",
+    "sendHint": "envía",
+    "newLine": "nueva línea"
+  },
+  "thread": {
+    "label": "Mensajes de la conversación",
+    "trace": "Ver traza",
+    "notProcessed": "No procesado",
+    "notice": {
+      "approval_pending": "Aviso: pendiente de aprobación",
+      "error": "Aviso de error"
+    },
+    "delivery": {
+      "sent": "Enviado",
+      "stored": "Guardado (demo)",
+      "simulated": "Guardado (simulado)",
+      "failed": "No entregado",
+      "received": "En cola",
+      "processing": "Procesando",
+      "parts": "{count, plural, one {# parte} other {# partes}}"
+    }
+  },
+  "activity": {
+    "emptyTitle": "Sin actividad",
+    "emptyDescription": "Aquí verás cada mensaje recibido y enviado por el canal, con su estado.",
+    "when": "Fecha",
+    "direction": "Sentido",
+    "contact": "Contacto",
+    "text": "Mensaje",
+    "links": "Enlaces",
+    "conversation": "Conversación",
+    "trace": "Traza",
+    "simulated": "Simulado",
+    "shown": "{count, plural, one {# mensaje} other {# mensajes}}",
+    "loadMore": "Cargar más",
+    "directions": {
+      "inbound": "Recibido",
+      "outbound": "Enviado"
+    },
+    "statuses": {
+      "received": "En cola",
+      "processing": "Procesando",
+      "processed": "Procesado",
+      "ignored": "Ignorado",
+      "failed": "Fallido",
+      "sent": "Enviado",
+      "stored": "Guardado"
+    }
+  },
+  "settings": {
+    "generalTitle": "Configuración del canal",
+    "generalDescription": "Agente, entorno, avisos y credenciales.",
+    "approvalMessage": "Aviso de aprobación pendiente",
+    "errorMessage": "Aviso de error",
+    "defaultHint": "Vacío: se usa el texto por defecto en el idioma del canal.",
+    "groupModes": {
+      "mention": "Solo cuando mencionan al bot",
+      "all": "Todos los mensajes"
+    },
+    "credentialsTitle": "Credenciales",
+    "credentialsDescription": "Se guardan cifradas y nunca se muestran. Deja un campo vacío para conservar el valor actual.",
+    "credentialSet": "Configurada",
+    "credentialPlatform": "De la plataforma",
+    "keepValue": "Sin cambios",
+    "saved": "Canal actualizado",
+    "savedWithError": "Guardado, pero la conexión con el proveedor ha fallado",
+    "paused": "Canal pausado",
+    "resumed": "Canal reactivado",
+    "unsupported": "Este canal se configura desde la sección de Voz.",
+    "dangerTitle": "Acciones",
+    "dangerDescription": "Pausar, regenerar el secreto o desconectar el canal.",
+    "pauseTitle": "Pausar el canal",
+    "pauseDescription": "Los mensajes que lleguen se registran pero no se responden.",
+    "resumeTitle": "Reactivar el canal",
+    "resumeDescription": "El agente vuelve a responder los mensajes nuevos.",
+    "pause": "Pausar",
+    "resume": "Reactivar",
+    "rotateTitle": "Regenerar el secreto",
+    "rotateDescription": "Invalida el verify token o el token del webhook actual.",
+    "rotate": "Regenerar",
+    "rotateConfirmTitle": "¿Regenerar el secreto del canal?",
+    "rotateConfirmBody": "El secreto actual dejará de funcionar. Tendrás que actualizarlo en el proveedor (Telegram se actualiza solo).",
+    "disconnectTitle": "Desconectar",
+    "disconnectDescription": "Elimina el canal y su registro de entregas. Las conversaciones se conservan en la bandeja.",
+    "disconnect": "Desconectar",
+    "disconnectConfirmTitle": "¿Desconectar «{name}»?",
+    "disconnectConfirmBody": "El agente dejará de responder en este canal y se borrarán sus credenciales. Esta acción no se puede deshacer.",
+    "disconnected": "«{name}» desconectado"
+  },
+  "inbox": {
+    "title": "Conversaciones",
+    "description": "Todas las conversaciones del proyecto, de cualquier canal, con enlace a la traza de cada respuesta.",
+    "refresh": "Actualizar",
+    "listLabel": "Conversaciones",
+    "agent": "Agente: {name}",
+    "since": "desde {date}",
+    "simulated": "Simulada",
+    "demo": "Demo",
+    "offline": "Sin conexión en directo",
+    "noPreview": "Sin mensajes",
+    "pendingBadge": "{count, plural, one {# aprobación} other {# aprobaciones}}",
+    "failedBadge": "{count, plural, one {# fallo de entrega} other {# fallos de entrega}}",
+    "shown": "{count, plural, one {# conversación} other {# conversaciones}}",
+    "loadMore": "Cargar más",
+    "backToList": "← Volver a la lista",
+    "selectTitle": "Elige una conversación",
+    "selectDescription": "Verás el hilo completo, el estado de cada entrega y el enlace a la traza de cada turno.",
+    "lastTrace": "Última traza",
+    "close": "Cerrar",
+    "reopen": "Reabrir",
+    "closedToast": "Conversación cerrada",
+    "reopenedToast": "Conversación reabierta",
+    "pendingTitle": "{count, plural, one {Hay # aprobación pendiente} other {Hay # aprobaciones pendientes}}",
+    "pendingOpen": "Revisar",
+    "noMessagesTitle": "Sin mensajes",
+    "noMessagesDescription": "Esta conversación todavía no tiene mensajes.",
+    "notFoundTitle": "Conversación no encontrada",
+    "notFoundDescription": "Puede que se haya eliminado o que no tengas acceso.",
+    "statuses": {
+      "open": "Abierta",
+      "closed": "Cerrada"
+    },
+    "filters": {
+      "label": "Filtros",
+      "search": "Buscar",
+      "searchPlaceholder": "Contacto, título o texto",
+      "provider": "Canal",
+      "channel": "Conexión",
+      "status": "Estado",
+      "clear": "Quitar filtros"
+    },
+    "empty": {
+      "title": "Sin conversaciones todavía",
+      "description": "Cuando alguien escriba al agente por un canal, el chat público o la API, la conversación aparecerá aquí.",
+      "action": "Conectar un canal",
+      "filteredTitle": "Ninguna conversación coincide",
+      "filteredDescription": "Prueba con otros filtros o quítalos."
+    }
+  },
+  "phoneAction": "Teléfono"
+}

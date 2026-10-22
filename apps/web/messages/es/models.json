@@ -1,0 +1,28 @@
+{
+  "description": "Los modelos que puede usar tu organización, sus precios por millón de tokens y dónde se ejecutan. Los agentes eligen un nivel; Messer lo traduce al modelo configurado.",
+  "tiers": {
+    "title": "Niveles",
+    "description": "Cada agente usa un nivel. Cambiar el modelo de un nivel no requiere tocar los agentes.",
+    "names": { "fast": "Rápido", "standard": "Estándar", "powerful": "Avanzado" },
+    "hints": {
+      "fast": "Clasificar, extraer, respuestas cortas.",
+      "standard": "La mayoría de agentes y flujos.",
+      "powerful": "Razonamiento complejo y tareas largas.",
+      "custom": "Nivel personalizado."
+    }
+  },
+  "catalog": {
+    "title": "Catálogo y precios",
+    "description": "Precio en dólares por millón de tokens. El consumo se descuenta en créditos al precio vigente.",
+    "model": "Modelo",
+    "input": "Entrada / MTok",
+    "output": "Salida / MTok",
+    "context": "Contexto (tokens)",
+    "availability": "Disponibilidad",
+    "allowed": "Permitido",
+    "blocked": "Bloqueado por la política",
+    "eu": "Disponible en la UE (Bedrock)",
+    "emptyTitle": "No hay modelos configurados",
+    "emptyDescription": "Un administrador de la plataforma debe dar de alta los precios de los modelos."
+  }
+}

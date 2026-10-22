@@ -27,7 +27,7 @@ CREDIT_NOTE_TOOL = {
         "required": ["amount"],
     },
 }
-TOOLS_PY = '''from messer import Tool
+TOOLS_PY = """from messer import Tool
 
 
 def _create_credit_note(amount: float, invoice_id: str) -> dict:
@@ -35,7 +35,7 @@ def _create_credit_note(amount: float, invoice_id: str) -> dict:
 
 
 create_credit_note = Tool(name="create_credit_note", description="Emite un abono (credit note)", handler=_create_credit_note)
-'''
+"""
 
 
 async def _setup(client: httpx.AsyncClient, email: str = "ana@acme.example") -> str:
@@ -89,8 +89,14 @@ async def test_playbook_lifecycle_validation_plan_gate_and_audit(client: httpx.A
 
     overview = (await client.get(base)).json()
     assert overview["agents"] == [
-        {"member": "soporte", "enabled": False, "has_playbook": False, "generated_by": None, "policies": 0,
-         "updated_at": None}
+        {
+            "member": "soporte",
+            "enabled": False,
+            "has_playbook": False,
+            "generated_by": None,
+            "policies": 0,
+            "updated_at": None,
+        }
     ]
     assert overview["plan_allows"] is False  # trial (Pro) does not include Guard
 
@@ -146,10 +152,17 @@ async def test_playbook_lifecycle_validation_plan_gate_and_audit(client: httpx.A
     disabled = (await client.post(f"{base}/soporte/disable")).json()
     assert disabled["enabled"] is False
     async with system_session() as session:
-        actions = (await session.execute(select(AuditLog.action).where(AuditLog.action.like("guard.%")))).scalars().all()
+        actions = (
+            (await session.execute(select(AuditLog.action).where(AuditLog.action.like("guard.%")))).scalars().all()
+        )
     assert sorted(actions) == sorted(
-        ["guard.playbook_generated", "guard.playbook_updated", "guard.enabled", "guard.playbook_updated",
-         "guard.disabled"]
+        [
+            "guard.playbook_generated",
+            "guard.playbook_updated",
+            "guard.enabled",
+            "guard.playbook_updated",
+            "guard.disabled",
+        ]
     )
 
     workflow = await client.get(f"{base}/no_existe")
@@ -164,7 +177,9 @@ async def test_viewers_read_but_cannot_change_guard(client: httpx.AsyncClient) -
         owner = (await s.execute(select(User).where(User.email == "ana@acme.example"))).scalar_one()
         oid = (await s.execute(select(Membership.org_id).where(Membership.user_id == owner.id))).scalar_one()
     await client.post("/api/v1/auth/logout")
-    res = await client.post("/api/v1/auth/signup", json={"email": viewer_email, "password": "Contrasena123", "name": "V"})
+    res = await client.post(
+        "/api/v1/auth/signup", json={"email": viewer_email, "password": "Contrasena123", "name": "V"}
+    )
     assert res.status_code == 200, res.text
     async with system_session() as s:
         viewer = (await s.execute(select(User).where(User.email == viewer_email))).scalar_one()
@@ -213,7 +228,8 @@ async def test_metrics_and_decisions_from_guarded_runs(client: httpx.AsyncClient
     assert m["runs"] == 3 and m["turns"] == 3 and m["days"] == 7
     assert m["on_path_turns"] == 2 and abs(m["on_path_share"] - 2 / 3) < 1e-9
     assert m["blocked_actions"] == 1 and m["routes"] == {"small": 1, "default": 2}
-    assert m["demo"] is True and m["daily"][0]["turns"] == 3 and m["daily"][0]["blocked"] == 1
+    assert m["demo"] is True  # runs may straddle midnight UTC, so the daily series is checked in total
+    assert sum(d["turns"] for d in m["daily"]) == 3 and sum(d["blocked"] for d in m["daily"]) == 1
     # Demo calls are priced at list prices: the greeting on Haiku is cheaper than the same tokens on Sonnet.
     assert float(m["cost"]["baseline_usd"]) > float(m["cost"]["guarded_usd"]) > 0
     assert m["cost"]["savings_pct"] is not None and m["cost"]["savings_pct"] > 0
@@ -223,6 +239,8 @@ async def test_metrics_and_decisions_from_guarded_runs(client: httpx.AsyncClient
     assert [d["policy"] for d in decisions] == ["fallthrough", "credit_note_limit", "small_talk"]
     block = decisions[1]
     assert block["status"] == "blocked" and block["blocked"][0]["tool"] == "create_credit_note"
-    assert block["tool_calls"][0]["input"]["amount"] == 900 and uuid.UUID(block["run_id"]) == uuid.UUID(blocked["run_id"])
+    assert block["tool_calls"][0]["input"]["amount"] == 900 and uuid.UUID(block["run_id"]) == uuid.UUID(
+        blocked["run_id"]
+    )
     assert decisions[2]["model"] == "anthropic/claude-haiku-5-5" and decisions[2]["route"] == "small"
     assert decisions[0]["on_path"] is False and decisions[0]["text"] == "¿Qué facturas tengo pendientes?"

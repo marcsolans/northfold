@@ -17,12 +17,13 @@ import {
   toast,
 } from "@messer/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bot, Code2, FlaskConical, History, Save, Settings2, Undo2 } from "lucide-react";
+import { ArrowLeft, Bot, Code2, FlaskConical, History, Save, Settings2, ShieldCheck, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 
+import { GuardPanel } from "@/components/guard/guard-panel";
 import { ApiError, http } from "@/lib/api";
 import { useRole } from "@/lib/hooks/use-me";
 import { configFingerprint, normalizeConfig, normalizeContextFiles, validateConfig } from "@/lib/studio/agent-config";
@@ -35,7 +36,7 @@ import { ConfigTab } from "./config-tab";
 import { EvalsTab } from "./evals-tab";
 import { VersionsTab } from "./versions-tab";
 
-type TabKey = "config" | "code" | "versions" | "evals";
+type TabKey = "config" | "code" | "versions" | "evals" | "guard";
 
 function DirtyDot({ label }: { label: string }) {
   return (
@@ -277,6 +278,7 @@ export function AgentBuilder({ projectId, name }: { projectId: string; name: str
             {tabLabel("code", Code2, t("tabs.code"), codeDirty)}
             {tabLabel("versions", History, t("tabs.versions"))}
             {tabLabel("evals", FlaskConical, t("tabs.evals"))}
+            {tabLabel("guard", ShieldCheck, t("tabs.guard"))}
           </TabsList>
           <TabsContent value="config" className="min-h-0 flex-1 overflow-y-auto pt-0">
             <ConfigTab
@@ -321,6 +323,9 @@ export function AgentBuilder({ projectId, name }: { projectId: string; name: str
           </TabsContent>
           <TabsContent value="evals" className="min-h-0 flex-1 overflow-y-auto pt-0">
             <EvalsTab projectId={projectId} member={detail.name} canBuild={canBuild} />
+          </TabsContent>
+          <TabsContent value="guard" className="min-h-0 flex-1 overflow-y-auto pt-0">
+            <GuardPanel projectId={projectId} member={detail.name} canBuild={canBuild} />
           </TabsContent>
         </Tabs>
       </section>

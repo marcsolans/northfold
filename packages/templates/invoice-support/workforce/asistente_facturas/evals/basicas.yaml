@@ -1,0 +1,71 @@
+# Evals deterministas (etiqueta "offline"): comprueban la herramienta usada y datos que solo puede dar esa
+# herramienta, así que pasan con Claude y con el modelo de demostración.
+- name: estado_de_una_factura
+  description: Consulta una factura por su número y responde con su estado y su cliente
+  runnable: _member.py::agent
+  tags: [offline, facturas]
+  params:
+    prompt: Consultar el estado de la factura F-2026-0142
+  seq!:
+    - llm
+    - consultar_factura
+    - llm
+  output:
+    contains_all!: ["F-2026-0142", "Talleres Ebro"]
+    contains!:
+      value: pendiente
+      transform: lowercase
+
+- name: factura_inexistente
+  description: Si la factura no existe lo dice en lugar de inventar datos
+  runnable: _member.py::agent
+  tags: [offline, facturas]
+  params:
+    prompt: Consultar el estado de la factura F-2026-9999
+  seq!:
+    - llm
+    - consultar_factura
+    - llm
+  output:
+    contains!:
+      value: no existe
+      transform: lowercase
+
+- name: facturas_pendientes_de_cobro
+  description: Lista las facturas pendientes y vencidas con su importe total
+  runnable: _member.py::agent
+  tags: [offline, facturas]
+  params:
+    prompt: Dame las facturas pendientes de cobro
+  seq!:
+    - llm
+    - facturas_pendientes
+    - llm
+  output:
+    contains_all!: ["F-2026-0131", "vencida"]
+
+- name: recargo_por_demora_con_fuente
+  description: Responde con las condiciones generales y cita el documento
+  runnable: _member.py::agent
+  tags: [offline, conocimiento]
+  params:
+    prompt: ¿Qué recargo se aplica si pago tarde según las condiciones generales?
+  seq!:
+    - llm
+    - knowledge_search
+    - llm
+  output:
+    contains_all!: ["1,5 %", "condiciones-generales-de-venta.pdf"]
+
+- name: abono_pequeno_sin_aprobacion
+  description: Un abono de 200 € se emite sin esperar aprobación
+  runnable: _member.py::agent
+  tags: [offline, abonos]
+  params:
+    prompt: Quiero emitir un abono de 200 € en la factura F-2026-0129 por «error en el precio»
+  seq!:
+    - llm
+    - emitir_abono
+    - llm
+  output:
+    contains_all!: ["AB-2026-0129", "200,00 €"]

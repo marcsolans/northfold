@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-cli"
+version = "1.0.0"
+description = "The messer command line: create, run locally, push, deploy and evaluate Messer projects."
+requires-python = ">=3.12"
+dependencies = [
+  "messer-core[server,evals]",
+  "httpx>=0.28",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0",
+]
+
+[project.scripts]
+messer = "messer_cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/messer_cli"]
+
+# The project scaffolds are the templates of the inherited CLI (packages/messer-core/cli/init-templates).
+[tool.hatch.build.targets.wheel.force-include]
+"../messer-core/cli/init-templates" = "messer_cli/init_templates"

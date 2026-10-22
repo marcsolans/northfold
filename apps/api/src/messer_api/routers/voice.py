@@ -485,6 +485,7 @@ async def list_calls(
     conversation_id: uuid.UUID | None = None,
     phone_number_id: uuid.UUID | None = None,
     transport: str | None = None,
+    channel: Literal["voice", "phone"] | None = None,
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     principal: Principal = Depends(require_role("viewer")),
@@ -503,6 +504,8 @@ async def list_calls(
         query = query.where(VoiceCall.phone_number_id == phone_number_id)
     if transport:
         query = query.where(VoiceCall.transport == transport)
+    if channel:
+        query = query.where(VoiceCall.channel == channel)
     total = (await session.execute(select(func.count()).select_from(query.subquery()))).scalar_one()
     rows = (
         (await session.execute(query.order_by(VoiceCall.created_at.desc()).limit(limit).offset(offset))).scalars().all()

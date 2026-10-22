@@ -74,3 +74,41 @@ def test_generated_code_imports_and_builds_the_agent(tmp_path: Path, monkeypatch
     assert "calculator" in names and "send_email" in names
     calc = next(t for t in agent.tools if getattr(t, "name", None) == "calculator")
     assert calc.requires_approval is True
+
+
+def test_custom_tools_load_as_package_and_plain_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg = default_agent_config("abonos", "Emite abonos")
+    cfg.tools = [ToolConfig(type="custom", key="emitir_abono", requires_approval=True)]
+    code = render_agent_code(cfg, has_custom_tools=True)
+    parsed = parse_agent_code(code)
+    assert parsed is not None and parsed.model_dump() == cfg.model_dump()
+    member = tmp_path / "workforce" / "abonos"
+    member.mkdir(parents=True)
+    (tmp_path / "workforce" / "__init__.py").write_text("", encoding="utf-8")
+    (member / "__init__.py").write_text("", encoding="utf-8")
+    (member / "agent.py").write_text(code, encoding="utf-8")
+    (member / "tools.py").write_text(
+        'def emitir_abono(factura: str, importe: float) -> str:\n    """Emite un abono."""\n    return factura\n',
+        encoding="utf-8",
+    )
+
+    def gated(module: object) -> bool:
+        tool = next(t for t in module.agent.tools if getattr(t, "name", None) == "emitir_abono")  # type: ignore[attr-defined]
+        return tool.requires_approval is True
+
+    # As a package (the runtime sandbox).
+    monkeypatch.syspath_prepend(str(tmp_path))
+    package = importlib.import_module("workforce.abonos.agent")
+    assert gated(package)
+    for name in [m for m in sys.modules if m == "workforce" or m.startswith("workforce.")]:
+        sys.modules.pop(name)
+    # As a plain file next to tools.py (messer start, flow introspection).
+    monkeypatch.syspath_prepend(str(member))
+    spec = importlib.util.spec_from_file_location("abonos_agent", member / "agent.py")
+    assert spec is not None and spec.loader is not None
+    plain = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(plain)
+    finally:
+        sys.modules.pop("tools", None)
+    assert gated(plain)

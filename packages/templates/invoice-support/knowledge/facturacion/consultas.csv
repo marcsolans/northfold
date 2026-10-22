@@ -1,0 +1,73 @@
+id,fecha,canal,cliente,numero_factura,tema,resuelta
+1,2026-09-01T13:09,telefono,Talleres Ebro S.L.,F-2026-0122,estado,true
+2,2026-09-01T16:06,telefono,Hotel Mar Azul S.L.,F-2026-0121,estado,false
+3,2026-09-02T11:02,whatsapp,Construcciones Miralles S.A.,F-2026-0112,abono,true
+4,2026-09-02T09:35,web,Gestoría Llobet y Asociados S.L.,F-2026-0123,datos_fiscales,true
+5,2026-09-03T11:40,telefono,Construcciones Miralles S.A.,F-2026-0131,estado,true
+6,2026-09-04T14:03,web,Hotel Mar Azul S.L.,F-2026-0117,condiciones,false
+7,2026-09-04T12:26,whatsapp,Academia de Idiomas Babel S.L.,F-2026-0114,estado,true
+8,2026-09-05T16:52,web,Hotel Mar Azul S.L.,F-2026-0132,estado,true
+9,2026-09-06T18:12,web,Hotel Mar Azul S.L.,F-2026-0121,condiciones,true
+10,2026-09-06T17:03,web,Gestoría Llobet y Asociados S.L.,F-2026-0130,condiciones,true
+11,2026-09-07T14:49,whatsapp,Clínica Dental Sonrisa S.L.P.,F-2026-0120,datos_fiscales,false
+12,2026-09-07T13:19,email,Hotel Mar Azul S.L.,F-2026-0117,estado,true
+13,2026-09-08T11:05,whatsapp,Hotel Mar Azul S.L.,F-2026-0128,condiciones,true
+14,2026-09-09T13:46,whatsapp,Talleres Ebro S.L.,F-2026-0124,datos_fiscales,false
+15,2026-09-09T09:32,web,Gestoría Llobet y Asociados S.L.,F-2026-0123,abono,true
+16,2026-09-10T15:26,telefono,Construcciones Miralles S.A.,F-2026-0111,estado,true
+17,2026-09-11T17:50,whatsapp,Talleres Ebro S.L.,F-2026-0136,abono,true
+18,2026-09-11T17:31,email,Hotel Mar Azul S.L.,F-2026-0128,condiciones,true
+19,2026-09-12T09:17,telefono,Panadería La Espiga S.C.,F-2026-0125,duplicado,true
+20,2026-09-12T19:44,telefono,Talleres Ebro S.L.,F-2026-0119,datos_fiscales,false
+21,2026-09-13T15:18,whatsapp,Hotel Mar Azul S.L.,F-2026-0132,duplicado,true
+22,2026-09-14T15:22,telefono,Hotel Mar Azul S.L.,F-2026-0115,estado,true
+23,2026-09-14T11:49,web,Talleres Ebro S.L.,F-2026-0119,estado,true
+24,2026-09-15T15:05,whatsapp,Hotel Mar Azul S.L.,F-2026-0115,abono,true
+25,2026-09-16T10:52,email,Gestoría Llobet y Asociados S.L.,F-2026-0123,condiciones,true
+26,2026-09-16T14:22,whatsapp,Construcciones Miralles S.A.,F-2026-0131,estado,true
+27,2026-09-17T10:09,telefono,Hotel Mar Azul S.L.,F-2026-0117,estado,true
+28,2026-09-17T17:11,whatsapp,Clínica Dental Sonrisa S.L.P.,F-2026-0118,estado,true
+29,2026-09-18T16:23,telefono,Panadería La Espiga S.C.,F-2026-0129,abono,false
+30,2026-09-19T19:54,telefono,Construcciones Miralles S.A.,F-2026-0126,duplicado,true
+31,2026-09-19T08:29,email,Gestoría Llobet y Asociados S.L.,F-2026-0139,duplicado,true
+32,2026-09-20T14:25,whatsapp,Talleres Ebro S.L.,F-2026-0122,estado,true
+33,2026-09-21T14:03,web,Hotel Mar Azul S.L.,F-2026-0116,estado,true
+34,2026-09-21T09:21,web,Panadería La Espiga S.C.,F-2026-0129,estado,true
+35,2026-09-22T10:34,whatsapp,Hotel Mar Azul S.L.,F-2026-0116,datos_fiscales,true
+36,2026-09-22T11:39,web,Distribuciones Norte S.L.,F-2026-0134,duplicado,true
+37,2026-09-23T13:38,whatsapp,Academia de Idiomas Babel S.L.,F-2026-0133,estado,true
+38,2026-09-24T15:29,whatsapp,Distribuciones Norte S.L.,F-2026-0140,estado,true
+39,2026-09-24T09:47,telefono,Construcciones Miralles S.A.,F-2026-0131,estado,true
+40,2026-09-25T19:10,web,Construcciones Miralles S.A.,F-2026-0111,condiciones,true
+41,2026-09-26T19:34,email,Construcciones Miralles S.A.,F-2026-0111,condiciones,true
+42,2026-09-26T18:55,telefono,Hotel Mar Azul S.L.,F-2026-0115,estado,true
+43,2026-09-27T10:22,whatsapp,Talleres Ebro S.L.,F-2026-0124,condiciones,true
+44,2026-09-27T13:40,telefono,Talleres Ebro S.L.,F-2026-0124,estado,true
+45,2026-09-28T14:47,web,Talleres Ebro S.L.,F-2026-0124,condiciones,true
+46,2026-09-29T19:01,email,Construcciones Miralles S.A.,F-2026-0111,estado,true
+47,2026-09-29T11:44,whatsapp,Hotel Mar Azul S.L.,F-2026-0132,abono,false
+48,2026-09-30T13:05,web,Talleres Ebro S.L.,F-2026-0124,estado,true
+49,2026-10-01T13:13,telefono,Distribuciones Norte S.L.,F-2026-0140,datos_fiscales,true
+50,2026-10-01T15:58,email,Hotel Mar Azul S.L.,F-2026-0132,duplicado,true
+51,2026-10-02T18:07,email,Distribuciones Norte S.L.,F-2026-0134,estado,true
+52,2026-10-02T10:27,web,Construcciones Miralles S.A.,F-2026-0131,abono,true
+53,2026-10-03T19:05,web,Clínica Dental Sonrisa S.L.P.,F-2026-0120,estado,true
+54,2026-10-04T17:57,email,Gestoría Llobet y Asociados S.L.,F-2026-0139,duplicado,true
+55,2026-10-04T17:30,web,Hotel Mar Azul S.L.,F-2026-0132,condiciones,true
+56,2026-10-05T08:00,whatsapp,Hotel Mar Azul S.L.,F-2026-0116,estado,true
+57,2026-10-06T11:52,web,Gestoría Llobet y Asociados S.L.,F-2026-0123,estado,true
+58,2026-10-06T16:15,whatsapp,Clínica Dental Sonrisa S.L.P.,F-2026-0147,estado,true
+59,2026-10-07T10:03,whatsapp,Hotel Mar Azul S.L.,F-2026-0132,duplicado,true
+60,2026-10-07T16:26,web,Talleres Ebro S.L.,F-2026-0142,condiciones,true
+61,2026-10-08T16:01,email,Hotel Mar Azul S.L.,F-2026-0138,estado,true
+62,2026-10-09T10:11,whatsapp,Talleres Ebro S.L.,F-2026-0119,datos_fiscales,true
+63,2026-10-09T16:03,telefono,Gestoría Llobet y Asociados S.L.,F-2026-0130,condiciones,true
+64,2026-10-10T15:50,whatsapp,Hotel Mar Azul S.L.,F-2026-0116,estado,true
+65,2026-10-11T12:02,whatsapp,Hotel Mar Azul S.L.,F-2026-0116,condiciones,true
+66,2026-10-11T09:28,telefono,Gestoría Llobet y Asociados S.L.,F-2026-0130,condiciones,true
+67,2026-10-12T11:44,whatsapp,Clínica Dental Sonrisa S.L.P.,F-2026-0127,condiciones,true
+68,2026-10-12T15:32,telefono,Panadería La Espiga S.C.,F-2026-0125,condiciones,false
+69,2026-10-13T12:59,web,Clínica Dental Sonrisa S.L.P.,F-2026-0145,condiciones,true
+70,2026-10-14T09:25,whatsapp,Hotel Mar Azul S.L.,F-2026-0138,estado,true
+71,2026-10-14T14:04,telefono,Gestoría Llobet y Asociados S.L.,F-2026-0123,estado,true
+72,2026-10-15T10:45,web,Academia de Idiomas Babel S.L.,F-2026-0133,estado,false

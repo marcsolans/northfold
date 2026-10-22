@@ -7,7 +7,6 @@ export type SettingsSection =
   | "credits"
   | "budgets"
   | "apiKeys"
-  | "secrets"
   | "models"
   | "residency"
   | "audit"
@@ -41,7 +40,6 @@ export const SETTINGS_GROUPS: { group: "account" | "org" | "governance" | "devel
     group: "developers",
     items: [
       { key: "apiKeys", href: "/app/settings/api-keys" },
-      { key: "secrets", href: "/app/settings/secrets" },
     ],
   },
 ];

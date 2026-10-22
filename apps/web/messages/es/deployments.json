@@ -1,0 +1,212 @@
+{
+  "title": "Despliegues",
+  "description": "Publica una versión del proyecto en desarrollo o producción. Las evals de cada agente y flujo actúan como puerta antes de publicar.",
+  "publishButton": "Publicar",
+  "readOnly": "Tienes acceso de solo lectura: puedes ver los entornos y el historial, pero no publicar ni revertir.",
+  "environmentsLabel": "Entornos",
+  "environmentsError": "No hemos podido cargar los entornos.",
+  "noEnvironments": {
+    "title": "Este proyecto no tiene entornos",
+    "description": "Los entornos de desarrollo y producción se crean con el proyecto. Si no aparecen, contacta con soporte."
+  },
+  "logsTitle": "Despliegue v{version} · {environment}",
+  "logsDescription": "Estado, puerta de evals y registro completo del despliegue.",
+  "forced": "Forzado",
+  "forcedHint": "Un administrador publicó esta versión aunque fallaran las evals. Queda registrado en la auditoría.",
+  "environments": {
+    "development": {
+      "label": "Desarrollo",
+      "description": "Para probar con tu equipo antes de llegar a los usuarios."
+    },
+    "production": {
+      "label": "Producción",
+      "description": "La versión que usan tus clientes, interfaces, canales y la API pública."
+    }
+  },
+  "status": {
+    "pending": "En cola",
+    "evaluating": "Evaluando",
+    "deploying": "Desplegando",
+    "live": "Publicado",
+    "failed": "Fallido",
+    "superseded": "Sustituido",
+    "rolled_back": "Revertido"
+  },
+  "errors": {
+    "deployment_in_progress": "Ya hay un despliegue en curso en este entorno. Espera a que termine.",
+    "force_requires_admin": "Solo un administrador puede forzar un despliegue.",
+    "not_rollbackable": "Solo se puede volver a una versión que estuvo publicada.",
+    "invalid_domain": "Ese dominio no es válido o pertenece a la plataforma.",
+    "domain_taken": "Ese dominio ya está en uso en otro entorno.",
+    "no_domain": "Este entorno no tiene dominio configurado.",
+    "dns_unavailable": "No hemos podido consultar el DNS. Inténtalo de nuevo en unos segundos.",
+    "forbidden": "No tienes permisos para esta acción.",
+    "not_found": "No lo encontramos: puede que se haya eliminado. Recarga la página."
+  },
+  "progress": {
+    "regionLabel": "Progreso del despliegue en {environment}",
+    "title": "{environment} · v{version}",
+    "by": "por {name}",
+    "stepsLabel": "Fases del despliegue",
+    "steps": {
+      "pending": "En cola",
+      "evaluating": "Evals",
+      "deploying": "Despliegue",
+      "live": "Publicado",
+      "failed": "Fallido",
+      "evalsSkipped": "Evals omitidas"
+    },
+    "stepState": {
+      "done": "completada",
+      "current": "en curso",
+      "failed": "fallida",
+      "upcoming": "pendiente"
+    },
+    "logs": "Registro",
+    "noLogs": "Todavía no hay entradas.",
+    "inProgress": "En curso…",
+    "level": {
+      "info": "Información",
+      "warning": "Aviso",
+      "error": "Error"
+    },
+    "liveToast": "Publicado en {environment}: versión {version}",
+    "failedToast": "El despliegue en {environment} ha fallado",
+    "pollError": "No hemos podido actualizar el estado del despliegue. Reintentaremos automáticamente."
+  },
+  "gate": {
+    "title": "Puerta de evals",
+    "summaryPassed": "Superada",
+    "summaryFailed": "{count, plural, one {# miembro con fallos} other {# miembros con fallos}}",
+    "forcedThrough": "La puerta de evals ha fallado, pero un administrador ha forzado la publicación.",
+    "blocked": "La puerta de evals ha bloqueado el despliegue. Corrige las evals fallidas y vuelve a publicar.",
+    "skipped": "Evals omitidas: es una reversión a una versión que ya superó su puerta cuando se publicó.",
+    "queued": "Esperando a que empiece el despliegue…",
+    "running": "Ejecutando las evals de cada agente y flujo…",
+    "noMembers": "No hay agentes ni flujos que evaluar en esta versión.",
+    "counts": "{passed, plural, one {# correcta} other {# correctas}} · {failed, plural, one {# fallida} other {# fallidas}}",
+    "noEvals": "Sin evals",
+    "viewEvals": "Ver evals",
+    "toggleCases": "Mostrar los casos de {member}",
+    "kind": {
+      "agent": "Agente",
+      "workflow": "Flujo"
+    },
+    "casesError": "No hemos podido cargar los casos de esta eval.",
+    "casesMissing": "No encontramos el detalle de esta ejecución de evals.",
+    "noCases": "La ejecución no tiene casos.",
+    "pass": "Correcto",
+    "fail": "Fallido",
+    "unnamedCase": "Caso sin nombre",
+    "validatorsFailed": "Validadores fallidos: {names}"
+  },
+  "publish": {
+    "title": "Publicar",
+    "description": "Elige el entorno y la versión. Las conversaciones en curso no se interrumpen: las nuevas ejecuciones usan la versión publicada.",
+    "submit": "Publicar en {environment}",
+    "environment": "Entorno",
+    "environmentHint": {
+      "development": "Pruebas del equipo. URL con ?env=development.",
+      "production": "Clientes, interfaces, canales y API pública."
+    },
+    "version": "Versión",
+    "versionHint": "Una versión es una instantánea de todo el proyecto en un commit.",
+    "latest": "Últimos cambios (nueva versión)",
+    "latestHint": "Crea una instantánea del código actual y la publica.",
+    "deployedIn": "en {environments}",
+    "versionsError": "No hemos podido cargar las versiones anteriores; puedes publicar los últimos cambios.",
+    "message": "Mensaje de la versión",
+    "messageHint": "Opcional. Aparece en el historial.",
+    "messagePlaceholder": "p. ej. Nuevo tono en las respuestas de soporte",
+    "gateExplanation": "Antes de publicar se ejecutan las evals de cada agente y flujo. Si alguna falla, el despliegue se bloquea y el entorno sigue con la versión anterior.",
+    "force": "Forzar aunque fallen las evals",
+    "forceHint": "Solo administradores. Publica la versión aunque la puerta de evals falle. Queda registrado en la auditoría.",
+    "forceWarning": "Las evals se ejecutarán igualmente, pero sus fallos no bloquearán la publicación."
+  },
+  "environment": {
+    "live": "Publicado",
+    "notDeployed": "Sin publicar",
+    "version": "Versión publicada",
+    "commit": "Commit",
+    "copyCommit": "Copiar el commit",
+    "published": "Publicado",
+    "by": "por {name}",
+    "url": "URL",
+    "copyUrl": "Copiar la URL",
+    "openUrl": "Abrir en una pestaña nueva",
+    "noUrl": "Sin URL todavía",
+    "emptyHint": "Todavía no has publicado nada en {environment}.",
+    "publish": "Publicar en {environment}"
+  },
+  "domain": {
+    "title": "Dominio personalizado",
+    "status": {
+      "pending": "Pendiente",
+      "unverified": "Pendiente de verificación",
+      "verified": "Propiedad verificada",
+      "active": "Activo",
+      "failed": "Error"
+    },
+    "inputLabel": "Dominio para {environment}",
+    "inputHint": "Usa un subdominio tuyo, p. ej. asistente.tuempresa.com. Te daremos los registros DNS que debes crear.",
+    "placeholder": "asistente.tuempresa.com",
+    "add": "Añadir dominio",
+    "invalid": "Introduce un dominio válido, p. ej. asistente.tuempresa.com.",
+    "none": "Sin dominio personalizado.",
+    "adminOnly": "Solo los administradores pueden cambiar el dominio.",
+    "open": "Abrir",
+    "activeHint": "El dominio apunta a Messer y el certificado TLS se emite y renueva automáticamente.",
+    "cnamePending": "Ya hemos verificado que el dominio es tuyo. Falta que el registro CNAME apunte a Messer.",
+    "recordsHint": "Crea estos registros en tu proveedor de DNS y pulsa Verificar.",
+    "recordsLabel": "Registros DNS para {domain}",
+    "type": "Tipo",
+    "name": "Nombre",
+    "value": "Valor",
+    "check": "Comprobación",
+    "copyName": "Copiar el nombre del registro {type}",
+    "copyValue": "Copiar el valor del registro {type}",
+    "notChecked": "Sin comprobar",
+    "found": "Encontrado",
+    "missing": "No encontrado",
+    "propagation": "Los cambios de DNS pueden tardar desde unos minutos hasta 48 horas en propagarse. Vuelve a verificar más tarde.",
+    "verifyToSeeRecords": "Pulsa Verificar para ver los registros DNS que debes crear y comprobar su estado.",
+    "pendingViewer": "Un administrador está configurando este dominio.",
+    "verify": "Verificar",
+    "recheck": "Volver a verificar",
+    "remove": "Quitar dominio",
+    "removeTitle": "¿Quitar el dominio {domain}?",
+    "removeDescription": "{environment} dejará de responder en este dominio. Podrás volver a añadirlo, pero tendrás que verificarlo de nuevo.",
+    "added": "Dominio {domain} añadido. Crea los registros DNS y verifícalo.",
+    "verifiedActive": "Dominio {domain} activo",
+    "verifiedOwnership": "Propiedad verificada. Falta el registro CNAME.",
+    "notYet": "Aún no detectamos los registros DNS. Pueden tardar en propagarse.",
+    "removed": "Dominio eliminado"
+  },
+  "history": {
+    "title": "Historial",
+    "description": "Cada publicación con su versión, commit, autor y registro.",
+    "filterLabel": "Filtrar por entorno",
+    "allEnvironments": "Todos los entornos",
+    "error": "No hemos podido cargar el historial de despliegues.",
+    "empty": {
+      "title": "Aún no has publicado",
+      "filteredTitle": "Aún no has publicado en {environment}",
+      "description": "Publica una versión para que tus usuarios, interfaces y canales la usen. Aquí verás cada despliegue y podrás volver a cualquier versión anterior.",
+      "action": "Publicar"
+    },
+    "columns": {
+      "version": "Versión",
+      "environment": "Entorno",
+      "commit": "Commit",
+      "who": "Quién",
+      "when": "Cuándo",
+      "status": "Estado"
+    },
+    "logs": "Registro",
+    "logsFor": "Ver el registro de v{version} en {environment}",
+    "rollback": "Volver a esta versión",
+    "rollbackTitle": "¿Volver a la versión {version} en {environment}?",
+    "rollbackDescription": "Se publicará de nuevo el commit {commit}. Las evals se omiten porque esta versión ya superó su puerta. Las conversaciones en curso no se interrumpen.",
+    "rollbackStarted": "Volviendo a la versión {version} en {environment}…"
+  }
+}

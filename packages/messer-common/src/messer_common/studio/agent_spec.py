@@ -294,7 +294,12 @@ def render_agent_code(config: AgentConfig, *, has_custom_tools: bool = False) ->
     if factories:
         imports.append(f"from messer.platform.tools import {', '.join(sorted(set(factories)))}")
     if has_custom_tools or any(t.type == "custom" for t in config.tools):
-        imports.append("from . import tools as custom_tools")
+        imports.append(
+            "try:  # inside the Messer runtime the member folder is a package\n"
+            "    from . import tools as custom_tools\n"
+            "except ImportError:  # loaded as a plain file (messer start, flow introspection)\n"
+            "    import tools as custom_tools  # type: ignore[no-redef]"
+        )
 
     tools = ",\n        ".join(
         [_render_tool(t, config) for t in config.tools] + [_render_mcp(m) for m in config.mcp_servers]
@@ -359,6 +364,14 @@ def _literal(node: ast.AST) -> Any:
         raise _Unparseable(ast.dump(node)[:80]) from exc
 
 
+def _is_import_fallback(stmt: ast.stmt) -> bool:
+    """``try: from . import x`` / ``except ImportError: import x`` — imports only, nothing else."""
+    if not isinstance(stmt, ast.Try) or stmt.orelse or stmt.finalbody or len(stmt.handlers) != 1:
+        return False
+    body = stmt.body + stmt.handlers[0].body
+    return all(isinstance(s, ast.Import | ast.ImportFrom) for s in body)
+
+
 def parse_agent_code(code: str) -> AgentConfig | None:
     """Map an ``agent.py`` back to a config without executing it. ``None`` = code mode."""
     try:
@@ -369,7 +382,7 @@ def parse_agent_code(code: str) -> AgentConfig | None:
     for stmt in tree.body:
         if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1 and isinstance(stmt.targets[0], ast.Name):
             assigns[stmt.targets[0].id] = stmt.value
-        elif isinstance(stmt, ast.Import | ast.ImportFrom | ast.Expr):
+        elif isinstance(stmt, ast.Import | ast.ImportFrom | ast.Expr) or _is_import_fallback(stmt):
             continue
         else:
             return None  # functions, classes or logic in the module → code mode

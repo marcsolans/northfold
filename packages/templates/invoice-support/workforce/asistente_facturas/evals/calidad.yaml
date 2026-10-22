@@ -1,0 +1,14 @@
+# Evals con juez LLM (etiqueta "llm"): se omiten mientras no hay clave de modelo (modo demo).
+- name: tono_y_fuentes
+  description: Una respuesta sobre devoluciones es clara, educada y cita su fuente
+  runnable: _member.py::agent
+  tags: [llm, calidad]
+  params:
+    prompt: Hola, compré un equipo hace una semana y quiero devolverlo. ¿Puedo?
+  output:
+    rubric!:
+      criteria:
+        - Responde en español con un tono profesional y amable
+        - Indica el plazo de devolución que figura en la política (14 días naturales)
+        - Cita el documento del que sale la información
+      model: "${model:fast}"

@@ -171,7 +171,8 @@
       "config": "Configuración",
       "code": "Código",
       "versions": "Versiones",
-      "evals": "Evals"
+      "evals": "Evals",
+      "guard": "Guard"
     },
     "notFound": {
       "title": "Agente no encontrado",
@@ -411,6 +412,10 @@
         "title": "No hay evals definidas",
         "description": "Añade archivos YAML en {path} para definir casos de prueba."
       }
+    },
+    "voice": {
+      "title": "Voz",
+      "description": "Habla con el agente desde el navegador o por teléfono: idioma, voz y saludo inicial."
     }
   },
   "playground": {

@@ -1,0 +1,150 @@
+# Template 1 — the demo project of spec section 13.
+id: invoice-support
+version: 1
+sector: finance
+sort_order: 10
+name: Atención al cliente sobre facturas
+name_en: Customer support for invoices
+description: >-
+  Asistente con voz que responde a tus clientes sobre sus facturas usando tus condiciones generales en PDF y la
+  tabla de facturas, emite abonos y pide aprobación humana antes de cualquier abono de más de 500 €. Atiende por
+  chat web, WhatsApp y teléfono, e incluye un panel con las facturas pendientes y las consultas del mes.
+description_en: >-
+  Voice-enabled assistant that answers your customers' questions about their invoices from your
+  terms-and-conditions PDFs and invoices table, issues credit notes and asks for human approval before any credit
+  note over €500. It handles web chat, WhatsApp and phone, and ships a dashboard with pending invoices and this
+  month's queries.
+tags: [facturas, abonos, aprobaciones, voz, whatsapp, panel]
+keywords:
+  - "abono:3"
+  - "abonos:3"
+  - "nota de credito:3"
+  - "credit note:3"
+  - "credit notes:3"
+  - "refund:2"
+  - "factura:1.5"
+  - "facturas:1.5"
+  - "invoice:1.5"
+  - "invoices:1.5"
+  - "condiciones:1"
+  - "terms and conditions:1.5"
+  - "terminos y condiciones:1.5"
+  - "preguntas de clientes:2"
+  - "customer questions:2"
+  - "atencion al cliente:2"
+  - "customer support:2"
+  - "facturas pendientes:2"
+  - "pending invoices:2"
+  - "whatsapp:0.5"
+includes:
+  - Agente con voz y saludo
+  - Flujo de abono con aprobación por encima de 500 €
+  - Condiciones en PDF y tabla de facturas
+  - Panel de facturas pendientes y consultas del mes
+  - Chat web, WhatsApp y teléfono
+  - Evals que pasan en modo demo
+includes_en:
+  - Voice agent with a greeting
+  - Credit-note workflow with approval above €500
+  - Terms PDFs and an invoices table
+  - Dashboard of pending invoices and this month's queries
+  - Web chat, WhatsApp and phone
+  - Evals that pass in demo mode
+default_model_tier: standard
+knowledge_bases:
+  - key: facturacion
+    name: Facturación
+    name_en: Billing
+    description: >-
+      Condiciones generales, política de abonos y preguntas frecuentes (documentos de ejemplo) y las tablas de
+      facturas y consultas de clientes (datos de ejemplo). Sustitúyelos por los tuyos o conecta tu ERP.
+    description_en: >-
+      Terms and conditions, credit-note policy and FAQ (sample documents) plus the invoices and customer queries
+      tables (sample data). Replace them with yours or connect your ERP.
+    documents:
+      - source: knowledge/facturacion/condiciones-generales.md
+        filename: condiciones-generales-de-venta.pdf
+        title: Condiciones generales de venta
+      - source: knowledge/facturacion/politica-abonos.md
+        filename: politica-de-abonos-y-devoluciones.pdf
+        title: Política de abonos y devoluciones
+      - source: knowledge/facturacion/preguntas-frecuentes.md
+        filename: preguntas-frecuentes-facturacion.pdf
+        title: Preguntas frecuentes de facturación
+    tables:
+      - name: facturas
+        source: knowledge/facturacion/facturas.csv
+        description: Facturas emitidas a clientes (datos de ejemplo)
+        primary_key: [numero]
+        date_anchor: 2026-10-15
+        columns:
+          - {name: numero, type: text, comment: Número de factura (F-AAAA-NNNN), nullable: false}
+          - {name: cliente, type: text, comment: Razón social del cliente}
+          - {name: nif, type: text, comment: NIF o CIF del cliente}
+          - {name: email, type: text, comment: Email de facturación}
+          - {name: telefono, type: text, comment: Teléfono del cliente}
+          - {name: fecha_emision, type: date}
+          - {name: fecha_vencimiento, type: date}
+          - {name: concepto, type: text}
+          - {name: base_imponible, type: numeric, comment: Importe sin IVA en euros}
+          - {name: iva, type: numeric, comment: Cuota de IVA en euros}
+          - {name: importe, type: numeric, comment: Total con IVA en euros}
+          - {name: estado, type: text, comment: pendiente | pagada | vencida | abonada}
+      - name: consultas
+        source: knowledge/facturacion/consultas.csv
+        description: Consultas de clientes por canal (datos de ejemplo; en producción llegan de tu CRM o helpdesk)
+        primary_key: [id]
+        date_anchor: 2026-10-15
+        columns:
+          - {name: id, type: integer, nullable: false}
+          - {name: fecha, type: timestamp}
+          - {name: canal, type: text, comment: web | whatsapp | telefono | email}
+          - {name: cliente, type: text}
+          - {name: numero_factura, type: text}
+          - {name: tema, type: text, comment: estado | abono | condiciones | datos_fiscales | duplicado}
+          - {name: resuelta, type: boolean}
+channels:
+  - provider: whatsapp
+    agent: asistente_facturas
+    name: WhatsApp · Facturación
+phone:
+  agent: asistente_facturas
+  note: >-
+    El agente tiene la voz activada: pruébalo por voz en el navegador desde el Studio. Para atender llamadas,
+    conecta un número de Twilio o Telnyx en Canales → Teléfono.
+  note_en: >-
+    The agent has voice enabled: try it by voice in the browser from the Studio. To answer phone calls, connect a
+    Twilio or Telnyx number in Channels → Phone.
+triggers:
+  - member: abono_factura
+    kind: webhook
+    name: Solicitud de abono desde el ERP
+    description: Tu ERP o CRM envía una solicitud de abono firmada y el flujo la valida, pide aprobación y la emite.
+    enabled: true
+requirements:
+  - kind: key
+    key: ANTHROPIC_API_KEY
+    purpose: Respuestas con Claude (sin clave responde el modelo de demostración)
+    purpose_en: Answers with Claude (without a key the demo model answers)
+  - kind: key
+    key: WHATSAPP_ACCESS_TOKEN
+    purpose: WhatsApp real (sin credenciales el canal funciona en modo demo)
+    purpose_en: Live WhatsApp (without credentials the channel runs in demo mode)
+  - kind: key
+    key: TWILIO_ACCOUNT_SID
+    purpose: Número de teléfono para recibir llamadas (o TELNYX_API_KEY)
+    purpose_en: Phone number to receive calls (or TELNYX_API_KEY)
+  - kind: connector
+    key: postgres
+    purpose: "Opcional: leer las facturas directamente de tu base de datos o ERP en lugar de la tabla de ejemplo"
+    purpose_en: "Optional: read invoices straight from your database or ERP instead of the sample table"
+try_prompts:
+  - member: asistente_facturas
+    prompt: Consultar la factura F-2026-0142
+    prompt_en: Look up invoice F-2026-0142
+  - member: asistente_facturas
+    prompt: ¿Qué recargo se aplica si pago tarde según las condiciones generales?
+    prompt_en: What surcharge applies if I pay late under the general terms?
+  - member: asistente_facturas
+    prompt: Quiero emitir un abono de 900 € en la factura F-2026-0137 por «cobro duplicado»
+    prompt_en: I want to issue a €900 credit note on invoice F-2026-0137 for "duplicate charge"

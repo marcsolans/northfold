@@ -3,12 +3,14 @@
 import { Alert, Button } from "@messer/ui";
 import { useTranslations } from "next-intl";
 
+import { VoiceSettingsSection } from "@/components/voice";
 import type { ConfigErrorCode, ConfigErrorKey } from "@/lib/studio/agent-config";
 import { useKnowledgeBasesOptional } from "@/lib/studio/hooks";
 import type { AgentConfig, ContextFile } from "@/lib/studio/types";
 
 import { GeneralSection, GuardrailsSection, KnowledgeSection, MemorySection, ModelSection } from "./config-sections";
 import { ContextFilesSection } from "./context-files-section";
+import { Section } from "./fields";
 import { PromptSection } from "./prompt-section";
 import { ToolsSection } from "./tools-section";
 
@@ -107,6 +109,9 @@ export function ConfigTab({
       />
       <GuardrailsSection config={config} onChange={onChange} readOnly={readOnly} errors={indexed("guardrail")} />
       <MemorySection config={config} onChange={onChange} readOnly={readOnly} keepLastNError={err("keep_last_n") ?? null} />
+      <Section id="voice" title={t("voice.title")} description={t("voice.description")}>
+        <VoiceSettingsSection value={config.voice} onChange={(voice) => onChange({ voice })} disabled={readOnly} />
+      </Section>
     </div>
   );
 }

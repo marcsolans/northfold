@@ -52,9 +52,27 @@ function stepStates(dep: Deployment, gate: GateResult[]): Record<StepKey, StepSt
 
 function StepIcon({ state, index }: { state: StepState; index: number }) {
   const base = "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold";
-  if (state === "done") return <span className={cn(base, "border-success bg-success text-white")}><Check className="size-3.5" strokeWidth={3} aria-hidden /></span>;
-  if (state === "failed") return <span className={cn(base, "border-danger bg-danger text-white")}><X className="size-3.5" strokeWidth={3} aria-hidden /></span>;
-  if (state === "current") return <span className={cn(base, "border-info bg-info-soft text-info")}><Loader2 className="size-3.5 animate-spin" aria-hidden /></span>;
+  if (state === "done") {
+    return (
+      <span className={cn(base, "border-success bg-success text-white")}>
+        <Check className="size-3.5" strokeWidth={3} aria-hidden />
+      </span>
+    );
+  }
+  if (state === "failed") {
+    return (
+      <span className={cn(base, "border-danger bg-danger text-white")}>
+        <X className="size-3.5" strokeWidth={3} aria-hidden />
+      </span>
+    );
+  }
+  if (state === "current") {
+    return (
+      <span className={cn(base, "border-info bg-info-soft text-info")}>
+        <Loader2 className="size-3.5 animate-spin" aria-hidden />
+      </span>
+    );
+  }
   return <span className={cn(base, "tabular border-border-strong bg-surface text-fg-subtle")}>{index + 1}</span>;
 }
 
@@ -293,8 +311,9 @@ export function GateResults({ projectId, deployment }: { projectId: string; depl
   );
 }
 
+const INFO_STYLE = { icon: <Info className="size-3.5 text-fg-subtle" aria-hidden />, className: "text-fg" };
 const LEVEL_STYLE: Record<string, { icon: React.ReactNode; className: string }> = {
-  info: { icon: <Info className="size-3.5 text-fg-subtle" aria-hidden />, className: "text-fg" },
+  info: INFO_STYLE,
   warning: { icon: <AlertTriangle className="size-3.5 text-warning" aria-hidden />, className: "text-warning" },
   error: { icon: <XCircle className="size-3.5 text-danger" aria-hidden />, className: "text-danger" },
 };
@@ -332,7 +351,7 @@ export function DeploymentLogs({ deployment }: { deployment: Deployment }) {
       >
         {deployment.logs.length === 0 ? <li className="text-fg-subtle">{t("noLogs")}</li> : null}
         {deployment.logs.map((entry: DeploymentLog, i) => {
-          const style = LEVEL_STYLE[entry.level] ?? LEVEL_STYLE.info!;
+          const style = LEVEL_STYLE[entry.level] ?? INFO_STYLE;
           return (
             <li key={`${entry.at}-${i}`} className="flex items-start gap-2 py-0.5">
               <time dateTime={entry.at} className="tabular shrink-0 text-fg-subtle">

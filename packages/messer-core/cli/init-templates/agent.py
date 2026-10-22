@@ -1,34 +1,18 @@
-import asyncio
-from datetime import datetime
+"""{{name}} — Messer agent created with `messer create`. Edit freely: the Messer Studio keeps this code and its
+configuration in sync while the code only uses these patterns; otherwise the code is the source of truth.
+Run it locally with `messer start` and publish it with `messer push` + `messer deploy`."""
 
 from messer import Agent
 
-
-def get_datetime() -> str:
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+SYSTEM_PROMPT = "Eres un asistente útil y preciso. Responde en el idioma del usuario."
 
 agent = Agent(
-    name="agent",
-    model="openai/gpt-5.2",
-    tools=[get_datetime],
+    name="{{name}}",
+    description="",
+    model="{{model}}",
+    system_prompt=SYSTEM_PROMPT,
+    max_tokens=4096,
+    max_iter=10,
+    timeout=120,
+    tools=[],
 )
-
-
-async def main():
-    while True:
-        prompt = input("User: ")
-        if prompt == "q":
-            break
-        agent_output_event = await agent(prompt=prompt).collect()
-        print(f"Agent: {agent_output_event.output}")  # noqa: T201
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        # Catch any Ctrl+C that wasn't caught in main()
-        print("\nGoodbye!")  # noqa: T201
-    finally:
-        print("Goodbye!")  # noqa: T201

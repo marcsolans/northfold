@@ -1,0 +1,52 @@
+# Evals deterministas (etiqueta "offline"): herramienta usada y datos que solo puede devolver esa herramienta.
+- name: lead_caliente_de_industria
+  description: Un lead grande, con presupuesto y prisa del sector industria es caliente y va a Marta Iglesias
+  runnable: _member.py::agent
+  tags: [offline, puntuacion]
+  params:
+    prompt: "Puntúa este lead: 120 empleados, presupuesto de 15000 € al año, plazo de 3 meses, sector industria"
+  seq!:
+    - llm
+    - puntuar_lead
+    - llm
+  output:
+    contains_all!: ["caliente", "Marta Iglesias"]
+
+- name: lead_frio_de_hosteleria
+  description: Un negocio pequeño sin presupuesto ni prisa es frío
+  runnable: _member.py::agent
+  tags: [offline, puntuacion]
+  params:
+    prompt: "Puntúa este lead: 4 empleados, presupuesto de 1000 € al año, plazo de 18 meses, sector hostelería"
+  seq!:
+    - llm
+    - puntuar_lead
+    - llm
+  output:
+    contains!: frio
+
+- name: lead_existente_por_email
+  description: Reconoce un lead existente por su email y devuelve su estado
+  runnable: _member.py::agent
+  tags: [offline, crm]
+  params:
+    prompt: Busca el lead lucia.ferrer@grupoalba.example
+  seq!:
+    - llm
+    - buscar_lead
+    - llm
+  output:
+    contains_all!: ["Grupo Alba Metal", "cualificado"]
+
+- name: precio_del_plan_profesional
+  description: Responde el precio con el catálogo y cita la fuente
+  runnable: _member.py::agent
+  tags: [offline, conocimiento]
+  params:
+    prompt: ¿Cuánto cuesta el plan Profesional al mes?
+  seq!:
+    - llm
+    - knowledge_search
+    - llm
+  output:
+    contains_all!: ["199 €", "catalogo-y-precios.pdf"]

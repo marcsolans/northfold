@@ -138,6 +138,9 @@ members = [
   "services/scheduler",
   "services/runtime",
   "services/voice",
+  "services/mcp",
+  "packages/messer-cli",
+  "packages/messer-sdk-py",
 ]
 
 [tool.uv.sources]
@@ -150,6 +153,9 @@ messer-worker = { workspace = true }
 messer-scheduler = { workspace = true }
 messer-runtime = { workspace = true }
 messer-voice = { workspace = true }
+messer-mcp = { workspace = true }
+messer-cli = { workspace = true }
+messer-sdk = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -162,6 +168,9 @@ dev = [
   "messer-scheduler",
   "messer-runtime",
   "messer-voice",
+  "messer-mcp",
+  "messer-cli",
+  "messer-sdk",
   "httpx>=0.28",
   "lancedb>=0.25.3",
   "pyngrok>=7.2.3",

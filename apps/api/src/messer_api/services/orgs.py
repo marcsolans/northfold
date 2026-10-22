@@ -21,11 +21,52 @@ from ..errors import ApiError, Conflict, NotFound
 
 INVITATION_TTL = timedelta(days=7)
 _SLUG_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$")
+# Organization slugs are the first segment of public URLs (/{org}/{project}/…), so they must never shadow a
+# top-level route of the web app or a well-known path.
+RESERVED_SLUGS = frozenset(
+    {
+        "admin",
+        "api",
+        "app",
+        "auth",
+        "approvals",
+        "blog",
+        "contact",
+        "docs",
+        "embed",
+        "forgot-password",
+        "health",
+        "invite",
+        "legal",
+        "login",
+        "logout",
+        "mfa",
+        "monaco",
+        "onboarding",
+        "pricing",
+        "reset-password",
+        "robots.txt",
+        "security",
+        "signup",
+        "sitemap.xml",
+        "sso",
+        "static",
+        "status",
+        "templates",
+        "verify-email",
+        "widget",
+        "www",
+        "_next",
+        "messer",
+        "support",
+        "help",
+    }
+)
 
 
 async def unique_org_slug(session: AsyncSession, name: str) -> str:
     base = slugify(name, max_length=60) or "org"
-    slug = base
+    slug = base if base not in RESERVED_SLUGS else f"{base}-org"
     n = 2
     while (await session.execute(select(Org.id).where(Org.slug == slug))).first() is not None:
         slug = f"{base}-{n}"
@@ -50,6 +91,8 @@ async def create_org(
         slug = slug.strip().lower()
         if not _SLUG_RE.match(slug):
             raise ApiError("El identificador solo admite minúsculas, números y guiones", code="invalid_slug")
+        if slug in RESERVED_SLUGS:
+            raise ApiError("Ese identificador está reservado; elige otro", code="slug_reserved")
         if (await session.execute(select(Org.id).where(Org.slug == slug))).first() is not None:
             raise Conflict("Ese identificador ya está en uso", code="slug_taken")
     else:

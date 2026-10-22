@@ -64,10 +64,23 @@ def anthropic_memory_reply(prefix: str = "") -> Callable[[httpx.Request], httpx.
         start = {**message, "content": [], "stop_reason": None, "usage": {"input_tokens": 100, "output_tokens": 1}}
         events = [
             ("message_start", {"type": "message_start", "message": start}),
-            ("content_block_start", {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}),
-            ("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": text}}),
+            (
+                "content_block_start",
+                {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}},
+            ),
+            (
+                "content_block_delta",
+                {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": text}},
+            ),
             ("content_block_stop", {"type": "content_block_stop", "index": 0}),
-            ("message_delta", {"type": "message_delta", "delta": {"stop_reason": "end_turn", "stop_sequence": None}, "usage": {"output_tokens": 20}}),
+            (
+                "message_delta",
+                {
+                    "type": "message_delta",
+                    "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                    "usage": {"output_tokens": 20},
+                },
+            ),
             ("message_stop", {"type": "message_stop"}),
         ]
         raw = "".join(f"event: {n}\ndata: {json.dumps(d)}\n\n" for n, d in events)
@@ -76,7 +89,9 @@ def anthropic_memory_reply(prefix: str = "") -> Callable[[httpx.Request], httpx.
     return handler
 
 
-async def recv_until(ws: Any, kind: str, *, timeout_s: float = 90.0, into: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+async def recv_until(
+    ws: Any, kind: str, *, timeout_s: float = 90.0, into: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
     """Read JSON frames until one of type ``kind`` arrives (frames read on the way are appended to ``into``)."""
     async with asyncio.timeout(timeout_s):
         while True:
@@ -245,13 +260,46 @@ def _anthropic(body: dict[str, Any], blocks: list[dict[str, Any]], stop_reason: 
     events: list[tuple[str, dict[str, Any]]] = [("message_start", {"type": "message_start", "message": start})]
     for i, block in enumerate(blocks):
         if block["type"] == "text":
-            events.append(("content_block_start", {"type": "content_block_start", "index": i, "content_block": {"type": "text", "text": ""}}))
-            events.append(("content_block_delta", {"type": "content_block_delta", "index": i, "delta": {"type": "text_delta", "text": block["text"]}}))
+            events.append(
+                (
+                    "content_block_start",
+                    {"type": "content_block_start", "index": i, "content_block": {"type": "text", "text": ""}},
+                )
+            )
+            events.append(
+                (
+                    "content_block_delta",
+                    {"type": "content_block_delta", "index": i, "delta": {"type": "text_delta", "text": block["text"]}},
+                )
+            )
         else:
-            events.append(("content_block_start", {"type": "content_block_start", "index": i, "content_block": {**block, "input": {}}}))
-            events.append(("content_block_delta", {"type": "content_block_delta", "index": i, "delta": {"type": "input_json_delta", "partial_json": json.dumps(block["input"])}}))
+            events.append(
+                (
+                    "content_block_start",
+                    {"type": "content_block_start", "index": i, "content_block": {**block, "input": {}}},
+                )
+            )
+            events.append(
+                (
+                    "content_block_delta",
+                    {
+                        "type": "content_block_delta",
+                        "index": i,
+                        "delta": {"type": "input_json_delta", "partial_json": json.dumps(block["input"])},
+                    },
+                )
+            )
         events.append(("content_block_stop", {"type": "content_block_stop", "index": i}))
-    events.append(("message_delta", {"type": "message_delta", "delta": {"stop_reason": stop_reason, "stop_sequence": None}, "usage": {"output_tokens": 20}}))
+    events.append(
+        (
+            "message_delta",
+            {
+                "type": "message_delta",
+                "delta": {"stop_reason": stop_reason, "stop_sequence": None},
+                "usage": {"output_tokens": 20},
+            },
+        )
+    )
     events.append(("message_stop", {"type": "message_stop"}))
     raw = "".join(f"event: {n}\ndata: {json.dumps(d)}\n\n" for n, d in events)
     return httpx.Response(200, content=raw.encode(), headers={"content-type": "text/event-stream"})

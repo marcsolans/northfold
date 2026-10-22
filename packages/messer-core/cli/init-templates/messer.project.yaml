@@ -1,0 +1,9 @@
+# Messer project manifest
+name: "{{project_name}}"
+description: ""
+default_model_tier: standard
+environments:
+- development
+- production
+allowed_models: []
+channels: []

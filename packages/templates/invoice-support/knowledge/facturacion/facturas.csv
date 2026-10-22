@@ -1,0 +1,42 @@
+numero,cliente,nif,email,telefono,fecha_emision,fecha_vencimiento,concepto,base_imponible,iva,importe,estado
+F-2026-0110,Ferretería Central S.L.,B15012345,tienda@ferreteriacentral.example,+34 981 000 110,2026-07-01,2026-07-31,Servicio de copias de seguridad,2400.00,504.00,2904.00,pagada
+F-2026-0111,Construcciones Miralles S.A.,A08567890,facturas@miralles.example,+34 932 000 105,2026-07-03,2026-08-02,Consumibles de impresión,690.00,144.90,834.90,vencida
+F-2026-0112,Construcciones Miralles S.A.,A08567890,facturas@miralles.example,+34 932 000 105,2026-07-06,2026-08-05,Suministro de material de oficina,180.00,37.80,217.80,pagada
+F-2026-0113,Ferretería Central S.L.,B15012345,tienda@ferreteriacentral.example,+34 981 000 110,2026-07-08,2026-08-07,Servicio de soporte técnico,1150.00,241.50,1391.50,vencida
+F-2026-0114,Academia de Idiomas Babel S.L.,B30901234,secretaria@academiababel.example,+34 968 000 109,2026-07-11,2026-08-10,Servicio de copias de seguridad,180.00,37.80,217.80,pagada
+F-2026-0115,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-07-14,2026-08-13,Consumibles de impresión,2400.00,504.00,2904.00,pagada
+F-2026-0116,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-07-16,2026-08-15,Servicio de copias de seguridad,240.00,50.40,290.40,pagada
+F-2026-0117,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-07-19,2026-08-18,Licencias de software (trimestral),560.00,117.60,677.60,pagada
+F-2026-0118,Clínica Dental Sonrisa S.L.P.,B46456789,gestion@clinicasonrisa.example,+34 963 000 104,2026-07-20,2026-08-19,Servicio de copias de seguridad,540.00,113.40,653.40,abonada
+F-2026-0119,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-07-24,2026-08-23,Renovación de equipos informáticos,980.00,205.80,1185.80,pagada
+F-2026-0120,Clínica Dental Sonrisa S.L.P.,B46456789,gestion@clinicasonrisa.example,+34 963 000 104,2026-07-27,2026-08-26,Consumibles de impresión,2400.00,504.00,2904.00,vencida
+F-2026-0121,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-07-29,2026-08-28,Instalación de terminales de punto de venta,560.00,117.60,677.60,pagada
+F-2026-0122,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-08-01,2026-08-31,Servicio de soporte técnico,180.00,37.80,217.80,pagada
+F-2026-0123,Gestoría Llobet y Asociados S.L.,B17678901,oficina@gestoriallobet.example,+34 972 000 106,2026-08-03,2026-09-02,Suministro de material de oficina,2400.00,504.00,2904.00,pagada
+F-2026-0124,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-08-06,2026-09-05,Instalación de terminales de punto de venta,315.00,66.15,381.15,pagada
+F-2026-0125,Panadería La Espiga S.C.,J28345678,pedidos@laespiga.example,+34 910 000 103,2026-08-09,2026-09-08,Servicio de soporte técnico,180.00,37.80,217.80,pagada
+F-2026-0126,Construcciones Miralles S.A.,A08567890,facturas@miralles.example,+34 932 000 105,2026-08-11,2026-09-10,Mantenimiento mensual de equipos,420.00,88.20,508.20,pagada
+F-2026-0127,Clínica Dental Sonrisa S.L.P.,B46456789,gestion@clinicasonrisa.example,+34 963 000 104,2026-08-14,2026-09-13,Instalación de terminales de punto de venta,420.00,88.20,508.20,pagada
+F-2026-0128,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-08-16,2026-09-15,Consumibles de impresión,980.00,205.80,1185.80,vencida
+F-2026-0129,Panadería La Espiga S.C.,J28345678,pedidos@laespiga.example,+34 910 000 103,2026-09-08,2026-10-08,Consumibles de impresión,360.00,75.60,435.60,pagada
+F-2026-0130,Gestoría Llobet y Asociados S.L.,B17678901,oficina@gestoriallobet.example,+34 972 000 106,2026-08-22,2026-09-21,Licencias de software (trimestral),1150.00,241.50,1391.50,pagada
+F-2026-0131,Construcciones Miralles S.A.,A08567890,facturas@miralles.example,+34 932 000 105,2026-08-12,2026-09-11,Renovación de equipos informáticos,4250.00,892.50,5142.50,vencida
+F-2026-0132,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-08-27,2026-09-26,Mantenimiento mensual de equipos,2400.00,504.00,2904.00,pagada
+F-2026-0133,Academia de Idiomas Babel S.L.,B30901234,secretaria@academiababel.example,+34 968 000 109,2026-08-29,2026-09-28,Renovación de equipos informáticos,750.00,157.50,907.50,vencida
+F-2026-0134,Distribuciones Norte S.L.,B48789012,compras@distribucionesnorte.example,+34 944 000 107,2026-09-01,2026-10-01,Servicio de copias de seguridad,560.00,117.60,677.60,vencida
+F-2026-0135,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-09-04,2026-10-04,Servicio de copias de seguridad,1680.00,352.80,2032.80,pagada
+F-2026-0136,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-09-06,2026-10-06,Suministro de material de oficina,315.00,66.15,381.15,pagada
+F-2026-0137,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-09-22,2026-10-22,Instalación de terminales de punto de venta,1800.00,378.00,2178.00,pagada
+F-2026-0138,Hotel Mar Azul S.L.,B07234567,contabilidad@hotelmarazul.example,+34 971 000 102,2026-09-11,2026-10-11,Servicio de soporte técnico,980.00,205.80,1185.80,vencida
+F-2026-0139,Gestoría Llobet y Asociados S.L.,B17678901,oficina@gestoriallobet.example,+34 972 000 106,2026-09-14,2026-10-14,Servicio de copias de seguridad,420.00,88.20,508.20,pagada
+F-2026-0140,Distribuciones Norte S.L.,B48789012,compras@distribucionesnorte.example,+34 944 000 107,2026-09-17,2026-10-17,Consumibles de impresión,180.00,37.80,217.80,pendiente
+F-2026-0141,Clínica Dental Sonrisa S.L.P.,B46456789,gestion@clinicasonrisa.example,+34 963 000 104,2026-09-19,2026-10-19,Servicio de soporte técnico,980.00,205.80,1185.80,pendiente
+F-2026-0142,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-10-02,2026-11-01,Mantenimiento mensual de equipos,1200.00,252.00,1452.00,pendiente
+F-2026-0143,Ferretería Central S.L.,B15012345,tienda@ferreteriacentral.example,+34 981 000 110,2026-09-24,2026-10-24,Instalación de terminales de punto de venta,2400.00,504.00,2904.00,pendiente
+F-2026-0144,Construcciones Miralles S.A.,A08567890,facturas@miralles.example,+34 932 000 105,2026-09-27,2026-10-27,Instalación de terminales de punto de venta,1320.00,277.20,1597.20,pendiente
+F-2026-0145,Clínica Dental Sonrisa S.L.P.,B46456789,gestion@clinicasonrisa.example,+34 963 000 104,2026-09-30,2026-10-30,Suministro de material de oficina,1680.00,352.80,2032.80,pendiente
+F-2026-0146,Ferretería Central S.L.,B15012345,tienda@ferreteriacentral.example,+34 981 000 110,2026-10-02,2026-11-01,Renovación de equipos informáticos,560.00,117.60,677.60,pendiente
+F-2026-0147,Clínica Dental Sonrisa S.L.P.,B46456789,gestion@clinicasonrisa.example,+34 963 000 104,2026-10-05,2026-11-04,Instalación de terminales de punto de venta,980.00,205.80,1185.80,pendiente
+F-2026-0148,Restaurante El Olivo S.L.,B41890123,reservas@elolivo.example,+34 954 000 108,2026-10-07,2026-11-06,Mantenimiento mensual de equipos,2400.00,504.00,2904.00,pendiente
+F-2026-0149,Talleres Ebro S.L.,B50123456,administracion@talleresebro.example,+34 976 000 101,2026-10-10,2026-11-09,Renovación de equipos informáticos,420.00,88.20,508.20,pendiente
+F-2026-0150,Restaurante El Olivo S.L.,B41890123,reservas@elolivo.example,+34 954 000 108,2026-10-13,2026-11-12,Suministro de material de oficina,1320.00,277.20,1597.20,pendiente

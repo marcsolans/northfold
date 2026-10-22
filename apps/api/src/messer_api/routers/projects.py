@@ -233,6 +233,7 @@ async def list_environments(
             "status": e.status,
             "url": e.url,
             "custom_domain": e.custom_domain,
+            "domain_status": e.domain_status,
             "deployed_version_id": str(e.deployed_version_id) if e.deployed_version_id else None,
         }
         for e in envs

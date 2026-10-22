@@ -285,6 +285,15 @@ async def test_manual_run_streams_nodes_and_resumes_after_approval(client: httpx
     refused = await client.post(f"{base}/clasificar/run", json={"input": {}})
     assert refused.status_code == 400 and refused.json()["error"]["code"] == "missing_inputs"
 
+    # Code mode: the canvas shows the graph the engine introspects from workflow.py (through the runtime).
+    code = (await client.get(f"{base}/pagos")).json()["code"] + "\nLIMITE = max(1, 2)\n"
+    edited = await client.put(f"{base}/pagos/code", json={"code": code})
+    assert edited.status_code == 200 and edited.json()["source_mode"] == "code"
+    flow = edited.json()["flow"]
+    assert flow is not None, edited.json()["flow_error"]
+    assert {n["id"] for n in flow["nodes"]} == {"pagos.entrada", "pagos.preparar", "pagos.aprobar", "pagos.resultado"}
+    assert ("pagos.preparar", "pagos.aprobar") in {(e["source"], e["target"]) for e in flow["edges"]}
+
 
 async def test_phase5_webhook_and_cron_fire_pause_email_approve_complete(
     client: httpx.AsyncClient, runtime: Harness, queued: list[tuple[str, tuple[Any, ...]]]

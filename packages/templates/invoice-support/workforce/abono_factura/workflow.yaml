@@ -1,0 +1,71 @@
+name: abono_factura
+description: >-
+  Valida una solicitud de abono contra la tabla de facturas, pide la aprobación de un administrador cuando supera
+  500 € y emite el abono.
+inputs:
+  - {name: numero_factura, type: string, description: Número de la factura a abonar, required: true}
+  - {name: importe, type: number, description: Importe del abono en euros, required: true}
+  - {name: motivo, type: string, description: Motivo del abono}
+nodes:
+  - id: entrada
+    type: input
+    label: Solicitud de abono
+    position: {x: 80, y: 200}
+  - id: validar
+    type: custom
+    label: Validar contra la factura
+    position: {x: 360, y: 200}
+    config:
+      function: validar_abono
+      args:
+        numero_factura: "{{input.numero_factura}}"
+        importe: "{{input.importe}}"
+        motivo: "{{input.motivo}}"
+  - id: requiere_aprobacion
+    type: condition
+    label: ¿Más de 500 €?
+    position: {x: 640, y: 200}
+    config:
+      expression: "{{validar.output.requiere_aprobacion}} == true"
+  - id: aprobar
+    type: approval
+    label: Aprobación de administración
+    position: {x: 920, y: 80}
+    config:
+      prompt: >-
+        ¿Emitir un abono de {{validar.output.importe}} € a {{validar.output.cliente}} sobre la factura
+        {{validar.output.numero_factura}}? Motivo: {{validar.output.motivo}}
+      description: Los abonos de más de 500 € requieren la aprobación de un responsable (política AB-01).
+      approver_role: admin
+      payload:
+        numero_factura: "{{validar.output.numero_factura}}"
+        cliente: "{{validar.output.cliente}}"
+        importe: "{{validar.output.importe}}"
+        motivo: "{{validar.output.motivo}}"
+  - id: emitir
+    type: custom
+    label: Emitir abono
+    position: {x: 1200, y: 200}
+    config:
+      function: emitir_abono
+      args:
+        numero_factura: "{{validar.output.numero_factura}}"
+        importe: "{{validar.output.importe}}"
+        importe_aprobado: "{{aprobar.output.importe}}"
+        motivo: "{{validar.output.motivo}}"
+        cliente: "{{validar.output.cliente}}"
+        valido: "{{validar.output.valido}}"
+        error: "{{validar.output.error}}"
+  - id: resultado
+    type: output
+    label: Resultado
+    position: {x: 1480, y: 200}
+    config:
+      value: "{{emitir.output}}"
+edges:
+  - {source: entrada, target: validar}
+  - {source: validar, target: requiere_aprobacion}
+  - {source: requiere_aprobacion, target: aprobar, condition: "true"}
+  - {source: requiere_aprobacion, target: emitir, condition: "false"}
+  - {source: aprobar, target: emitir}
+  - {source: emitir, target: resultado}

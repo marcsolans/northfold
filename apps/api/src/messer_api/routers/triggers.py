@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hmac
 import json
 import re
@@ -23,6 +24,7 @@ from messer_common.settings import get_settings
 from ..deps import ensure_project_access, get_db, require_role
 from ..errors import ApiError, NotFound, RateLimited, Unauthorized
 from ..ratelimit import hit
+from ..services import channels as channels_svc
 from ..services import projects as svc
 
 router = APIRouter(tags=["triggers"])
@@ -296,14 +298,27 @@ def _normalize(raw: dict[str, Any]) -> InboundEmail:
 async def inbound_email(
     request: Request, token: str | None = None, authorization: str | None = Header(default=None)
 ) -> JSONResponse:
-    """Inbound email webhook from the provider (secret as ``?token=`` or HTTP Basic/Bearer)."""
+    """Inbound email webhook from the provider (secret as ``?token=`` or HTTP Basic/Bearer).
+
+    The single provider URL for the inbound domain: ``wf-<token>@`` addresses fire email triggers and
+    ``ch-<token>@`` addresses reach email channels.
+    """
     secret = get_settings().messer_inbound_email_secret
-    supplied = token or (authorization or "").split(" ", 1)[-1]
+    header = authorization or ""
+    supplied = token or header.split(" ", 1)[-1]
+    if not token and header.lower().startswith("basic "):
+        try:
+            supplied = base64.b64decode(header[6:]).decode().split(":", 1)[-1]
+        except (ValueError, UnicodeDecodeError):
+            supplied = ""
     if not secret or not supplied or not hmac.compare_digest(secret, supplied):
         raise Unauthorized("Firma no válida", code="invalid_signature")
-    email = _normalize(await request.json())
-    fired = await dispatch_inbound_email(email)
-    return JSONResponse({"accepted": True, "fired": fired}, status_code=202)
+    raw = await request.json()
+    if not isinstance(raw, dict):
+        raise ApiError("El cuerpo debe ser un objeto JSON", code="invalid_body")
+    fired = await dispatch_inbound_email(_normalize(raw))
+    routed = await channels_svc.route_inbound_email(raw)
+    return JSONResponse({"accepted": True, "fired": fired, "routed": routed}, status_code=202)
 
 
 async def dispatch_inbound_email(email: InboundEmail) -> int:

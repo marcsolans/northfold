@@ -1,14 +1,11 @@
-import asyncio
+"""{{name}} — Messer workflow created with `messer create`. Each step is a function (or an agent); steps run as
+soon as their inputs are ready. Run it locally with `messer start` and publish it with `messer push`."""
 
 from messer import Workflow
 
-workflow = Workflow(name="workflow")
+
+def saludar(nombre: str = "mundo") -> str:
+    return f"Hola, {nombre}"
 
 
-async def main():
-    result = await workflow().collect()
-    print(result.output)  # noqa: T201
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+workflow = Workflow(name="{{name}}").step(saludar)

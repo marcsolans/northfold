@@ -29,7 +29,10 @@ def memory_model(monkeypatch: pytest.MonkeyPatch):  # type: ignore[no-untyped-de
 
 
 async def test_text_mode_call_two_turns_with_memory(
-    api_client: httpx.AsyncClient, voice_server, runtime: Harness, memory_model  # type: ignore[no-untyped-def]
+    api_client: httpx.AsyncClient,
+    voice_server,
+    runtime: Harness,
+    memory_model,  # type: ignore[no-untyped-def]
 ) -> None:
     pid = await setup_agent(api_client, voice={"greeting": "Hola, soy la recepcionista de Acme."})
     status = (await api_client.get("/api/v1/voice/status")).json()
@@ -51,7 +54,9 @@ async def test_text_mode_call_two_turns_with_memory(
         await ws.send(json.dumps({"type": "playback", "played_ms": greeting["duration_ms"]}))
         await ws.send(json.dumps({"type": "speech_done"}))
 
-        await ws.send(json.dumps({"type": "user_text", "text": "Me llamo Marta y quiero revisar una factura", "final": True}))
+        await ws.send(
+            json.dumps({"type": "user_text", "text": "Me llamo Marta y quiero revisar una factura", "final": True})
+        )
         committed = await recv_until(ws, "transcript_committed", into=frames)
         assert committed["text"].startswith("Me llamo Marta")
         first: list[dict] = []
@@ -108,10 +113,14 @@ async def test_text_mode_call_two_turns_with_memory(
 
 
 async def test_ticket_is_single_use_and_checked(
-    api_client: httpx.AsyncClient, voice_server, runtime: Harness  # type: ignore[no-untyped-def]
+    api_client: httpx.AsyncClient,
+    voice_server,
+    runtime: Harness,  # type: ignore[no-untyped-def]
 ) -> None:
     pid = await setup_agent(api_client)
-    session = (await api_client.post("/api/v1/voice/sessions", json={"project_id": pid, "workforce": "recepcion"})).json()
+    session = (
+        await api_client.post("/api/v1/voice/sessions", json={"project_id": pid, "workforce": "recepcion"})
+    ).json()
     async with websockets.connect(f"{voice_server.ws_url}/v1/session?ticket=forged") as ws:
         error = json.loads(await ws.recv())
         assert error["type"] == "error" and error["code"] == "invalid_ticket"

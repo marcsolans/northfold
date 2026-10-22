@@ -1,0 +1,21 @@
+id,fecha,nombre,empresa,email,telefono,sector,empleados,presupuesto_eur,plazo_meses,origen,mensaje,puntuacion,estado,comercial
+1,2026-09-03T12:00,Lucía Ferrer,Grupo Alba Metal S.L.,lucia.ferrer@grupoalba.example,+34 601 000 101,industria,180,42000,2,web,Solicitud de demo desde la web,95,cualificado,Marta Iglesias
+2,2026-09-05T15:00,Pablo Ortega,Transportes Ortega e Hijos S.L.,pablo@transportes.example,+34 602 000 102,logistica,65,18000,4,whatsapp,Mensaje por WhatsApp pidiendo precios,75,cualificado,Jordi Puig
+3,2026-09-07T09:00,Nuria Campos,Farmacia Campos,nuria@farmacia.example,+34 603 000 103,salud,6,2400,12,web,Solicitud de demo desde la web,25,descartado,Elena Robles
+4,2026-09-09T12:00,Andrés Vidal,Moda Vidal S.L.,andres@moda.example,+34 604 000 104,retail,35,9000,6,email,Email pidiendo una propuesta,55,en_seguimiento,Sergio Navas
+5,2026-09-12T15:00,Carmen Ruiz,Clínica Veterinaria Ruiz,carmen@clinica.example,+34 605 000 105,salud,14,6000,3,web,Solicitud de demo desde la web,65,en_seguimiento,Elena Robles
+6,2026-09-14T09:00,Íñigo Etxeberria,Etxe Componentes S.A.,iñigo@etxe.example,+34 606 000 106,industria,420,65000,5,evento,Contacto en feria del sector,90,cualificado,Marta Iglesias
+7,2026-09-16T12:00,Laura Méndez,Hostal La Plaza,laura@hostal.example,+34 607 000 107,hosteleria,8,1500,18,whatsapp,Mensaje por WhatsApp pidiendo precios,10,descartado,Ana Beltrán
+8,2026-09-18T15:00,Raúl Santos,Santos Abogados,raul@santos.example,+34 608 000 108,servicios,12,4000,9,web,Solicitud de demo desde la web,35,descartado,Ana Beltrán
+9,2026-09-20T09:00,Teresa Molina,Supermercados Molina S.L.,teresa@supermercados.example,+34 609 000 109,retail,230,38000,3,web,Solicitud de demo desde la web,95,cualificado,Sergio Navas
+10,2026-09-23T12:00,Diego Prieto,Prieto Logística Integral S.L.,diego@prieto.example,+34 610 000 110,logistica,95,24000,2,email,Email pidiendo una propuesta,85,cualificado,Jordi Puig
+11,2026-09-25T15:00,Silvia Navarro,Academia Navarro,silvia@academia.example,+34 611 000 111,educacion,20,3500,10,web,Solicitud de demo desde la web,35,descartado,Ana Beltrán
+12,2026-09-27T09:00,Hugo Castro,Castro Plásticos S.L.,hugo@castro.example,+34 612 000 112,industria,55,12000,8,whatsapp,Mensaje por WhatsApp pidiendo precios,65,en_seguimiento,Marta Iglesias
+13,2026-09-29T12:00,Marina Gil,Residencia Los Olmos,marina@residencia.example,+34 613 000 113,salud,80,15000,6,web,Solicitud de demo desde la web,75,cualificado,Elena Robles
+14,2026-10-01T15:00,Óscar León,Panificadora León S.A.,oscar@panificadora.example,+34 614 000 114,industria,140,28000,3,evento,Contacto en feria del sector,85,ganado,Marta Iglesias
+15,2026-10-04T09:00,Rocío Delgado,Delgado Interiorismo,rocio@delgado.example,+34 615 000 115,servicios,4,1200,24,web,Solicitud de demo desde la web,10,descartado,Ana Beltrán
+16,2026-10-06T12:00,Javier Romero,Ferreterías Romero S.L.,javier@ferreterias.example,+34 616 000 116,retail,48,7500,4,email,Email pidiendo una propuesta,55,en_seguimiento,Sergio Navas
+17,2026-10-08T15:00,Patricia Herrera,Herrera Asesores S.L.,patricia@herrera.example,+34 617 000 117,servicios,25,5000,6,web,Solicitud de demo desde la web,45,en_seguimiento,Ana Beltrán
+18,2026-10-10T09:00,Alberto Núñez,Frigoríficos Núñez S.A.,alberto@frigorificos.example,+34 618 000 118,logistica,310,52000,3,web,Solicitud de demo desde la web,100,cualificado,Jordi Puig
+19,2026-10-12T12:00,Cristina Vega,Óptica Vega,cristina@optica.example,+34 619 000 119,salud,9,3000,5,whatsapp,Mensaje por WhatsApp pidiendo precios,45,en_seguimiento,Elena Robles
+20,2026-10-15T15:00,Manuel Pastor,Pastor Maquinaria Agrícola S.L.,manuel@pastor.example,+34 620 000 120,industria,70,20000,12,web,Solicitud de demo desde la web,65,en_seguimiento,Marta Iglesias

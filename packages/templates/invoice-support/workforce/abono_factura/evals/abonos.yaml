@@ -1,0 +1,44 @@
+# Evals deterministas del flujo (etiqueta "offline"). La rama con aprobación se prueba desde la bandeja de
+# aprobaciones: una eval no puede aprobar por una persona.
+- name: abono_menor_de_500_se_emite
+  description: Un abono de 120 € válido se emite sin aprobación
+  runnable: ../workflow.py::workflow
+  tags: [offline, abonos]
+  params:
+    numero_factura: F-2026-0129
+    importe: 120
+    motivo: Error en el precio
+  output:
+    emitido:
+      eq!: true
+    aprobacion:
+      eq!: no necesaria
+    abono:
+      starts_with!: AB-2026-0129-
+
+- name: abono_superior_a_la_factura
+  description: Un abono mayor que la factura se rechaza
+  runnable: ../workflow.py::workflow
+  tags: [offline, abonos]
+  params:
+    numero_factura: F-2026-0129
+    importe: 450
+    motivo: Devolución
+  output:
+    emitido:
+      eq!: false
+    motivo_rechazo:
+      contains!: supera el importe
+
+- name: factura_ya_abonada
+  description: Una factura abonada no admite un segundo abono
+  runnable: ../workflow.py::workflow
+  tags: [offline, abonos]
+  params:
+    numero_factura: F-2026-0118
+    importe: 100
+  output:
+    emitido:
+      eq!: false
+    motivo_rechazo:
+      contains!: ya está abonada

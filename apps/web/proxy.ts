@@ -77,6 +77,18 @@ export async function proxy(request: NextRequest) {
   return withSecurityHeaders(request, pathname, (headers) => NextResponse.next({ request: { headers } }));
 }
 
+/** ws(s):// origin of the voice service (browser calls), for the CSP connect-src. */
+function voiceOrigin(): string {
+  const raw = process.env.MESSER_VOICE_PUBLIC_URL || process.env.MESSER_VOICE_URL;
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    return ` ${url.protocol === "https:" ? "wss:" : "ws:"}//${url.host}`;
+  } catch {
+    return "";
+  }
+}
+
 function withSecurityHeaders(
   request: NextRequest,
   pathname: string,
@@ -93,7 +105,7 @@ function withSecurityHeaders(
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    `connect-src 'self' ${posthogHost} ${sentry}${isDev ? " ws: http://localhost:*" : ""}`,
+    `connect-src 'self' ${posthogHost} ${sentry}${voiceOrigin()}${isDev ? " ws: http://localhost:*" : ""}`,
     "worker-src 'self' blob:",
     "media-src 'self' blob:",
     embeddable ? "frame-ancestors *" : "frame-ancestors 'none'",

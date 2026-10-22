@@ -130,7 +130,9 @@ async def test_filler_phrase_while_a_tool_runs(
     use_fake_speech(monkeypatch)
     model(anthropic_tool_then_text("El IVA de 120 euros son 25,20 euros.", delay_s=2.0))
     pid = await setup_agent(api_client, tools=[{"type": "builtin", "key": "calculator"}])
-    session = (await api_client.post("/api/v1/voice/sessions", json={"project_id": pid, "workforce": "recepcion"})).json()
+    session = (
+        await api_client.post("/api/v1/voice/sessions", json={"project_id": pid, "workforce": "recepcion"})
+    ).json()
     frames: list[dict] = []
     async with websockets.connect(session["ws_url"]) as ws:
         await recv_until(ws, "session_started", into=frames)
@@ -138,7 +140,12 @@ async def test_filler_phrase_while_a_tool_runs(
         status = await recv_until(ws, "agent_status", into=frames)
         assert "calculator" in status["text"]
         filler = await recv_until(ws, "filler", into=frames)
-        assert filler["text"] in {"Un momento, lo compruebo.", "Déjame mirarlo.", "Dame un segundo.", "Lo consulto ahora mismo."}
+        assert filler["text"] in {
+            "Un momento, lo compruebo.",
+            "Déjame mirarlo.",
+            "Dame un segundo.",
+            "Lo consulto ahora mismo.",
+        }
         done = await recv_until(ws, "agent_text_done", into=frames)
         assert "25,20" in done["text"]
         metrics = await recv_until(ws, "metrics", into=frames)
