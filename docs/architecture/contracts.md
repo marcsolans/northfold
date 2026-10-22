@@ -61,6 +61,50 @@ Package `packages/connectors` → `messer_connectors` (depends only on `messer_c
 Demo connections (`connections.demo = true`) return realistic sample data from fixtures shipped in the package,
 clearly labelled as demo in the UI.
 
+### 4.1 Additions (connectors workstream)
+
+- `ConnectionContext` also carries `connector_key: str` and `agent_id: UUID | None` (connections routed through an
+  on-prem agent). `ConnectorAdapter.actions_for(ctx)` (databases) adds `execute` (side effect) only when the
+  connection is not read-only; `actions()` stays the static list.
+- `ConnectorSpec{key, name, category, auth_type, description, capabilities{actions, sync, sync_resources, events,
+  introspection, demo, agent}, icon, oauth{provider, authorize_url, token_url, scopes}, config_fields, events}`.
+  `events` is `list[{name, event, title, title_en, description, delivery: "poll"|"push"}]`, e.g.
+  `{"name": "gmail.new_email", "event": "new_email", …}`; served by `GET /api/v1/connectors[/{key}]` (`events`).
+- Errors: adapters raise `messer_connectors.base.ConnectorError` subclasses (`code`, `status_code`, `details`):
+  `ConnectorAuthError` (reconnect), `InvalidArguments`, `ReadOnlyViolation`, `ProviderError`, `AgentUnavailable`…
+- Agent RPC from any process: `await messer_connectors.agent_rpc.call(agent_id, method, params, timeout_s=…)`
+  (Redis channel `agent-rpc:<agent_id>` → API instance holding the agent's WebSocket → reply list
+  `agent-rpc-reply:<request_id>`). Methods: `ping`, `sql.ping|query|introspect|fetch_batch`, `files.list|read`.
+- Credentials for the engine (`Integration.resolve()`): `GET /api/v1/orgs/{org_id}/connections/{id}/credentials`
+  authorized by `Authorization: Bearer <MESSER_SERVICE_TOKEN>`, an org API key with scope `connections:read`, or a
+  token signed with `security.sign_payload({"typ": "runtime", "org_id": …})`. Returns
+  `{token, token_type, expires_at, provider, scopes, demo, agent_id, config, credentials}` (refreshed).
+
+### 4.2 Connector events (workflow triggers)
+
+Adapters with `capabilities.events` implement
+`async poll_events(ctx, event: str, cursor: str | None) -> tuple[list[dict], str | None]`; each item is
+`{"id": <stable provider id>, "event", "occurred_at", "data": {...}}`. `cursor=None` returns `([], baseline)` — no
+backfill. Cursors are opaque strings stored by the caller.
+
+| Trigger event (`config.event`) | Adapter event | Delivery | Cursor | Notes |
+|---|---|---|---|---|
+| `gmail.new_email` | `new_email` | poll | `internalDate` (ms) | inbox; `config.event_query` adds a Gmail filter |
+| `outlook.new_email` | `new_email` | poll | `receivedDateTime` | inbox |
+| `hubspot.new_contact` | `new_contact` | poll | `createdate` (ms) | |
+| `salesforce.new_record` | `new_record` | poll | `CreatedDate` | object `config.event_object` (default Lead) |
+| `google_drive.new_file` | `new_file` | poll | `createdTime` | folder `config.event_folder_id` (optional) |
+| `webhooks.received` | `received` | push | `created_at\|id` | HMAC-verified request to `/api/v1/webhooks/connections/{id}` |
+| `<connector>.sync_completed` | — | push | — | after every sync run of a syncable connector |
+
+Emission: the scheduler task `connector_events.poll` (every 60 s) polls only connections referenced by enabled
+`connector_event` triggers (`config.connection_id`, `config.event` = name or `*`), keeps cursors in
+`connections.config["_event_cursors"]` (hidden from the API) and calls
+`messer_common.triggers.emit(session, org_id=…, event="<connector>.<event>", connection_id=…, event_id=<id>,
+payload={connector, connection_id, event, event_id, occurred_at, data, [from, subject, snippet, email]})`.
+Push events call `emit` when they happen. Inbound webhook events are also stored in `connector_events` (30-day
+retention) and published on the Redis channel `connector-events`.
+
 ## 5. Model access (shared) — owner: runtime
 
 All model calls go through the runtime **model gateway** (`POST {MESSER_RUNTIME_URL}/internal/v1/orgs/{org_id}/proxies/anthropic/v1/messages`,

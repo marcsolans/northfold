@@ -1,0 +1,17 @@
+apiVersion: v2
+name: messer-data-plane
+description: >-
+  Messer data plane for customer-cloud (BYOC) and on-premise installations: runtime, workers, scheduler,
+  voice gateway and MCP server. Customer data (knowledge, traces, conversations, files) stays in the
+  customer's account; only orchestration crosses to the Messer control plane over mTLS.
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.27.0-0"
+keywords: [messer, ai, agents, byoc, data-plane]
+home: https://messer.eu
+maintainers:
+  - name: Messer
+    email: platform@messer.eu
+annotations:
+  messer.eu/data-residency: eu

@@ -21,6 +21,7 @@ from ..deps import ensure_project_access, get_db, require_role
 from ..errors import ApiError, NotFound
 
 router = APIRouter(prefix="/runs", tags=["runs"])
+project_router = APIRouter(prefix="/projects/{project_id}/runs", tags=["runs"])
 
 
 class RunSummary(BaseModel):
@@ -323,3 +324,34 @@ async def add_feedback(
         session.add(row)
     await session.flush()
     return {"id": str(row.id), "value": row.value, "comment": row.comment}
+
+
+@project_router.get("", response_model=RunPage)
+async def list_project_runs(
+    project_id: uuid.UUID,
+    principal: Principal = Depends(require_role("viewer")),
+    session: AsyncSession = Depends(get_db),
+    workforce: str | None = None,
+    status: str | None = None,
+    channel: str | None = None,
+    cursor: str | None = None,
+    limit: int = Query(default=50, ge=1, le=200),
+) -> RunPage:
+    """Same as ``GET /runs?project_id=`` (spec path)."""
+    ensure_project_access(principal, project_id)
+    return await list_runs(
+        principal=principal,
+        session=session,
+        project_id=project_id,
+        workforce=workforce,
+        status=status,
+        channel=channel,
+        environment=None,
+        since=None,
+        until=None,
+        cursor=cursor,
+        limit=limit,
+    )
+
+
+extra_routers = [project_router]

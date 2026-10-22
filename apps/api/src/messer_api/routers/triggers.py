@@ -217,6 +217,7 @@ async def fire_now(
 
 
 @public_router.post("/api/hooks/{trigger_id}", status_code=202)
+@public_router.post("/hooks/{trigger_id}", status_code=202, include_in_schema=False)
 async def receive_webhook(
     trigger_id: uuid.UUID,
     request: Request,
@@ -277,18 +278,21 @@ class InboundEmail(BaseModel):
 
 def _normalize(raw: dict[str, Any]) -> InboundEmail:
     if "From" in raw or "TextBody" in raw:
-        return InboundEmail.model_validate({
-            "to": str(raw.get("OriginalRecipient") or raw.get("To") or ""),
-            "from": str(raw.get("From") or ""),
-            "subject": str(raw.get("Subject") or ""),
-            "text": str(raw.get("TextBody") or raw.get("StrippedTextReply") or ""),
-            "html": raw.get("HtmlBody"),
-            "message_id": raw.get("MessageID"),
-        })
+        return InboundEmail.model_validate(
+            {
+                "to": str(raw.get("OriginalRecipient") or raw.get("To") or ""),
+                "from": str(raw.get("From") or ""),
+                "subject": str(raw.get("Subject") or ""),
+                "text": str(raw.get("TextBody") or raw.get("StrippedTextReply") or ""),
+                "html": raw.get("HtmlBody"),
+                "message_id": raw.get("MessageID"),
+            }
+        )
     return InboundEmail.model_validate(raw)
 
 
 @public_router.post("/api/inbound/email", status_code=202)
+@public_router.post("/inbound-email", status_code=202, include_in_schema=False)
 async def inbound_email(
     request: Request, token: str | None = None, authorization: str | None = Header(default=None)
 ) -> JSONResponse:

@@ -195,3 +195,45 @@ async def gateway_totals(run_id: str) -> tuple[Decimal, set[str], list[dict[str,
 
 def now() -> datetime:
     return datetime.now(UTC)
+
+
+async def persist_guard_spans(
+    session: AsyncSession, *, run: Run, decisions: list[dict[str, Any]], root_call_id: str | None
+) -> Decimal:
+    """Guard decisions of a run as ``guard`` spans under the root span. Returns their summed cost."""
+    total = Decimal("0")
+    root_span = None
+    if root_call_id:
+        root_span = (
+            await session.execute(select(Span.id).where(Span.run_id == run.id, Span.call_id == root_call_id))
+        ).scalar_one_or_none()
+    for i, d in enumerate(decisions):
+        cost = Decimal(str(d.get("cost_usd") or "0"))
+        total += cost
+        t0 = int(d.get("t") or 0)
+        session.add(
+            Span(
+                id=uuid.uuid4(),
+                org_id=run.org_id,
+                run_id=run.id,
+                call_id=f"guard-{run.id.hex[:12]}-{i}",
+                parent_call_id=root_call_id,
+                parent_span_id=root_span,
+                kind="guard",
+                name=str(d.get("policy") or d.get("action") or "guard"),
+                path="guard",
+                status=str(d.get("status") or "success"),
+                input=_clip(d.get("input")),
+                output=_clip(d.get("output")),
+                error=None,
+                model=d.get("model"),
+                input_tokens=int(d.get("input_tokens") or 0),
+                output_tokens=int(d.get("output_tokens") or 0),
+                cache_read_tokens=0,
+                cost_usd=cost,
+                t0=t0,
+                t1=t0 + int(d.get("latency_ms") or 0),
+                meta=_clip({k: v for k, v in d.items() if k not in ("input", "output")}),
+            )
+        )
+    return total

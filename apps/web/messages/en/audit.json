@@ -1,0 +1,38 @@
+{
+  "description": "Immutable record of the organization's important actions: sign-ins, configuration changes, permissions and data.",
+  "adminOnly": "Only administrators can view the audit log.",
+  "export": "Export CSV",
+  "filters": {
+    "action": "Action",
+    "actionPlaceholder": "e.g. sso. or member.",
+    "actor": "Person",
+    "anyActor": "Anyone",
+    "entityType": "Entity type",
+    "since": "From",
+    "until": "To",
+    "clear": "Clear filters"
+  },
+  "columns": {
+    "when": "Date",
+    "actor": "Person",
+    "action": "Action",
+    "entity": "Entity",
+    "ip": "IP"
+  },
+  "system": "System",
+  "apiKey": "API key",
+  "impersonated": "Impersonation",
+  "empty": "No events",
+  "emptyFiltered": "Try other filters or a wider date range.",
+  "showing": "{count, plural, one {# event} other {# events}}",
+  "loadMore": "Load more",
+  "diff": {
+    "title": "Event details",
+    "field": "Field",
+    "before": "Before",
+    "after": "After",
+    "raw": "View JSON",
+    "noChanges": "This event has no additional data.",
+    "impersonatedBy": "Impersonated by"
+  }
+}

@@ -11,7 +11,8 @@ export type SettingsSection =
   | "models"
   | "residency"
   | "audit"
-  | "data";
+  | "data"
+  | "modelPolicy";
 
 export const SETTINGS_GROUPS: { group: "account" | "org" | "governance" | "developers"; items: { key: SettingsSection; href: string }[] }[] = [
   { group: "account", items: [{ key: "profile", href: "/app/settings/profile" }] },
@@ -33,6 +34,7 @@ export const SETTINGS_GROUPS: { group: "account" | "org" | "governance" | "devel
       { key: "residency", href: "/app/settings/residency" },
       { key: "audit", href: "/app/settings/audit" },
       { key: "data", href: "/app/settings/data" },
+      { key: "modelPolicy", href: "/app/settings/model-policy" },
     ],
   },
   {

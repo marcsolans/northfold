@@ -1,0 +1,175 @@
+# Messer data plane — default values. Every secret comes from existing Kubernetes Secrets (never from values).
+# Minimal install:
+#   helm install messer-dp ./infra/helm/messer-data-plane -n messer --create-namespace \
+#     --set controlPlane.url=https://api.messer.eu --set controlPlane.dataPlaneId=<id from Messer>
+
+nameOverride: ""
+fullnameOverride: ""
+
+global:
+  # Registry holding the data-plane images (mirror it for air-gapped installs, see docs/on-prem.md).
+  imageRegistry: ghcr.io/messer
+  imageTag: ""            # defaults to the chart appVersion
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []    # e.g. [{name: registry-credentials}]
+  environment: production # MESSER_ENV
+  region: eu-central-1    # informational; keep every resource in an EU region
+
+controlPlane:
+  # Outbound-only connection to the Messer control plane (orchestration: deploy, run, approval decisions).
+  url: https://api.messer.eu
+  webUrl: https://app.messer.eu
+  dataPlaneId: ""         # issued by Messer when the customer-cloud environment is registered
+
+mtls:
+  enabled: true
+  # Secret with ca.crt, tls.crt and tls.key (client certificate for this environment, see infra/scripts/mtls-gen.sh).
+  existingSecret: messer-data-plane-mtls
+  mountPath: /etc/messer/mtls
+
+secrets:
+  # Secret with DATABASE_URL, DATABASE_APP_URL, DATABASE_READONLY_URL, REDIS_URL, MESSER_SECRETS_KEY,
+  # MESSER_JWT_SECRET, MESSER_SERVICE_TOKEN and the provider keys you use (ANTHROPIC_API_KEY or
+  # AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY for Bedrock EU, SMTP_PASSWORD, TWILIO_*…).
+  existingSecret: messer-data-plane
+  # Extra secrets mounted as environment variables (all keys).
+  extraEnvFromSecrets: []
+
+# Non-secret configuration shared by every component.
+config:
+  MESSER_EMBEDDINGS_PROVIDER: local
+  AWS_REGION: eu-central-1
+  MESSER_EMAIL_PROVIDER: smtp
+  MESSER_EMAIL_REGION: eu-west-1
+  MESSER_VOICE_REGION: ""
+  MESSER_STORAGE_DIR: /data/storage
+  MESSER_PROJECTS_DIR: /data/projects
+  MESSER_RUNTIME_CACHE_DIR: /cache/runtime
+  OTEL_EXPORTER_OTLP_ENDPOINT: ""
+
+# Shared volume for project repositories and local file storage (ReadWriteMany: EFS, Azure Files, Filestore…).
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: ""
+  accessMode: ReadWriteMany
+  size: 100Gi
+
+serviceAccount:
+  create: true
+  name: ""
+  # Cloud workload identity (IRSA / Azure Workload Identity / GKE Workload Identity).
+  annotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []
+
+components:
+  runtime:
+    enabled: true
+    image: messer-runtime
+    command: []
+    port: 8100
+    replicas: 2
+    resources:
+      requests: {cpu: 500m, memory: 1Gi}
+      limits: {cpu: "2", memory: 4Gi}
+    autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 70}
+    pdb: {enabled: true, minAvailable: 1}
+    service: {enabled: true, type: ClusterIP}
+    probes: {enabled: true, path: /health}
+    extraEnv: {}
+  worker:
+    enabled: true
+    image: messer-worker
+    command: [python, -m, messer_worker]
+    port: 0
+    replicas: 2
+    resources:
+      requests: {cpu: 250m, memory: 512Mi}
+      limits: {cpu: "2", memory: 4Gi}
+    autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 20, targetCPUUtilizationPercentage: 75}
+    pdb: {enabled: true, minAvailable: 1}
+    service: {enabled: false, type: ClusterIP}
+    probes: {enabled: false, path: ""}
+    extraEnv: {}
+  scheduler:
+    enabled: true
+    image: messer-scheduler
+    command: [python, -m, messer_scheduler]
+    port: 0
+    # Redis leader election: extra replicas are hot standbys.
+    replicas: 2
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {cpu: 500m, memory: 512Mi}
+    autoscaling: {enabled: false, minReplicas: 2, maxReplicas: 2, targetCPUUtilizationPercentage: 80}
+    pdb: {enabled: true, minAvailable: 1}
+    service: {enabled: false, type: ClusterIP}
+    probes: {enabled: false, path: ""}
+    extraEnv: {}
+  voice:
+    enabled: true
+    image: messer-voice
+    command: []
+    port: 8300
+    replicas: 2
+    resources:
+      requests: {cpu: 500m, memory: 512Mi}
+      limits: {cpu: "2", memory: 2Gi}
+    autoscaling: {enabled: true, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 60}
+    pdb: {enabled: true, minAvailable: 1}
+    service: {enabled: true, type: ClusterIP}
+    probes: {enabled: true, path: /health}
+    extraEnv: {}
+  mcp:
+    enabled: true
+    image: messer-mcp
+    command: []
+    port: 8400
+    replicas: 2
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {cpu: "1", memory: 1Gi}
+    autoscaling: {enabled: false, minReplicas: 2, maxReplicas: 4, targetCPUUtilizationPercentage: 75}
+    pdb: {enabled: true, minAvailable: 1}
+    service: {enabled: true, type: ClusterIP}
+    probes: {enabled: true, path: /health}
+    extraEnv: {}
+
+networkPolicy:
+  enabled: true
+  # Namespaces allowed to reach the HTTP services (your ingress controller / internal callers).
+  ingressNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: ingress-nginx
+  # Destinations the pods may open connections to. Leave a list empty to allow any address on that port.
+  egress:
+    postgresCidrs: []     # e.g. [10.20.0.0/16]
+    redisCidrs: []
+    httpsCidrs: []        # control plane, model providers (Bedrock EU / Anthropic), object storage, KMS
+    extraRules: []        # raw NetworkPolicy egress rules
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  path: /metrics
+  labels: {}

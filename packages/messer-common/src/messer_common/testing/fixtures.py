@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
 from messer_common.db import Principal, dispose_engines, system_session
 from messer_common.settings import REPO_ROOT, get_settings
@@ -96,6 +97,20 @@ async def seeded(migrated_database: None) -> None:
 async def clean_database(seeded: None) -> AsyncIterator[None]:
     yield
     async with system_session() as s:
+        # Knowledge bases own a schema and a cluster-wide reader role: drop both before truncating, so repeated
+        # runs do not accumulate roles (roles are shared by every database on the server).
+        has_kb = (await s.execute(text("select to_regclass('public.knowledge_bases')"))).scalar_one()
+        if has_kb:
+            for schema, role in (
+                await s.execute(text("SELECT schema_name, reader_role FROM public.knowledge_bases"))
+            ).all():
+                await s.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+                if role and (await s.execute(text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": role})).first():
+                    try:
+                        async with s.begin_nested():
+                            await s.execute(text(f'DROP ROLE "{role}"'))
+                    except DBAPIError:
+                        pass  # still referenced elsewhere (another test database): leave it
         rows = await s.execute(text("select tablename from pg_tables where schemaname = 'public'"))
         tables = [r[0] for r in rows if r[0] not in KEEP_TABLES]
         if tables:

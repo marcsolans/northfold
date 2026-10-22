@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,9 +24,15 @@ async def record(
     ip: str | None = None,
     user_agent: str | None = None,
 ) -> None:
-    """Insert an audit entry in the caller's transaction (so it commits atomically with the change)."""
+    """Insert an audit entry in the caller's transaction (so it commits atomically with the change).
+
+    Every column is set client-side, so the INSERT needs no ``RETURNING``: under RLS the audit log is readable
+    only by admins, and builders/viewers must still be able to write their own entries.
+    """
     session.add(
         AuditLog(
+            id=uuid.uuid4(),
+            created_at=datetime.now(UTC),
             org_id=org_id or (principal.org_id if principal else None),
             actor_id=principal.user_id if principal else None,
             impersonated_by=principal.impersonated_by if principal else None,

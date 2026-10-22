@@ -1,0 +1,24 @@
+{
+  "sections": [
+    {
+      "title": { "es": "Empezar", "en": "Get started" },
+      "pages": [
+        { "slug": "", "title": { "es": "Introducción", "en": "Introduction" } },
+        { "slug": "quickstart", "title": { "es": "Guía rápida", "en": "Quickstart" } },
+        { "slug": "concepts", "title": { "es": "Conceptos", "en": "Concepts" } }
+      ]
+    },
+    {
+      "title": { "es": "Guías", "en": "Guides" },
+      "pages": [{ "slug": "demo", "title": { "es": "Proyecto de demostración", "en": "Demo project" } }]
+    },
+    {
+      "title": { "es": "Desarrolladores", "en": "Developers" },
+      "pages": [{ "slug": "mcp", "title": { "es": "Servidor MCP", "en": "MCP server" } }]
+    },
+    {
+      "title": { "es": "Empresa", "en": "Enterprise" },
+      "pages": [{ "slug": "byoc", "title": { "es": "Despliegue en tu nube", "en": "Deploy in your cloud" } }]
+    }
+  ]
+}

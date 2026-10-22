@@ -1,0 +1,81 @@
+---
+title: Por qué el código exportable importa
+description: Una plataforma de IA que no te deja llevarte lo que construyes te convierte en rehén de sus precios, sus modelos y su hoja de ruta. Qué significa «exportable» de verdad y qué preguntar antes de elegir.
+date: 2026-09-16
+author: Equipo de Messer
+tags: [arquitectura, código, dependencia del proveedor]
+---
+
+Las plataformas de IA prometen ir rápido: arrastras unos bloques, conectas tus documentos y en una tarde tienes un asistente funcionando. El problema aparece seis meses después, cuando ese asistente atiende a cientos de clientes, el proveedor cambia sus precios o deja de soportar el modelo que usas, y descubres que lo que construiste solo existe dentro de su interfaz.
+
+En Messer partimos de un principio sencillo: **todo lo que construyes es código que te puedes llevar**. Este artículo explica por qué nos parece tan importante y qué deberías exigir a cualquier herramienta, sea la nuestra o no.
+
+## Qué significa «exportable» de verdad
+
+Muchas herramientas dicen que se puede exportar. A menudo eso significa un JSON con la configuración que solo esa misma herramienta sabe interpretar. Eso no es exportar: es una copia de seguridad.
+
+Para nosotros, un proyecto es exportable cuando cumple tres condiciones:
+
+1. **Es legible.** Los agentes y flujos son código y configuración que una persona puede leer y revisar, no un formato binario o propietario.
+2. **Es ejecutable fuera de la plataforma.** Con el código exportado puedes arrancar el proyecto en tu portátil o en tu servidor, sin depender de nuestro servicio.
+3. **Tiene historial.** Cada cambio queda registrado con su autor, su fecha y su motivo, y puedes comparar dos versiones.
+
+En Messer, cada proyecto es un repositorio git. Cada agente es un archivo Python sobre el motor de Messer, con su configuración en `messer.yaml`; los flujos, las herramientas y las evals viven en el mismo repositorio. La interfaz del Studio edita ese código, no una representación paralela. Puedes descargar el proyecto como un `.zip` ejecutable o sincronizarlo con un repositorio de GitHub.
+
+```python
+from messer import Tool
+
+
+def consultar_factura(numero: str) -> dict:
+    """Devuelve el estado y las líneas de una factura."""
+    ...
+
+
+consultar = Tool(handler=consultar_factura)
+```
+
+Ese archivo es el mismo que ves en el Studio, el que se versiona y el que se despliega.
+
+## Por qué importa
+
+### Auditoría y revisión
+
+Cuando un agente responde a clientes o mueve dinero, alguien en tu empresa va a preguntar qué hace exactamente. Con código versionado, la respuesta es un *diff*: qué instrucciones cambiaron, qué herramienta se añadió, quién aprobó el cambio. Puedes aplicar las mismas prácticas que en el resto de tu software: revisión por pares, ramas, integración continua.
+
+### Continuidad
+
+Los precios, los modelos y las prioridades de cualquier proveedor cambian. Si tu solución está atada a una interfaz, cada cambio te afecta sin alternativa. Si está en código, tienes opciones: cambiar de modelo modificando una cadena de texto, ejecutar el proyecto en tu infraestructura o, en el peor caso, irte con todo lo construido.
+
+### Calidad
+
+El código se puede probar. Las evals —casos de prueba declarativos con validadores— viven junto al agente y se ejecutan antes de cada despliegue. Un cambio en las instrucciones que rompe tres casos no llega a producción.
+
+### Colaboración
+
+Las personas de negocio pueden trabajar desde la interfaz y los desarrolladores desde su editor, sobre el mismo repositorio. Nadie tiene que traducir lo que el otro hizo.
+
+## Lo que no se exporta (y por qué)
+
+Ser honestos con los límites también es parte del principio:
+
+- **Las credenciales** de tus conectores no salen en el `.zip`. Se guardan cifradas y tendrás que configurarlas en el nuevo entorno. Es una decisión de seguridad.
+- **Los datos de tus bases de conocimiento** se exportan por separado, desde los ajustes de la organización, junto con el resto de tus datos. No tiene sentido mezclarlos con el código.
+- **Los servicios gestionados** —la cola de trabajos, la bandeja de aprobaciones, las trazas— son parte de la plataforma. El código exportado funciona sin ellos en local, pero si quieres replicarlos en producción tendrás que proveerlos tú.
+
+## Qué preguntar a cualquier proveedor
+
+Antes de elegir una plataforma de IA, pide respuestas concretas a estas preguntas:
+
+| Pregunta | Respuesta que deberías esperar |
+| --- | --- |
+| ¿En qué formato se guardan mis agentes y flujos? | Código y configuración legibles, con historial. |
+| ¿Puedo ejecutarlos sin vuestro servicio? | Sí, con una herramienta documentada. |
+| ¿Puedo cambiar de modelo o de proveedor de modelos? | Sí, por configuración, sin reescribir el agente. |
+| ¿Cómo exporto mis datos y en cuánto tiempo? | Desde la propia herramienta, en formatos estándar. |
+| ¿Qué pasa con mis datos si me voy? | Plazo para exportarlos y borrado verificable después. |
+
+Si la respuesta a la segunda pregunta es «no», lo que estás comprando no es una herramienta: es una dependencia.
+
+## En resumen
+
+Ir rápido y poder irse no son objetivos opuestos. Una plataforma puede darte un Composer que construye por ti, un Studio visual y despliegue con un clic, y aun así guardar todo como código que entiendes y controlas. Es lo que hemos construido en Messer, y es lo que creemos que deberías exigir.

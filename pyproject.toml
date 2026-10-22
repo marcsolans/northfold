@@ -131,25 +131,37 @@ constraint-dependencies = [
 members = [
   "packages/messer-core",
   "packages/messer-common",
+  "packages/connectors",
+  "services/connector-agent",
   "apps/api",
   "services/worker",
   "services/scheduler",
+  "services/runtime",
+  "services/voice",
 ]
 
 [tool.uv.sources]
 messer-core = { workspace = true }
 messer-common = { workspace = true }
+messer-connectors = { workspace = true }
+messer-connector-agent = { workspace = true }
 messer-api = { workspace = true }
 messer-worker = { workspace = true }
 messer-scheduler = { workspace = true }
+messer-runtime = { workspace = true }
+messer-voice = { workspace = true }
 
 [dependency-groups]
 dev = [
   "messer-core[all]",
   "messer-common",
+  "messer-connectors[mcp]",
+  "messer-connector-agent",
   "messer-api",
   "messer-worker",
   "messer-scheduler",
+  "messer-runtime",
+  "messer-voice",
   "httpx>=0.28",
   "lancedb>=0.25.3",
   "pyngrok>=7.2.3",

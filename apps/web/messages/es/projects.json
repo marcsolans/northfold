@@ -1,0 +1,95 @@
+{
+  "title": "Proyectos",
+  "description": "Cada proyecto es un repositorio con sus agentes, flujos, conocimiento e interfaces, versionado como código.",
+  "new": "Nuevo proyecto",
+  "tabsLabel": "Secciones del proyecto",
+  "noDescription": "Sin descripción",
+  "updated": "Actualizado {when}",
+  "stats": {
+    "agents": "Agentes",
+    "agentsCount": "{count, plural, =0 {Sin agentes} one {# agente} other {# agentes}}",
+    "workflows": "Flujos",
+    "workflowsCount": "{count, plural, =0 {Sin flujos} one {# flujo} other {# flujos}}",
+    "runs": "Ejecuciones en 30 días",
+    "runsCount": "{count, plural, =0 {Sin ejecuciones} one {# ejecución} other {{value} ejecuciones}}"
+  },
+  "empty": {
+    "title": "Todavía no hay proyectos",
+    "description": "Crea un proyecto vacío para construir agentes a mano, o describe tu problema al Composer y deja que lo construya por ti.",
+    "composer": "Usar el Composer"
+  },
+  "notFound": {
+    "title": "Proyecto no encontrado",
+    "description": "El proyecto no existe, se ha archivado o no tienes acceso.",
+    "back": "Volver a proyectos"
+  },
+  "create": {
+    "title": "Nuevo proyecto",
+    "description": "Se crea un repositorio con los entornos de desarrollo y producción.",
+    "name": "Nombre",
+    "namePlaceholder": "Atención de facturas",
+    "nameRequired": "Indica un nombre para el proyecto.",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Qué problema resuelve este proyecto",
+    "tier": "Nivel de modelo por defecto",
+    "submit": "Crear proyecto",
+    "created": "Proyecto «{name}» creado"
+  },
+  "overview": {
+    "newAgent": "Nuevo agente",
+    "agents": "Agentes",
+    "workflows": "Flujos",
+    "defaultTier": "Modelo por defecto",
+    "recentRuns": "Ejecuciones recientes",
+    "recentRunsHint": "Últimas ejecuciones de todos los canales, con su coste.",
+    "allTraces": "Ver todas las trazas",
+    "noRuns": "Sin ejecuciones todavía",
+    "noRunsHint": "Prueba un agente en el playground y verás aquí su traza.",
+    "workforce": "Equipo de IA",
+    "workforceHint": "Agentes y flujos del proyecto.",
+    "noMembers": "Aún no hay agentes ni flujos.",
+    "kind": {
+      "agent": "Agente",
+      "workflow": "Flujo"
+    },
+    "environments": "Entornos",
+    "env": {
+      "development": "Desarrollo",
+      "production": "Producción"
+    },
+    "deployed": "Desplegado",
+    "notDeployed": "Sin desplegar",
+    "noUrl": "Sin URL pública",
+    "idle": "Inactivo",
+    "updated": "Proyecto actualizado {when}"
+  },
+  "settings": {
+    "title": "Ajustes del proyecto",
+    "description": "Nombre, descripción y modelo por defecto de los nuevos agentes.",
+    "general": "General",
+    "readOnly": "Tu rol solo permite ver los ajustes. Pide a un constructor o administrador que los cambie.",
+    "name": "Nombre",
+    "nameRequired": "El nombre no puede estar vacío.",
+    "descriptionLabel": "Descripción",
+    "tier": "Nivel de modelo por defecto",
+    "tierHint": "Se aplica a los agentes nuevos que no elijan un nivel propio.",
+    "unsaved": "Cambios sin guardar",
+    "saved": "Ajustes guardados",
+    "details": "Detalles",
+    "projectId": "ID del proyecto",
+    "slug": "Identificador",
+    "github": "Repositorio de GitHub",
+    "githubNone": "No sincronizado",
+    "archiveTitle": "Archivar proyecto",
+    "archiveDescription": "El proyecto deja de aparecer y no se puede ejecutar. Su repositorio, trazas y auditoría se conservan.",
+    "archive": "Archivar proyecto",
+    "archiveConfirmTitle": "¿Archivar «{name}»?",
+    "archiveConfirmDescription": "Sus agentes y flujos dejarán de responder en todos los canales.",
+    "archiveConfirmLabel": "Escribe «{name}» para confirmar",
+    "archiveConfirmMismatch": "El nombre no coincide.",
+    "archived": "Proyecto «{name}» archivado",
+    "leaveTitle": "¿Salir sin guardar?",
+    "leaveDescription": "Perderás los cambios que no has guardado.",
+    "leave": "Salir sin guardar"
+  }
+}

@@ -9,6 +9,7 @@ description = "Messer control plane: platform REST API and orchestration."
 requires-python = ">=3.12"
 dependencies = [
   "messer-common",
+  "messer-connectors[mcp]",
   "messer-core[server,evals,documents,codegen]",
   "fastapi>=0.115",
   "uvicorn[standard]>=0.34",
@@ -19,6 +20,9 @@ dependencies = [
   "croniter>=6.0",
   "python-slugify>=8.0",
   "sse-starlette>=2.2",
+  "signxml>=4.0.3",
+  "lxml>=5.2",
+  "dnspython>=2.6",
 ]
 
 [tool.hatch.build.targets.wheel]

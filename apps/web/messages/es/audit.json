@@ -1,0 +1,38 @@
+{
+  "description": "Registro inmutable de las acciones importantes de la organización: accesos, cambios de configuración, permisos y datos.",
+  "adminOnly": "Solo los administradores pueden consultar el registro de auditoría.",
+  "export": "Exportar CSV",
+  "filters": {
+    "action": "Acción",
+    "actionPlaceholder": "p. ej. sso. o member.",
+    "actor": "Persona",
+    "anyActor": "Cualquiera",
+    "entityType": "Tipo de entidad",
+    "since": "Desde",
+    "until": "Hasta",
+    "clear": "Limpiar filtros"
+  },
+  "columns": {
+    "when": "Fecha",
+    "actor": "Persona",
+    "action": "Acción",
+    "entity": "Entidad",
+    "ip": "IP"
+  },
+  "system": "Sistema",
+  "apiKey": "API key",
+  "impersonated": "Suplantación",
+  "empty": "No hay eventos",
+  "emptyFiltered": "Prueba con otros filtros o un rango de fechas más amplio.",
+  "showing": "{count, plural, one {# evento} other {# eventos}}",
+  "loadMore": "Cargar más",
+  "diff": {
+    "title": "Detalle del evento",
+    "field": "Campo",
+    "before": "Antes",
+    "after": "Después",
+    "raw": "Ver JSON",
+    "noChanges": "Este evento no tiene datos adicionales.",
+    "impersonatedBy": "Suplantado por"
+  }
+}

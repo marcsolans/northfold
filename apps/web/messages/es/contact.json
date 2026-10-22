@@ -1,0 +1,55 @@
+{
+  "metaTitle": "Contacto",
+  "metaDescription": "Habla con el equipo de Messer sobre ventas, el plan Enterprise, soporte, seguridad o colaboraciones.",
+  "eyebrow": "Contacto",
+  "title": "Hablemos",
+  "subtitle": "Cuéntanos qué quieres resolver y te responderá una persona del equipo.",
+  "form": {
+    "name": "Nombre",
+    "email": "Email de trabajo",
+    "company": "Empresa",
+    "optional": "opcional",
+    "topic": "Tema",
+    "message": "¿En qué podemos ayudarte?",
+    "messageHint": "Mínimo 10 caracteres.",
+    "messagePlaceholder": "Por ejemplo: queremos que un asistente responda a las dudas de nuestros clientes sobre sus facturas y que pida aprobación para los abonos.",
+    "honeypot": "Deja este campo vacío",
+    "submit": "Enviar mensaje",
+    "privacy": "Usaremos estos datos solo para responder a tu mensaje. Consulta la <link>política de privacidad</link>.",
+    "topics": {
+      "sales": "Ventas",
+      "enterprise": "Plan Enterprise",
+      "support": "Soporte",
+      "security": "Seguridad y cumplimiento",
+      "partnership": "Colaboraciones",
+      "press": "Prensa",
+      "other": "Otro"
+    }
+  },
+  "errors": {
+    "required": "Este campo es obligatorio.",
+    "email": "Introduce un email válido.",
+    "messageShort": "El mensaje debe tener al menos 10 caracteres.",
+    "tooLong": "El texto es demasiado largo.",
+    "validation": "Revisa los campos marcados.",
+    "rateLimited": "Has enviado varios mensajes seguidos. Inténtalo de nuevo en unos minutos.",
+    "generic": "No hemos podido enviar el mensaje. Inténtalo de nuevo en unos minutos."
+  },
+  "success": {
+    "title": "Mensaje enviado",
+    "body": "Gracias, {name}. Te responderemos a {email}.",
+    "another": "Enviar otro mensaje"
+  },
+  "aside": {
+    "enterpriseTitle": "Enterprise",
+    "enterpriseBody": "Residencia estricta en la UE, despliegue en tu nube, SCIM, SLA e ingeniero dedicado.",
+    "enterpriseFrom": "Desde {price} al mes.",
+    "pricingLink": "Ver precios",
+    "supportTitle": "Soporte",
+    "supportBody": "Si ya usas Messer, indica el nombre de tu organización para que podamos ayudarte antes.",
+    "docsLink": "Consultar la documentación",
+    "securityTitle": "Seguridad",
+    "securityBody": "Para informar de una vulnerabilidad, elige el tema «Seguridad y cumplimiento».",
+    "trustLink": "Centro de confianza"
+  }
+}

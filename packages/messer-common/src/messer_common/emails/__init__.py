@@ -237,6 +237,22 @@ TEMPLATES: dict[str, dict[str, TemplateDef]] = {
             "buttons": [{"label": "Download", "url": "{{ url }}"}],
         },
     },
+    "data_delete_completed": {
+        "es": {
+            "subject": "Borrado de datos completado",
+            "paragraphs": [
+                "Hemos completado el borrado solicitado ({{ subject }}).",
+                "El informe verificable de la solicitud {{ request_id }} queda registrado en Messer.",
+            ],
+        },
+        "en": {
+            "subject": "Data deletion completed",
+            "paragraphs": [
+                "We have completed the deletion you requested ({{ subject }}).",
+                "The verifiable report of request {{ request_id }} is recorded in Messer.",
+            ],
+        },
+    },
     "payment_failed": {
         "es": {
             "subject": "No hemos podido cobrar tu suscripción",
@@ -255,14 +271,100 @@ TEMPLATES: dict[str, dict[str, TemplateDef]] = {
             "buttons": [{"label": "Update payment", "url": "{{ url }}"}],
         },
     },
+    "trial_expired": {
+        "es": {
+            "subject": "Tu prueba de Messer ha terminado",
+            "paragraphs": [
+                "La prueba de {{ org }} ha terminado y la organización está en modo solo lectura.",
+                "Tus proyectos y datos siguen intactos. Elige un plan para volver a ejecutar y desplegar.",
+            ],
+            "buttons": [{"label": "Elegir plan", "url": "{{ url }}"}],
+        },
+        "en": {
+            "subject": "Your Messer trial has ended",
+            "paragraphs": [
+                "The trial for {{ org }} has ended and the organization is now read-only.",
+                "Your projects and data are intact. Choose a plan to run and deploy again.",
+            ],
+            "buttons": [{"label": "Choose a plan", "url": "{{ url }}"}],
+        },
+    },
+    "subscription_canceled": {
+        "es": {
+            "subject": "Suscripción cancelada: {{ org }}",
+            "paragraphs": [
+                "La suscripción {{ plan }} de {{ org }} ha finalizado y la organización está en modo solo lectura.",
+                "Puedes reactivarla cuando quieras desde Plan y facturación.",
+            ],
+            "buttons": [{"label": "Reactivar", "url": "{{ url }}"}],
+        },
+        "en": {
+            "subject": "Subscription canceled: {{ org }}",
+            "paragraphs": [
+                "The {{ plan }} subscription for {{ org }} has ended and the organization is now read-only.",
+                "You can reactivate it at any time from Plan and billing.",
+            ],
+            "buttons": [{"label": "Reactivate", "url": "{{ url }}"}],
+        },
+    },
+    "budget_exceeded": {
+        "es": {
+            "subject": "Presupuesto agotado: {{ scope }}",
+            "paragraphs": [
+                "{{ scope }} ha consumido {{ spent }} de {{ limit }} este periodo.{% if hard_stop %} Las nuevas"
+                " ejecuciones están detenidas hasta el próximo periodo o hasta que amplíes el límite.{% endif %}",
+            ],
+            "buttons": [{"label": "Revisar presupuestos", "url": "{{ url }}"}],
+        },
+        "en": {
+            "subject": "Budget exhausted: {{ scope }}",
+            "paragraphs": [
+                "{{ scope }} has spent {{ spent }} of {{ limit }} this period.{% if hard_stop %} New runs are"
+                " stopped until the next period or until you raise the limit.{% endif %}",
+            ],
+            "buttons": [{"label": "Review budgets", "url": "{{ url }}"}],
+        },
+    },
+    "auto_topup_failed": {
+        "es": {
+            "subject": "No hemos podido recargar tus créditos",
+            "paragraphs": [
+                "La recarga automática de {{ org }} ({{ pack }}) ha fallado: {{ reason }}",
+                "Revisa tu método de pago para que tus agentes no se detengan.",
+            ],
+            "buttons": [{"label": "Revisar créditos", "url": "{{ url }}"}],
+        },
+        "en": {
+            "subject": "We couldn't top up your credits",
+            "paragraphs": [
+                "The automatic top-up for {{ org }} ({{ pack }}) failed: {{ reason }}",
+                "Check your payment method so your agents don't stop.",
+            ],
+            "buttons": [{"label": "Review credits", "url": "{{ url }}"}],
+        },
+    },
     "contact_received": {
         "es": {
             "subject": "Nuevo contacto: {{ name }} ({{ company }})",
             "paragraphs": ["{{ name }} <{{ email }}> escribe sobre {{ topic }}:", "{{ message }}"],
+            "footer": "Empresa: {{ company }} · Idioma: {{ locale }} · Responde a este email para contestar a {{ name }}.",
         },
         "en": {
             "subject": "New contact: {{ name }} ({{ company }})",
             "paragraphs": ["{{ name }} <{{ email }}> writes about {{ topic }}:", "{{ message }}"],
+            "footer": "Company: {{ company }} · Language: {{ locale }} · Reply to this email to answer {{ name }}.",
+        },
+    },
+    "service_recovered": {
+        "es": {
+            "subject": "Servicio recuperado: {{ service }}",
+            "paragraphs": ["El servicio {{ service }} vuelve a funcionar con normalidad desde el {{ since }}."],
+            "buttons": [{"label": "Página de estado", "url": "{{ url }}"}],
+        },
+        "en": {
+            "subject": "Service recovered: {{ service }}",
+            "paragraphs": ["Service {{ service }} has been operating normally since {{ since }}."],
+            "buttons": [{"label": "Status page", "url": "{{ url }}"}],
         },
     },
     "generic": {

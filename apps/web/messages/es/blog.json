@@ -1,0 +1,21 @@
+{
+  "metaTitle": "Blog",
+  "metaDescription": "Ideas y guías prácticas para llevar la IA a producción en empresas europeas: código exportable, residencia de datos, aprobación humana y más.",
+  "eyebrow": "Blog",
+  "title": "Blog",
+  "subtitle": "Ideas y guías prácticas para llevar la IA a producción en empresas europeas.",
+  "readingTime": "{minutes} min de lectura",
+  "by": "Por {author}",
+  "empty": "Todavía no hay artículos publicados.",
+  "back": "Todos los artículos",
+  "onlySpanish": "Este artículo solo está disponible en español.",
+  "rss": "Suscríbete por RSS",
+  "rssTitle": "Blog de Messer",
+  "more": "Más artículos",
+  "ctaTitle": "Pruébalo con tu propio caso",
+  "ctaBody": "Describe el problema en el Composer y ten tu primer agente funcionando en minutos.",
+  "ctaButton": "Empieza gratis",
+  "copy": "Copiar",
+  "plainText": "texto",
+  "anchor": "Enlace a esta sección"
+}

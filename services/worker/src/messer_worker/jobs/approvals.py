@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from messer_common import runtime_client
 from messer_common.approvals import email_link_token
+from messer_common.channels.processing import deliver_resumed_run
 from messer_common.db import system_session
 from messer_common.db.models import Approval, Membership, Project, User
 from messer_common.email import send_template
@@ -76,6 +77,8 @@ async def resume_run(_ctx: dict[str, Any], request: dict[str, Any]) -> dict[str,
     except RuntimeUnavailable as exc:
         log.warning("approval.resume_failed", run_id=request.get("run_id"), error=str(exc))
         raise  # arq retries the job
+    # Runs started from a channel (WhatsApp, Slack, …) answer the user there once resumed.
+    await deliver_resumed_run(request, result)
     return {"run_id": result.get("run_id"), "status": result.get("status")}
 
 

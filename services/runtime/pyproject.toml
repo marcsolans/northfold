@@ -9,6 +9,7 @@ description = "Messer data plane runtime: sandboxed execution of project agents 
 requires-python = ">=3.12"
 dependencies = [
   "messer-common",
+  "messer-connectors",
   "messer-core[server,evals,documents]",
   "fastapi>=0.115",
   "uvicorn[standard]>=0.34",

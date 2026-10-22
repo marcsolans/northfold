@@ -167,6 +167,11 @@ class ApiKey(Base, IdMixin, OrgScoped, CreatedMixin):
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     last_used_at: Mapped[datetime | None] = mapped_column(nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    # OAuth access tokens (migration 0015): API-key equivalents bound to a user grant, with an expiry.
+    expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    oauth_grant_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("oauth_grants.id", ondelete="CASCADE"), nullable=True, index=True
+    )
 
 
 rls("api_keys", read="builder", write="admin")
@@ -203,9 +208,14 @@ class Notification(Base, IdMixin, OrgScoped, CreatedMixin):
     read_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
 
-class DataRequest(Base, IdMixin, OrgScoped, CreatedMixin):
+class DataRequest(Base, IdMixin, CreatedMixin):
     __tablename__ = "data_requests"
 
+    # Not OrgScoped: org_id is SET NULL (not CASCADE) so an organization deletion report survives the
+    # deletion it proves (migration 0011). Rows with a NULL org are visible to superadmins only.
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("orgs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     subject_user_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     scope: Mapped[str] = mapped_column(String(10), default="user", server_default="user")  # user | org

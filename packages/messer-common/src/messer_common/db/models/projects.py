@@ -65,7 +65,8 @@ class Version(Base, IdMixin, OrgScoped, CreatedMixin):
     snapshot_json: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
     author_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     message: Mapped[str] = mapped_column(Text, default="", server_default="")
-    source: Mapped[str] = mapped_column(String(20), default="studio", server_default="studio")  # studio|github|composer
+    # studio | github | composer | cli (git push to the Messer remote)
+    source: Mapped[str] = mapped_column(String(20), default="studio", server_default="studio")
 
 
 rls("versions", read="viewer", write="builder")
@@ -188,6 +189,8 @@ class Alarm(Base, IdMixin, OrgScoped, TimestampMixin):
     threshold: Mapped[float] = mapped_column()
     window_minutes: Mapped[int] = mapped_column(default=60, server_default="60")
     channels: Mapped[list[Any]] = mapped_column(default=list, server_default=text("'[]'::jsonb"))  # email|slack
+    # Scope and delivery options (migration 0013): {"environment", "channel", "workforce_name", "slack_channel"}
+    config: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     state: Mapped[str] = mapped_column(String(10), default="ok", server_default="ok")  # ok | firing
     last_value: Mapped[float | None] = mapped_column(nullable=True)

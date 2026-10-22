@@ -23,6 +23,7 @@ from ..errors import ApiError, Unauthorized
 from ..ratelimit import rate_limit
 from ..services import auth as auth_service
 from ..services import oauth_login
+from ..services import sso as sso_service
 from ..services.orgs import accept_invitation, create_org
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -213,6 +214,7 @@ async def signup(body: SignupIn, request: Request, response: Response) -> AuthOu
 async def login(body: LoginIn, request: Request, response: Response) -> AuthOut:
     settings = get_settings()
     async with system_session() as s:
+        await sso_service.assert_password_login_allowed(s, body.email)  # "enforce SSO for this domain"
         if settings.has_supabase:
             data = await auth_service.SupabaseAuth().password_login(body.email, body.password)
             sb_user = data["user"]
@@ -311,6 +313,7 @@ async def supabase_session(body: SupabaseSessionIn, response: Response) -> AuthO
     except TokenError as exc:
         raise Unauthorized("Token de Supabase no válido", code="invalid_token") from exc
     async with system_session() as s:
+        await sso_service.assert_password_login_allowed(s, str(claims.get("email", "")))
         meta = claims.get("user_metadata") or {}
         user, created = await auth_service.ensure_user(
             s,
@@ -358,6 +361,10 @@ async def oauth_callback(provider: str, request: Request, code: str = "", state:
         return RedirectResponse(f"{settings.messer_web_url}/login?error=oauth", status_code=302)
     async with system_session() as s:
         identity = await oauth_login.finish(s, config, code, state)
+        try:
+            await sso_service.assert_password_login_allowed(s, identity.email)
+        except ApiError as exc:
+            return RedirectResponse(f"{settings.messer_web_url}/sso/error?code={exc.code}", status_code=302)
         user = await auth_service.find_user_by_email(s, identity.email)
         created = False
         if user is None:

@@ -1,0 +1,21 @@
+{
+  "bot": {"id": "bot-demo", "name": "Messer (demo)", "workspace_name": "Albor (demo)"},
+  "pages": [
+    {"id": "pg-wiki", "title": "Wiki de Albor", "parent": {"type": "workspace"}, "icon": "📚", "offset_min": -100000,
+     "blocks": [["heading_1", "Wiki interna"], ["paragraph", "Punto de entrada a los procesos de Distribuciones Albor. Documento de demostración."], ["bulleted_list_item", "Proceso de facturación"], ["bulleted_list_item", "Guía de atención al cliente"], ["bulleted_list_item", "Onboarding comercial"]]},
+    {"id": "pg-billing", "title": "Proceso de facturación", "parent": {"type": "page_id", "id": "pg-wiki"}, "icon": "🧾", "offset_min": -20000,
+     "blocks": [["heading_2", "Emisión"], ["paragraph", "Las facturas se emiten automáticamente al confirmar el albarán de entrega."], ["heading_2", "Vencimientos"], ["paragraph", "Pago estándar a 30 días fecha factura; clientes con antigüedad de más de 12 meses pueden pedir 60 días."], ["heading_2", "Abonos"], ["paragraph", "Los abonos de más de 500 € requieren aprobación del responsable financiero antes de emitirse."], ["to_do", "Revisar facturas vencidas cada lunes"]]},
+    {"id": "pg-support", "title": "Guía de atención al cliente", "parent": {"type": "page_id", "id": "pg-wiki"}, "icon": "💬", "offset_min": -15000,
+     "blocks": [["heading_2", "Canales"], ["paragraph", "Teléfono, chat y correo de 8:30 a 18:00 de lunes a viernes."], ["heading_2", "Consultas de facturas"], ["numbered_list_item", "Identifica al cliente por CIF o número de factura."], ["numbered_list_item", "Consulta el estado en el ERP."], ["numbered_list_item", "Si hay discrepancia, abre una incidencia en la base «Incidencias de clientes»."], ["quote", "Respondemos en menos de 4 horas laborables."]]},
+    {"id": "pg-onboarding", "title": "Onboarding comercial", "parent": {"type": "page_id", "id": "pg-wiki"}, "icon": "🚀", "offset_min": -9000,
+     "blocks": [["heading_2", "Primera semana"], ["paragraph", "Formación en catálogo, tarifa 2026 y condiciones generales de venta."], ["heading_2", "Herramientas"], ["paragraph", "CRM, ERP y el asistente de Messer para consultas de clientes."]]}
+  ],
+  "databases": [
+    {"id": "db-incidents", "title": "Incidencias de clientes", "offset_min": -30000,
+     "rows": [
+       {"id": "row-inc-1", "title": "Sillas dañadas pedido 88213", "Estado": "En curso", "Cliente": "Clínica Dental Arrieta", "Importe": 378, "offset_min": -2100},
+       {"id": "row-inc-2", "title": "Cantidad incorrecta F-2026-0488", "Estado": "Pendiente", "Cliente": "Construcciones Ugalde", "Importe": 117.5, "offset_min": -900},
+       {"id": "row-inc-3", "title": "Duplicado factura F-2026-0412", "Estado": "Resuelta", "Cliente": "Talleres Mendaro", "Importe": 0, "offset_min": -2800}
+     ]}
+  ]
+}

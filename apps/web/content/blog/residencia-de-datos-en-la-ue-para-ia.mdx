@@ -1,0 +1,86 @@
+---
+title: "Residencia de datos en la UE para IA: qué significa de verdad"
+description: Tener la base de datos en Fráncfort no basta si cada pregunta de tus clientes viaja a otro continente para que la responda un modelo. Qué datos se mueven en una solución de IA y cómo mantenerlos en la UE.
+date: 2026-10-01
+author: Equipo de Messer
+tags: [RGPD, residencia de datos, seguridad]
+---
+
+«Nuestros datos están en la UE» es una de las frases que más se oyen en la venta de software para empresas europeas. En una solución de IA, esa frase puede ser cierta y, aun así, no decir casi nada. La base de datos puede estar en Fráncfort mientras cada pregunta de tus clientes —con su nombre, su número de factura y su queja— viaja a otro continente para que un modelo la responda.
+
+Este artículo repasa qué datos se mueven realmente en una solución de IA, qué dice el RGPD sobre ello y qué opciones tienes para mantener el tratamiento dentro de la Unión Europea.
+
+## Qué datos se mueven en una solución de IA
+
+Piensa en un asistente que responde a clientes sobre sus facturas. En cada conversación intervienen:
+
+1. **El mensaje del cliente**, que puede incluir datos personales.
+2. **El contexto recuperado**: fragmentos de tus condiciones generales y filas de la tabla de facturas de ese cliente.
+3. **La llamada al modelo**: todo lo anterior, junto con las instrucciones del agente, se envía al modelo de lenguaje.
+4. **Los embeddings**: para buscar en tus documentos, el texto se convierte en vectores con otro modelo.
+5. **Las trazas**: la plataforma guarda la entrada, la salida y el coste de cada paso para que puedas depurar y auditar.
+6. **Los canales**: si la conversación llega por WhatsApp, email o teléfono, intervienen esos proveedores.
+
+La residencia de datos tiene que cubrir los seis puntos. Que la base de datos esté en la UE solo cubre una parte de los puntos 2 y 5.
+
+## Qué dice el RGPD (y qué no)
+
+El RGPD no prohíbe transferir datos fuera del Espacio Económico Europeo. Exige que la transferencia tenga una garantía adecuada: una decisión de adecuación de la Comisión Europea, como el Marco de Privacidad de Datos UE-EE. UU. para las empresas adheridas, o cláusulas contractuales tipo, con medidas complementarias si hacen falta.
+
+Por eso muchas organizaciones pueden usar modelos alojados fuera de la UE de forma legal. Pero hay casos en los que no basta con que sea legal:
+
+- Sectores regulados con requisitos propios (salud, banca, sector público).
+- Clientes que exigen por contrato que sus datos no salgan de la UE.
+- Evaluaciones de impacto que concluyen que el riesgo de la transferencia no es aceptable.
+- Políticas internas que simplifican el cumplimiento evitando transferencias.
+
+En esos casos necesitas que **el tratamiento** —no solo el almacenamiento— ocurra en la UE.
+
+## Las piezas de una arquitectura con residencia estricta
+
+### El modelo, en una región de la UE
+
+Es la pieza clave. Los grandes proveedores de nube ofrecen modelos de lenguaje desplegados en regiones europeas. En Messer, el modo de residencia **UE estricta** usa Claude solo a través de AWS Bedrock en una región de la UE (por defecto, Fráncfort). La organización no puede elegir un modelo que no esté disponible así: la plataforma lo impide.
+
+Un matiz importante: no todos los modelos están disponibles en todas las regiones al mismo tiempo. Antes de decidir, comprueba qué modelos ofrece la región que necesitas y planifica con ese catálogo.
+
+### Embeddings locales
+
+Los embeddings se suelen pasar por alto. Si tus documentos se vectorizan con un servicio externo, el texto completo de tus PDF sale de tu infraestructura. En modo UE estricta, Messer calcula los embeddings con un modelo multilingüe que se ejecuta en nuestra propia infraestructura europea.
+
+### Trazas y conversaciones
+
+Las trazas contienen datos personales: son copias de las conversaciones. Deben estar en la UE, con acceso controlado y con una **retención configurable**. En Messer cada organización decide cuántos días conserva sus trazas y sus conversaciones.
+
+### Canales y proveedores auxiliares
+
+Voz, email y mensajería añaden proveedores. En modo estricto, Messer solo permite proveedores de voz y email con región UE, o los desactiva. Los canales que activas con tus propias credenciales, como tu cuenta de WhatsApp Business, son una relación directa entre tu empresa y ese proveedor, y conviene revisarlos en tu registro de actividades.
+
+## Preguntas para tu DPO
+
+Si estás evaluando una plataforma de IA, estas preguntas te ahorrarán sorpresas:
+
+| Pregunta | Por qué importa |
+| --- | --- |
+| ¿Dónde se ejecuta la inferencia del modelo? | Es donde viajan los datos de cada conversación. |
+| ¿Dónde se calculan los embeddings? | Implica el texto completo de tus documentos. |
+| ¿Dónde se guardan las trazas y cuánto tiempo? | Son copias de las conversaciones. |
+| ¿Puedo impedir técnicamente el uso de modelos fuera de la UE? | Una política escrita no basta si un usuario puede cambiar el modelo. |
+| ¿La lista de subencargados es pública y se avisa de los cambios? | Lo exige el artículo 28 del RGPD. |
+| ¿El proveedor entrena modelos con mis datos? | Debería ser que no, por contrato. |
+
+## El coste de la residencia estricta
+
+La residencia estricta tiene costes reales que conviene conocer:
+
+- **Catálogo de modelos más limitado**, o con algo de retraso respecto a los lanzamientos globales.
+- **Precio**: las tarifas por token en algunas regiones pueden ser diferentes.
+- **Proveedores auxiliares**: algunas funciones, como ciertos proveedores de voz, pueden no estar disponibles.
+
+Por eso en Messer es una opción por organización y no una imposición para todas: el modo estándar ya mantiene en la UE la infraestructura, la base de datos, los archivos, la cola y las trazas, y deja la llamada al modelo en la API de Anthropic. El modo estricto, disponible en el plan Enterprise, lleva también la inferencia a la UE.
+
+## En resumen
+
+La residencia de datos en IA se decide en la llamada al modelo, en los embeddings y en las trazas, no solo en la ubicación de la base de datos. Pregunta por cada pieza, exige que la restricción sea técnica y no solo contractual, y elige el modo que corresponda al riesgo de cada caso de uso.
+
+Puedes ver la lista de proveedores que intervienen en Messer en nuestra página de [subencargados](/legal/subprocessors) y el detalle de los controles en el [centro de confianza](/security).

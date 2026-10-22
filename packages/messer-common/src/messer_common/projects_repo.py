@@ -407,3 +407,8 @@ class ProjectRepo:
                 if target.is_file() or target.is_symlink():
                     await asyncio.to_thread(target.unlink)
         await self._run(*identity, "commit", "-q", "--no-edit", "-m", message)
+
+    async def commit_info(self, ref: str) -> Commit:
+        out = (await self._run("log", "-1", "--format=%H%x1f%s%x1f%an%x1f%aI", ref)).decode().strip()
+        sha, msg, author, date = out.split("\x1f")
+        return Commit(sha=sha, message=msg, author=author, date=datetime.fromisoformat(date).astimezone(UTC))

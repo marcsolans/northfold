@@ -1,0 +1,45 @@
+{
+  "user": {"id": "usr-demo", "displayName": "Equipo Albor (demo)", "mail": "demo@albor.example", "userPrincipalName": "demo@albor.example"},
+  "drives": {
+    "me": {"name": "OneDrive", "items": [
+      {"id": "od-docs", "name": "Documentos", "folder": true, "parent": "root", "offset_min": -90000},
+      {"id": "od-manual", "name": "Manual de atención al cliente.md", "parent": "od-docs", "file": "manual_atencion_cliente.md", "mime": "text/markdown", "offset_min": -12000},
+      {"id": "od-faq", "name": "Preguntas frecuentes.md", "parent": "od-docs", "file": "faq_clientes.md", "mime": "text/markdown", "offset_min": -9000},
+      {"id": "od-pricing", "name": "Tarifa 2026.csv", "parent": "root", "file": "tarifa_2026.csv", "mime": "text/csv", "offset_min": -50000}
+    ]},
+    "drv-intranet": {"name": "Documentos compartidos", "site": "site-intranet", "items": [
+      {"id": "sp-proc", "name": "Procedimientos", "folder": true, "parent": "root", "offset_min": -100000},
+      {"id": "sp-cgv", "name": "Condiciones generales de venta.md", "parent": "sp-proc", "file": "condiciones_generales_venta.md", "mime": "text/markdown", "offset_min": -43000},
+      {"id": "sp-returns", "name": "Política de devoluciones.md", "parent": "sp-proc", "file": "politica_devoluciones.md", "mime": "text/markdown", "offset_min": -30000},
+      {"id": "sp-privacy", "name": "Política de privacidad.md", "parent": "sp-proc", "file": "politica_privacidad.md", "mime": "text/markdown", "offset_min": -29000}
+    ]},
+    "drv-finance": {"name": "Documentos", "site": "site-finance", "items": [
+      {"id": "sp-fin-cobros", "name": "Cobros", "folder": true, "parent": "root", "offset_min": -60000},
+      {"id": "sp-fin-proc", "name": "Procedimiento de cobro.md", "parent": "sp-fin-cobros", "file": "procedimiento_cobro.md", "mime": "text/markdown", "offset_min": -20000},
+      {"id": "sp-fin-pending", "name": "Facturas pendientes.csv", "parent": "sp-fin-cobros", "file": "facturas_pendientes.csv", "mime": "text/csv", "offset_min": -1500},
+      {"id": "sp-fin-q3", "name": "Informe de ventas T3.md", "parent": "root", "file": "informe_ventas_trimestral.md", "mime": "text/markdown", "offset_min": -4000}
+    ]}
+  },
+  "sites": [
+    {"id": "site-intranet", "displayName": "Intranet Albor", "name": "intranet", "webUrl": "https://albor.sharepoint.example/sites/intranet", "description": "Procedimientos y políticas internas"},
+    {"id": "site-finance", "displayName": "Departamento financiero", "name": "finanzas", "webUrl": "https://albor.sharepoint.example/sites/finanzas", "description": "Cobros, cierres y facturación"}
+  ],
+  "mail": {
+    "messages": [
+      {"id": "olk-0001", "offset_min": -3000, "from": ["Iker Mendaro", "compras@talleres-mendaro.example"], "to": ["facturacion@albor.example"], "subject": "Pedido trimestral de consumibles", "body": "Buenos días,\n\nOs adjuntamos el pedido trimestral de consumibles. ¿Podéis confirmar plazo de entrega?\n\nIker"},
+      {"id": "olk-0002", "offset_min": -1800, "from": ["Ane Ugalde", "ane.ugalde@construcciones-ugalde.example"], "to": ["facturacion@albor.example"], "subject": "Abono factura F-2026-0488", "body": "Hola,\n\n¿Hay novedades sobre el abono de la factura F-2026-0488? Faltaban 5 archivadores.\n\nAne"},
+      {"id": "olk-0003", "offset_min": -700, "from": ["Asesoría Iturbe", "contabilidad@asesoria-iturbe.example"], "to": ["administracion@albor.example"], "subject": "Certificado de retenciones", "body": "Buenas,\n\nNecesitamos el certificado de retenciones del ejercicio para el cierre.\n\nUn saludo"},
+      {"id": "olk-0004", "offset_min": -60, "from": ["Miren Lurra", "miren@papeleria-lurra.example"], "to": ["atencion@albor.example"], "subject": "Cambio de dirección de entrega", "body": "Hola,\n\nA partir del lunes las entregas deben ir a nuestra nueva tienda en la calle Mayor 8.\n\nMiren"}
+    ],
+    "incoming": [
+      {"from": ["Jon Ribera", "jon@hosteleria-ribera.example"], "to": ["facturacion@albor.example"], "subject": "Consulta sobre vencimiento F-2026-0540", "body": "Hola,\n\n¿Cuál es la fecha de vencimiento de la factura F-2026-0540?\n\nGracias, Jon"},
+      {"from": ["Nerea Arrieta", "administracion@clinica-arrieta.example"], "to": ["facturacion@albor.example"], "subject": "Solicitud de factura electrónica", "body": "Buenos días,\n\nNecesitamos que las facturas lleguen en formato electrónico a partir de ahora.\n\nNerea"},
+      {"from": ["Talleres Mendaro", "compras@talleres-mendaro.example"], "to": ["facturacion@albor.example"], "subject": "Duplicado de factura F-2026-0519", "body": "Hola,\n\n¿Nos podéis reenviar la factura F-2026-0519?\n\nGracias"}
+    ]
+  },
+  "events": [
+    {"id": "olk-evt-1", "subject": "Comité de dirección", "offset_min": 1560, "duration_min": 60, "location": "Sala Gorbea", "attendees": ["direccion@albor.example"]},
+    {"id": "olk-evt-2", "subject": "Formación: nuevo portal de clientes", "offset_min": 3000, "duration_min": 90, "location": "Teams", "attendees": ["atencion@albor.example"]},
+    {"id": "olk-evt-3", "subject": "Revisión de facturas vencidas", "offset_min": 4440, "duration_min": 45, "location": "Departamento financiero", "attendees": ["finanzas@albor.example"]}
+  ]
+}

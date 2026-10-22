@@ -1,0 +1,26 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- $root := . }}
+{{- range $component, $spec := .Values.components }}
+{{- if and $spec.enabled $spec.service.enabled (gt (int $spec.port) 0) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "messer.componentName" (dict "root" $root "component" $component) }}
+  labels:
+    {{- include "messer.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+    {{- with $root.Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "messer.selectorLabels" (dict "root" $root "component" $component) | nindent 6 }}
+  endpoints:
+    - port: http
+      path: {{ $root.Values.serviceMonitor.path }}
+      interval: {{ $root.Values.serviceMonitor.interval }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -38,3 +38,4 @@ export {
 } from "./components/misc";
 export { CommandPalette, type CommandItem } from "./components/command";
 export { Logo } from "./components/logo";
+export * from "./components/data";

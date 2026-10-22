@@ -1,0 +1,21 @@
+{
+  "metaTitle": "Blog",
+  "metaDescription": "Ideas and practical guides to put AI into production at European companies: exportable code, data residency, human approval and more.",
+  "eyebrow": "Blog",
+  "title": "Blog",
+  "subtitle": "Ideas and practical guides to put AI into production at European companies.",
+  "readingTime": "{minutes} min read",
+  "by": "By {author}",
+  "empty": "No articles have been published yet.",
+  "back": "All articles",
+  "onlySpanish": "This article is only available in Spanish.",
+  "rss": "Subscribe via RSS",
+  "rssTitle": "Messer blog",
+  "more": "More articles",
+  "ctaTitle": "Try it with your own case",
+  "ctaBody": "Describe the problem in the Composer and have your first agent working in minutes.",
+  "ctaButton": "Start free",
+  "copy": "Copy",
+  "plainText": "text",
+  "anchor": "Link to this section"
+}

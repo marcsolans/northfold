@@ -1,0 +1,19 @@
+{
+  "team": {"id": "T0DEMO", "name": "Albor (demo)"},
+  "user": {"id": "U0DEMO", "name": "equipo.albor"},
+  "channels": [
+    {"id": "C0GENERAL", "name": "general", "is_private": false, "num_members": 42, "topic": "Anuncios de la empresa"},
+    {"id": "C0VENTAS", "name": "ventas", "is_private": false, "num_members": 12, "topic": "Oportunidades y pedidos"},
+    {"id": "C0SOPORTE", "name": "soporte-clientes", "is_private": false, "num_members": 9, "topic": "Consultas e incidencias de clientes"},
+    {"id": "C0FACTURAS", "name": "facturacion", "is_private": true, "num_members": 5, "topic": "Facturas, abonos y cobros"}
+  ],
+  "messages": [
+    {"channel": "C0GENERAL", "user": "U0ANE", "username": "ane.rrhh", "offset_min": -4320, "text": "Recordatorio: el viernes cerramos a las 15:00 por la jornada intensiva."},
+    {"channel": "C0VENTAS", "user": "U0MIKEL", "username": "mikel.comercial", "offset_min": -2000, "text": "Talleres Mendaro confirma el pedido trimestral de consumibles (≈1.500 €)."},
+    {"channel": "C0VENTAS", "user": "U0LEIRE", "username": "leire.comercial", "offset_min": -1300, "text": "Hostelería Ribera pide pago a 60 días. ¿Lo vemos con finanzas?"},
+    {"channel": "C0SOPORTE", "user": "U0JON", "username": "jon.soporte", "offset_min": -800, "text": "Clínica Dental Arrieta: dos sillas dañadas en el pedido 88213, gestionando reposición."},
+    {"channel": "C0FACTURAS", "user": "U0AMAIA", "username": "amaia.finanzas", "offset_min": -500, "text": "Abono de 640 € para Hostelería Ribera pendiente de aprobación (supera 500 €)."},
+    {"channel": "C0FACTURAS", "user": "U0AMAIA", "username": "amaia.finanzas", "offset_min": -200, "text": "Esta semana hay 14 facturas vencidas a más de 15 días. Envío los recordatorios hoy."},
+    {"channel": "C0SOPORTE", "user": "U0JON", "username": "jon.soporte", "offset_min": -45, "text": "Papelería Lurra pregunta por la factura electrónica: les paso el procedimiento."}
+  ]
+}

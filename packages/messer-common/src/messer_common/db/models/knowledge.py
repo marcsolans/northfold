@@ -35,7 +35,17 @@ rls("knowledge_bases", read="viewer", write="builder", delete="admin")
 
 class KbFile(Base, IdMixin, OrgScoped, CreatedMixin):
     __tablename__ = "kb_files"
-    __table_args__ = (Index("ix_kb_files_kb", "kb_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_kb_files_kb", "kb_id", "created_at"),
+        # Connector files are identified by external_id within a knowledge base (migration 0005).
+        Index(
+            "uq_kb_files_kb_external",
+            "kb_id",
+            "external_id",
+            unique=True,
+            postgresql_where=text("external_id IS NOT NULL"),
+        ),
+    )
 
     kb_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("knowledge_bases.id", ondelete="CASCADE"))
     path: Mapped[str] = mapped_column(Text)  # storage key
@@ -122,6 +132,8 @@ class KbEntity(Base, IdMixin, OrgScoped, TimestampMixin):
     """Suggested duplicate groups across sources, and their merge decision."""
 
     __tablename__ = "kb_entities"
+    # One suggestion per match key and knowledge base (migration 0005).
+    __table_args__ = (UniqueConstraint("kb_id", "match_key", name="uq_kb_entities_kb_match_key"),)
 
     kb_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("knowledge_bases.id", ondelete="CASCADE"), index=True)
     entity_type: Mapped[str] = mapped_column(String(40))  # company | person | generic
@@ -206,6 +218,8 @@ class Sync(Base, IdMixin, OrgScoped, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), default="idle", server_default="idle")
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     stats: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
+    # Adapter options: target table, recursion, selected fields/columns… (column added by migration 0006).
+    options: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
 
 
 rls("syncs", read="viewer", write="builder")

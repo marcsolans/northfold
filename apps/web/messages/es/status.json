@@ -1,0 +1,65 @@
+{
+  "metaTitle": "Estado del servicio",
+  "metaDescription": "Estado en tiempo real de los servicios de Messer y su disponibilidad en los últimos 90 días.",
+  "eyebrow": "Estado",
+  "title": "Estado del servicio",
+  "overall": {
+    "operational": "Todos los sistemas funcionan con normalidad",
+    "degraded": "Algunos servicios funcionan con degradación",
+    "down": "Hay servicios con un corte en curso",
+    "unknown": "No hay datos recientes de todos los servicios"
+  },
+  "updated": "Última comprobación: {time}",
+  "never": "Todavía no hay comprobaciones registradas.",
+  "refresh": "Actualizar",
+  "servicesTitle": "Servicios",
+  "services": {
+    "web": "Web y panel",
+    "api": "API de la plataforma",
+    "runtime": "Ejecución de agentes y flujos",
+    "worker": "Procesos en segundo plano",
+    "scheduler": "Programador y disparadores",
+    "voice": "Voz",
+    "mcp": "Servidor MCP"
+  },
+  "statuses": {
+    "operational": "Operativo",
+    "degraded": "Degradado",
+    "down": "Caído",
+    "unknown": "Sin datos",
+    "no_data": "Sin datos"
+  },
+  "uptime": "{pct} % de disponibilidad en 90 días",
+  "uptimeUnknown": "Sin datos de disponibilidad",
+  "uptimeShort": "{pct} %",
+  "latency": "{ms} ms",
+  "ninetyDaysAgo": "Hace 90 días",
+  "today": "Hoy",
+  "day": "{date}: {status}",
+  "dayWithUptime": "{date}: {status} ({pct} %)",
+  "legend": {
+    "operational": "Sin incidencias",
+    "degraded": "Degradación o corte breve",
+    "down": "Corte",
+    "no_data": "Sin datos"
+  },
+  "incidentsTitle": "Incidencias recientes",
+  "noIncidents": "Sin incidencias registradas en los últimos 90 días.",
+  "incident": {
+    "degraded": "Degradación",
+    "down": "Corte",
+    "ongoing": "En curso",
+    "resolved": "Resuelta",
+    "started": "Inicio: {time}",
+    "ended": "Fin: {time}",
+    "duration": "Duración: {duration}"
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "hours": "{count, plural, one {# hora} other {# horas}}",
+    "hoursMinutes": "{hours} h {minutes} min"
+  },
+  "unavailableTitle": "No hemos podido cargar el estado",
+  "unavailableBody": "El servicio de estado no responde ahora mismo. Si el problema continúa, es posible que haya una incidencia en curso.",
+  "note": "Comprobamos cada servicio cada minuto desde nuestra infraestructura en la UE. Las horas se muestran en UTC."
+}

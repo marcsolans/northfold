@@ -255,14 +255,14 @@ class SearchBody(BaseModel):
 async def kb_search(
     org_id: uuid.UUID, kb_id: uuid.UUID, body: SearchBody, claims: SandboxClaims = Depends(sandbox_claims)
 ) -> JSONResponse:
-    from messer_common.knowledge import search as kb_search_mod
+    from messer_common.knowledge.search import search as kb_search
     from messer_common.knowledge.errors import KnowledgeError
 
     await _kb_for(claims, org_id, kb_id)
     mode = body.mode if body.mode in ("vector", "keyword", "hybrid") else "hybrid"
     try:
         async with system_session() as s:
-            hits = await kb_search_mod.search(s, kb_id=kb_id, query=body.query, mode=mode, k=body.k)  # type: ignore[arg-type]
+            hits = await kb_search(s, kb_id=kb_id, query=body.query, mode=mode, k=body.k)  # type: ignore[arg-type]
     except KnowledgeError as exc:
         return JSONResponse({"error": {"type": exc.code, "message": exc.message}}, status_code=exc.status)
     return JSONResponse({"hits": [_jsonable(h) for h in hits]})
@@ -277,12 +277,12 @@ class QueryBody(BaseModel):
 async def kb_query(
     org_id: uuid.UUID, kb_id: uuid.UUID, body: QueryBody, claims: SandboxClaims = Depends(sandbox_claims)
 ) -> JSONResponse:
-    from messer_common.knowledge import sql as kb_sql
+    from messer_common.knowledge.sql import run_readonly
     from messer_common.knowledge.errors import KnowledgeError
 
     await _kb_for(claims, org_id, kb_id)
     try:
-        result = await kb_sql.run_readonly(kb_id=kb_id, sql=body.sql, params=body.params, role="agent")
+        result = await run_readonly(kb_id=kb_id, sql=body.sql, params=body.params, role=None)
     except KnowledgeError as exc:
         return JSONResponse({"error": {"type": exc.code, "message": exc.message}}, status_code=exc.status)
     return JSONResponse(_jsonable(result))

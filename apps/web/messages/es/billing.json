@@ -1,0 +1,273 @@
+{
+  "billing": {
+    "title": "Plan y facturación",
+    "description": "Tu plan, el uso frente a los límites, las facturas y el método de pago.",
+    "portal": "Portal de facturación",
+    "portalUnavailable": "El portal de Stripe (método de pago, datos fiscales y facturas) estará disponible al configurar Stripe.",
+    "ownerOnly": "Solo el propietario de la organización puede cambiar el plan o gestionar los pagos."
+  },
+  "testMode": {
+    "badge": "Modo de prueba",
+    "hint": "Facturación simulada: no se realiza ningún cargo.",
+    "title": "Facturación en modo de prueba",
+    "banner": "Stripe no está configurado. Las suscripciones y compras se simulan sin cargos y siguen exactamente el mismo flujo que con Stripe.",
+    "simulateFailure": "Simular pago fallido",
+    "simulateSuccess": "Simular cobro correcto"
+  },
+  "status": {
+    "trialing": "En prueba",
+    "trial_expired": "Prueba terminada",
+    "active": "Activa",
+    "past_due": "Pago pendiente",
+    "canceled": "Cancelada",
+    "incomplete": "Incompleta",
+    "none": "Sin suscripción"
+  },
+  "interval": {
+    "month": "Mensual",
+    "year": "Anual"
+  },
+  "intervalUnit": {
+    "month": "mes",
+    "year": "año"
+  },
+  "alerts": {
+    "pastDueTitle": "No hemos podido cobrar tu suscripción",
+    "pastDue": "Actualiza el método de pago antes del {date} para evitar el modo solo lectura.",
+    "readOnlyTitle": "Organización en modo solo lectura",
+    "readOnly": "Tus proyectos y datos siguen disponibles, pero no se pueden ejecutar ni editar. Elige un plan para continuar.",
+    "trialExpired": "La prueba ha terminado. Elige un plan para volver a ejecutar, editar y desplegar.",
+    "cancelingTitle": "Cancelación programada",
+    "canceling": "La suscripción terminará el {date}. Hasta entonces todo sigue funcionando."
+  },
+  "current": {
+    "title": "Plan actual",
+    "noPlan": "Sin plan",
+    "trialUntil": "Prueba gratuita hasta el {date} ({days, plural, one {queda # día} other {quedan # días}})",
+    "price": "{amount} / {interval} + IVA",
+    "renews": "Se renueva el {date}",
+    "choosePlanHint": "Elige un plan para mantener tus proyectos activos cuando termine la prueba.",
+    "cancel": "Cancelar suscripción",
+    "cancelTitle": "¿Cancelar la suscripción?",
+    "cancelDescription": "Seguirás teniendo acceso completo hasta el {date}. Después la organización quedará en modo solo lectura.",
+    "cancelConfirm": "Cancelar al final del periodo",
+    "keep": "Mantener",
+    "cancelScheduled": "La suscripción se cancelará al final del periodo.",
+    "resume": "Reactivar suscripción",
+    "resumed": "Suscripción reactivada."
+  },
+  "usage": {
+    "title": "Uso",
+    "period": "Este mes: {start} – {end}",
+    "unlimited": "ilimitado",
+    "creditsUsed": "Créditos usados este mes",
+    "balance": "Saldo de créditos"
+  },
+  "limits": {
+    "seats": "Usuarios",
+    "projects": "Proyectos",
+    "runs_month": "Ejecuciones este mes",
+    "credits_month": "Créditos al mes",
+    "storage_gb": "Almacenamiento"
+  },
+  "limitsCount": {
+    "seats": "{count, plural, one {1 usuario} other {{value} usuarios}}",
+    "projects": "{count, plural, one {1 proyecto} other {{value} proyectos}}",
+    "runs_month": "{value} ejecuciones al mes",
+    "credits_month": "{value} créditos de IA al mes",
+    "storage_gb": "{value} GB de almacenamiento"
+  },
+  "limitsUnlimited": {
+    "seats": "Usuarios ilimitados",
+    "projects": "Proyectos ilimitados",
+    "runs_month": "Ejecuciones ilimitadas",
+    "credits_month": "Créditos ilimitados",
+    "storage_gb": "Almacenamiento ilimitado"
+  },
+  "features": {
+    "public_chat": "Chat público y widget",
+    "api": "API pública y API keys",
+    "connectors": "Conectores",
+    "channels": "Canales (WhatsApp, Slack, Teams, email, Telegram)",
+    "deployments": "Despliegue con un clic y entornos",
+    "voice": "Voz (navegador y teléfono)",
+    "sso": "SSO SAML/OIDC",
+    "audit": "Registro de auditoría",
+    "guard": "Guard: control de comportamiento",
+    "priority_support": "Soporte prioritario",
+    "eu_strict": "Residencia UE estricta",
+    "byoc": "Despliegue en tu nube",
+    "scim": "SCIM",
+    "sla": "SLA",
+    "dedicated_engineer": "Ingeniero dedicado"
+  },
+  "plans": {
+    "title": "Planes",
+    "description": "Precios sin IVA. El IVA se calcula según tu país al pagar.",
+    "interval": "Periodicidad de pago",
+    "current": "Actual",
+    "currentPlan": "Plan actual",
+    "from": "Desde",
+    "perMonth": "/ mes",
+    "billedYearly": "{amount} al año · ahorras un {discount}%",
+    "vatExcluded": "IVA no incluido",
+    "included": "incluido",
+    "notIncluded": "no incluido",
+    "subscribe": "Contratar {plan}",
+    "upgrade": "Mejorar",
+    "downgrade": "Cambiar a este plan",
+    "switchInterval": "Cambiar periodicidad",
+    "contactSales": "Hablar con ventas",
+    "changed": "Plan actualizado.",
+    "confirmTitle": "¿Cambiar al plan {plan}?",
+    "confirmDescription": "El cambio es inmediato. Se cobra o se abona la parte proporcional del periodo actual; después pagarás {amount} / {interval} + IVA.",
+    "confirm": "Cambiar plan"
+  },
+  "invoices": {
+    "title": "Facturas",
+    "description": "Facturas con IVA de cada periodo y de las compras de créditos.",
+    "emptyTitle": "Todavía no hay facturas",
+    "emptyDescription": "Aparecerán aquí cuando contrates un plan o compres créditos.",
+    "number": "Número",
+    "date": "Fecha",
+    "period": "Periodo",
+    "amount": "Importe",
+    "tax": "IVA",
+    "download": "PDF",
+    "noPdf": "Sin PDF"
+  },
+  "invoiceStatus": {
+    "paid": "Pagada",
+    "open": "Pendiente",
+    "draft": "Borrador",
+    "void": "Anulada",
+    "uncollectible": "Incobrable"
+  },
+  "checkout": {
+    "title": "Confirmar pago",
+    "description": "Organización: {org}",
+    "testNotice": "Modo de prueba — no se realizará ningún cargo",
+    "testExplanation": "Stripe no está configurado. Al confirmar, Messer procesa los mismos eventos que enviaría Stripe (suscripción, factura y créditos) sin pedir tarjeta ni cobrar nada.",
+    "summary": "Resumen",
+    "planLine": "Plan {plan}",
+    "planIncludes": "incluye {credits} créditos al mes",
+    "packLine": "Paquete de {credits} créditos",
+    "total": "Total",
+    "vatNote": "Importe sin IVA. Con Stripe configurado, el IVA lo calcula Stripe Tax según tu país.",
+    "expires": "Este enlace de pago caduca el {date}.",
+    "confirm": "Confirmar pago de prueba ({amount})",
+    "notFoundTitle": "No encontramos este pago",
+    "successToast": "Pago completado. Tu plan ya está activo.",
+    "canceledToast": "Pago cancelado. No se ha cobrado nada.",
+    "status": {
+      "open": "Pendiente",
+      "completed": "Completado",
+      "canceled": "Cancelado",
+      "expired": "Caducado"
+    }
+  },
+  "credits": {
+    "title": "Créditos",
+    "description": "Los créditos pagan el uso de modelos de IA. Cada crédito vale {value}: coste del modelo más el margen del servicio.",
+    "unit": "créditos",
+    "balance": "Saldo",
+    "balanceUsd": "Equivale a {value}",
+    "usedThisMonth": "Usados este mes",
+    "addedThisMonth": "Añadidos este mes",
+    "included": "Incluidos en el plan",
+    "perMonth": "cada mes",
+    "exhaustedTitle": "Te has quedado sin créditos",
+    "exhausted": "Las ejecuciones están detenidas. Compra un paquete o activa la recarga automática.",
+    "lowTitle": "Te quedan pocos créditos",
+    "low": "Compra un paquete o activa la recarga automática para que tus agentes no se detengan.",
+    "buyTitle": "Comprar créditos",
+    "buyDescription": "Los paquetes se suman a tu saldo y no caducan.",
+    "per1k": "{price} por 1.000",
+    "buy": "Comprar",
+    "purchased": "Créditos añadidos a tu saldo."
+  },
+  "autoTopup": {
+    "title": "Recarga automática",
+    "description": "Compra un paquete automáticamente cuando el saldo baje del umbral, con el método de pago guardado.",
+    "needsPaymentMethod": "Necesitas un método de pago guardado: contrata un plan o compra un paquete primero.",
+    "enable": "Activar la recarga automática",
+    "threshold": "Recargar cuando el saldo baje de",
+    "thresholdHint": "En créditos. Como máximo una recarga cada 10 minutos y cinco al día.",
+    "pack": "Paquete a comprar",
+    "saved": "Recarga automática guardada.",
+    "last": {
+      "pending": "Última recarga solicitada el {date}, pendiente de confirmar.",
+      "succeeded": "Última recarga completada el {date}.",
+      "failed": "La última recarga ({date}) ha fallado"
+    }
+  },
+  "ledger": {
+    "title": "Movimientos",
+    "description": "Todo lo que suma o resta créditos: lo incluido en el plan, compras, uso y ajustes.",
+    "filter": "Filtrar por tipo",
+    "kinds": {
+      "grant": "Plan",
+      "purchase": "Compra",
+      "usage": "Uso",
+      "adjustment": "Ajuste"
+    },
+    "emptyTitle": "Sin movimientos",
+    "emptyDescription": "No hay movimientos de este tipo.",
+    "date": "Fecha",
+    "kind": "Tipo",
+    "detail": "Detalle",
+    "amount": "Créditos",
+    "cost": "Coste de modelo",
+    "pageOf": "Página {page} de {pages} · {total} movimientos",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  },
+  "budgets": {
+    "description": "Limita el gasto en modelos de IA por organización y por proyecto. Avisamos al llegar al umbral y, con parada automática, se detienen las nuevas ejecuciones al llegar al límite.",
+    "new": "Nuevo presupuesto",
+    "newTitle": "Nuevo presupuesto",
+    "editTitle": "Editar presupuesto",
+    "formDescription": "El gasto es el coste real de los modelos (USD) de las ejecuciones del periodo.",
+    "scope": "Ámbito",
+    "orgScope": "Toda la organización",
+    "period": "Periodo",
+    "periods": {
+      "month": "Mensual",
+      "week": "Semanal",
+      "day": "Diario"
+    },
+    "limit": "Límite (USD)",
+    "limitInvalid": "Introduce un importe mayor que cero.",
+    "threshold": "Avisar al llegar al (%)",
+    "thresholdHint": "Los administradores reciben un email y una notificación, una vez por periodo.",
+    "thresholdInvalid": "Entre 1 y 100.",
+    "hardStop": "Parada automática",
+    "hardStopHint": "Al alcanzar el límite se rechazan las nuevas ejecuciones hasta el siguiente periodo.",
+    "hardStopBadge": "Parada automática",
+    "alertAt": "Aviso al {pct}%",
+    "spend": "Gasto del periodo",
+    "states": {
+      "ok": "En margen",
+      "alert": "Aviso",
+      "exceeded": "Agotado"
+    },
+    "emptyTitle": "Sin presupuestos",
+    "emptyDescription": "Crea un presupuesto para la organización o para un proyecto y recibe avisos antes de pasarte.",
+    "created": "Presupuesto creado.",
+    "updated": "Presupuesto actualizado.",
+    "deleted": "Presupuesto eliminado.",
+    "deleteTitle": "¿Eliminar el presupuesto de {scope}?",
+    "deleteDescription": "Dejarán de aplicarse sus avisos y su parada automática. Esta acción queda auditada.",
+    "footnote": "Los periodos se calculan en UTC. El gasto incluye todas las ejecuciones del ámbito, de cualquier canal."
+  },
+  "upgrade": {
+    "limitTitle": "Has alcanzado un límite de tu plan",
+    "featureTitle": "Tu plan no incluye esta función",
+    "readOnlyTitle": "La organización está en modo solo lectura",
+    "recommended": "Plan recomendado:",
+    "seePlans": "Ver planes",
+    "choosePlan": "Elegir plan",
+    "notNow": "Ahora no",
+    "askOwner": "Pide al propietario de la organización que cambie el plan."
+  }
+}

@@ -1,0 +1,22 @@
+{{- $root := . }}
+{{- range $component, $spec := .Values.components }}
+{{- if and $spec.enabled $spec.service.enabled (gt (int $spec.port) 0) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "messer.componentName" (dict "root" $root "component" $component) }}
+  labels:
+    {{- include "messer.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  type: {{ $spec.service.type }}
+  selector:
+    {{- include "messer.selectorLabels" (dict "root" $root "component" $component) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $spec.port }}
+      targetPort: http
+      protocol: TCP
+{{- end }}
+{{- end }}

@@ -25,9 +25,10 @@ from messer_common.queue import Jobs, enqueue
 from messer_common.security import DecryptionError, decrypt
 from messer_common.settings import get_settings
 
+from . import guard_bridge
 from .code_cache import ensure_checkout
 from .gateway import CallContext, GatewayRefusal, check_spend
-from .persistence import gateway_totals, now, persist_spans, to_uuid
+from .persistence import gateway_totals, now, persist_guard_spans, persist_spans, to_uuid, trace_records
 from .sandbox.manager import SandboxPool
 
 log = get_logger("messer.runtime.runs")
@@ -202,6 +203,7 @@ class RunExecutor:
                 ended_at=now() if refusal else None,
             )
             await s.merge(run)
+        await guard_bridge.remember_member(run_id, str(req.project_id), member.name)
         yield {"type": "RUN_STARTED", "run_id": run_id, "commit": commit, "workforce": member.name, "kind": root_kind}
         if refusal is not None:
             yield {
@@ -291,6 +293,13 @@ class RunExecutor:
             models: list[str] = []
             if run.trace:
                 span_cost, models = await persist_spans(s, run=run, trace=run.trace, root_kind=member.kind, demo=demo)
+            guard_decisions = await guard_bridge.decisions(run_id)
+            if guard_decisions:
+                await s.flush()
+                root_call = next(
+                    (str(r.get("call_id")) for r in trace_records(run.trace) if r.get("parent_call_id") is None), None
+                )
+                await persist_guard_spans(s, run=run, decisions=guard_decisions, root_call_id=root_call)
             total_cost = cost if cost > 0 else span_cost
             run_credits = usd_to_credits(total_cost) if total_cost > 0 else Decimal("0")
             run.status = status

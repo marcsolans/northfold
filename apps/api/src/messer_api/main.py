@@ -88,6 +88,8 @@ def create_app() -> FastAPI:
         router = getattr(module, "router", None)
         if router is not None:
             app.include_router(router, prefix=API_PREFIX)
+        for extra in getattr(module, "extra_routers", []):  # additional /api/v1 routers with other prefixes
+            app.include_router(extra, prefix=API_PREFIX)
         public = getattr(module, "public_router", None)
         if public is not None:
             app.include_router(public)

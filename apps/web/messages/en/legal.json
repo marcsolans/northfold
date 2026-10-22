@@ -1,0 +1,21 @@
+{
+  "draftTitle": "Draft — pending review by a lawyer",
+  "draftBody": "This document is a working template and has not yet been reviewed by legal counsel.",
+  "updated": "Last updated: {date}",
+  "version": "Version {version}",
+  "onlySpanish": "This document is only available in Spanish.",
+  "otherDocs": "Legal documents",
+  "docs": {
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "cookies": "Cookie policy",
+    "dpa": "Data processing agreement (DPA)",
+    "subprocessors": "Sub-processors",
+    "aup": "Acceptable use policy"
+  },
+  "questions": "Questions about this document?",
+  "contact": "Contact us",
+  "copy": "Copy",
+  "plainText": "text",
+  "anchor": "Link to this section"
+}

@@ -1,0 +1,22 @@
+Messer data plane {{ .Chart.AppVersion }} installed as "{{ .Release.Name }}" in namespace {{ .Release.Namespace }}.
+
+Components:
+{{- range $component, $spec := .Values.components }}
+  - {{ $component }}: {{ if $spec.enabled }}enabled{{ else }}disabled{{ end }}
+{{- end }}
+
+Control plane: {{ .Values.controlPlane.url }} (outbound only{{ if .Values.mtls.enabled }}, mTLS with secret {{ .Values.mtls.existingSecret }}{{ end }}).
+{{- if not .Values.controlPlane.dataPlaneId }}
+
+WARNING: controlPlane.dataPlaneId is empty. Register the environment with Messer (customer-cloud
+environment registration) and upgrade the release with --set controlPlane.dataPlaneId=<id>.
+{{- end }}
+{{- if not .Values.mtls.enabled }}
+
+WARNING: mTLS is disabled. Only use this for local testing; production data planes must use mTLS.
+{{- end }}
+
+Check the rollout:
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "messer.fullname" . }}-runtime {{ .Values.components.runtime.port }}
+  curl -s localhost:{{ .Values.components.runtime.port }}/health

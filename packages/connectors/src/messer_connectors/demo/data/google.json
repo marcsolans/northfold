@@ -1,0 +1,51 @@
+{
+  "user": {"email": "demo@albor.example", "name": "Equipo Albor (demo)"},
+  "drive": {
+    "items": [
+      {"id": "fld-albor", "name": "Albor · Documentación", "mimeType": "application/vnd.google-apps.folder", "parent": "root", "offset_min": -86400},
+      {"id": "fld-policies", "name": "Condiciones y políticas", "mimeType": "application/vnd.google-apps.folder", "parent": "fld-albor", "offset_min": -86000},
+      {"id": "fld-billing", "name": "Facturación", "mimeType": "application/vnd.google-apps.folder", "parent": "fld-albor", "offset_min": -85000},
+      {"id": "fld-sales", "name": "Comercial", "mimeType": "application/vnd.google-apps.folder", "parent": "root", "offset_min": -80000},
+      {"id": "doc-cgv", "name": "Condiciones generales de venta", "mimeType": "application/vnd.google-apps.document", "parent": "fld-policies", "file": "condiciones_generales_venta.md", "offset_min": -43000},
+      {"id": "doc-returns", "name": "Política de devoluciones y abonos", "mimeType": "application/vnd.google-apps.document", "parent": "fld-policies", "file": "politica_devoluciones.md", "offset_min": -30000},
+      {"id": "doc-privacy", "name": "Política de privacidad para clientes", "mimeType": "application/vnd.google-apps.document", "parent": "fld-policies", "file": "politica_privacidad.md", "offset_min": -29000},
+      {"id": "doc-collections", "name": "Procedimiento interno de cobro", "mimeType": "application/vnd.google-apps.document", "parent": "fld-billing", "file": "procedimiento_cobro.md", "offset_min": -20000},
+      {"id": "sheet-pending", "name": "Facturas pendientes", "mimeType": "application/vnd.google-apps.spreadsheet", "parent": "fld-billing", "file": "facturas_pendientes.csv", "offset_min": -2000},
+      {"id": "sheet-pricing", "name": "Tarifa 2026", "mimeType": "application/vnd.google-apps.spreadsheet", "parent": "fld-albor", "file": "tarifa_2026.csv", "offset_min": -50000},
+      {"id": "file-faq", "name": "preguntas_frecuentes_clientes.md", "mimeType": "text/markdown", "parent": "fld-albor", "file": "faq_clientes.md", "offset_min": -10000},
+      {"id": "doc-q3", "name": "Informe de ventas T3 2026", "mimeType": "application/vnd.google-apps.document", "parent": "fld-sales", "file": "informe_ventas_trimestral.md", "offset_min": -4000}
+    ],
+    "incoming": [
+      {"name": "Acta reunión comercial", "mimeType": "application/vnd.google-apps.document", "parent": "fld-sales", "file": "acta_reunion_comercial.md"}
+    ]
+  },
+  "gmail": {
+    "messages": [
+      {"id": "msg-0001", "threadId": "thr-0001", "offset_min": -2880, "from": "Iker Mendaro <compras@talleres-mendaro.example>", "to": "facturacion@albor.example", "subject": "Duplicado factura F-2026-0412", "body": "Buenos días,\n\nNo encontramos la factura F-2026-0412 de agosto. ¿Podéis enviarnos un duplicado en PDF?\n\nGracias,\nIker Mendaro\nTalleres Mendaro S.A.", "labels": ["INBOX", "UNREAD"]},
+      {"id": "msg-0002", "threadId": "thr-0002", "offset_min": -2100, "from": "Nerea Arrieta <administracion@clinica-arrieta.example>", "to": "devoluciones@albor.example", "subject": "Envío dañado pedido 88213", "body": "Hola,\n\nEl pedido 88213 llegó con dos sillas con el respaldo roto. Adjunto fotos. ¿Cómo gestionamos la devolución?\n\nUn saludo,\nNerea Arrieta", "labels": ["INBOX"]},
+      {"id": "msg-0003", "threadId": "thr-0003", "offset_min": -1500, "from": "Jon Ribera <jon@hosteleria-ribera.example>", "to": "comercial@albor.example", "subject": "Solicitud de pago a 60 días", "body": "Hola,\n\nLlevamos más de un año trabajando con vosotros. ¿Sería posible pasar a pago a 60 días en las próximas facturas?\n\nJon Ribera\nHostelería Ribera S.L.", "labels": ["INBOX", "IMPORTANT"]},
+      {"id": "msg-0004", "threadId": "thr-0004", "offset_min": -900, "from": "Ane Ugalde <ane.ugalde@construcciones-ugalde.example>", "to": "facturacion@albor.example", "subject": "Importe incorrecto en factura F-2026-0488", "body": "Buenas tardes,\n\nEn la factura F-2026-0488 aparecen 25 archivadores y solo recibimos 20. ¿Podéis revisarlo y emitir el abono?\n\nGracias,\nAne Ugalde", "labels": ["INBOX", "UNREAD"]},
+      {"id": "msg-0005", "threadId": "thr-0005", "offset_min": -400, "from": "Proveedores Oficina Norte <ventas@oficina-norte.example>", "to": "compras@albor.example", "subject": "Nueva tarifa de papel desde noviembre", "body": "Estimado cliente,\n\nLe informamos de que a partir del 1 de noviembre la tarifa del papel A4 se incrementa un 3 %.\n\nAtentamente,\nOficina Norte", "labels": ["INBOX"]},
+      {"id": "msg-0006", "threadId": "thr-0006", "offset_min": -120, "from": "Miren Lurra <miren@papeleria-lurra.example>", "to": "atencion@albor.example", "subject": "¿Factura electrónica?", "body": "Hola,\n\n¿Podéis emitir nuestras facturas en formato electrónico? Nos lo pide nuestra gestoría.\n\nMiren", "labels": ["INBOX", "UNREAD"]}
+    ],
+    "incoming": [
+      {"from": "Asesoría Iturbe <contabilidad@asesoria-iturbe.example>", "to": "facturacion@albor.example", "subject": "Consulta sobre la factura F-2026-0533", "body": "Hola,\n\n¿Nos confirmáis la fecha de vencimiento de la factura F-2026-0533? No aparece en la copia que tenemos.\n\nGracias."},
+      {"from": "Iker Mendaro <compras@talleres-mendaro.example>", "to": "facturacion@albor.example", "subject": "Factura agrupada mensual", "body": "Buenos días,\n\nA partir de este mes preferimos recibir una única factura mensual con todos los pedidos. ¿Es posible?\n\nIker"},
+      {"from": "Jon Ribera <jon@hosteleria-ribera.example>", "to": "facturacion@albor.example", "subject": "Abono pendiente de 640 €", "body": "Hola,\n\nSeguimos esperando el abono de 640 € por la devolución del mobiliario del mes pasado. ¿En qué estado está?\n\nJon"},
+      {"from": "Nerea Arrieta <administracion@clinica-arrieta.example>", "to": "atencion@albor.example", "subject": "Gracias por la reposición", "body": "Hola,\n\nYa hemos recibido las sillas de reposición. Todo correcto, muchas gracias.\n\nNerea"}
+    ]
+  },
+  "calendar": {
+    "calendars": [
+      {"id": "primary", "summary": "demo@albor.example", "primary": true, "timeZone": "Europe/Madrid", "accessRole": "owner"},
+      {"id": "comercial@group.calendar.example", "summary": "Agenda comercial", "timeZone": "Europe/Madrid", "accessRole": "writer"}
+    ],
+    "events": [
+      {"id": "evt-0001", "calendarId": "primary", "summary": "Reunión semanal de cobros", "offset_min": 1500, "duration_min": 45, "location": "Sala Gorbea", "attendees": ["finanzas@albor.example", "administracion@albor.example"]},
+      {"id": "evt-0002", "calendarId": "primary", "summary": "Llamada con Hostelería Ribera (condiciones de pago)", "offset_min": 2940, "duration_min": 30, "location": "Teléfono", "attendees": ["jon@hosteleria-ribera.example"]},
+      {"id": "evt-0003", "calendarId": "comercial@group.calendar.example", "summary": "Visita a Talleres Mendaro", "offset_min": 4380, "duration_min": 90, "location": "Polígono Ibarra, Eibar", "attendees": ["compras@talleres-mendaro.example"]},
+      {"id": "evt-0004", "calendarId": "primary", "summary": "Revisión tarifa de mobiliario", "offset_min": 5820, "duration_min": 60, "location": "Sala Anboto", "attendees": ["comercial@albor.example"]},
+      {"id": "evt-0005", "calendarId": "primary", "summary": "Cierre contable mensual", "offset_min": 8700, "duration_min": 120, "location": "Departamento financiero", "attendees": ["finanzas@albor.example"]}
+    ]
+  }
+}

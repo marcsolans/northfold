@@ -1,0 +1,138 @@
+{
+  "title": "Aprobaciones",
+  "description": "Acciones que esperan una decisión humana. La ejecución se reanuda en cuanto decides, incluso tras un reinicio.",
+  "pendingCount": "{count, plural, one {# aprobación pendiente} other {# aprobaciones pendientes}}",
+  "fallbackTitle": "Solicitud para ejecutar {tool}",
+  "needsRole": "Requiere {role}",
+  "expires": "Caduca {when}",
+  "filters": {
+    "status": "Estado",
+    "project": "Proyecto",
+    "agent": "Agente",
+    "mine": "Solo las que puedo decidir"
+  },
+  "empty": {
+    "pendingTitle": "No hay aprobaciones pendientes",
+    "pendingDescription": "Cuando un agente o flujo necesite tu visto bueno, aparecerá aquí y recibirás una notificación.",
+    "title": "Sin resultados",
+    "description": "Ninguna aprobación coincide con los filtros."
+  },
+  "status": {
+    "pending": "Pendiente",
+    "approved": "Aprobada",
+    "denied": "Denegada",
+    "expired": "Caducada"
+  },
+  "payload": {
+    "empty": "La acción no recibe datos."
+  },
+  "editor": {
+    "mode": "Modo de edición",
+    "form": "Formulario",
+    "json": "JSON",
+    "jsonLabel": "Valores en JSON",
+    "invalidJson": "JSON no válido: debe ser un objeto.",
+    "invalidNumber": "Introduce un número válido.",
+    "missing": "Faltan campos obligatorios: {fields}"
+  },
+  "decide": {
+    "approve": "Aprobar",
+    "deny": "Denegar",
+    "approveWithChanges": "Aprobar con cambios",
+    "denyReason": "Motivo de la denegación",
+    "denyReasonHint": "Obligatorio. El agente lo recibirá y quedará en la auditoría.",
+    "commentRequired": "Indica por qué deniegas la acción.",
+    "confirmDeny": "Denegar",
+    "comment": "Comentario",
+    "confirmChanges": "Aprobar con estos cambios",
+    "noChanges": "No has cambiado ningún valor. Usa «Aprobar» o modifica algún campo.",
+    "invalidChanges": "Revisa los valores antes de aprobar.",
+    "needsRole": "Esta aprobación requiere el rol {role} o superior.",
+    "cannotDecide": "No puedes decidir esta aprobación."
+  },
+  "detail": {
+    "title": "Aprobación",
+    "assignedTo": "Decide: {role} o superior",
+    "payload": "Datos de la acción",
+    "context": "Contexto",
+    "details": "Detalles",
+    "project": "Proyecto",
+    "agent": "Agente",
+    "run": "Ejecución",
+    "viewTrace": "Ver traza",
+    "viewResumed": "Ver la ejecución reanudada",
+    "environment": "Entorno",
+    "channel": "Canal",
+    "created": "Solicitada",
+    "expires": "Caduca",
+    "expiryAction": {
+      "approve": "se aprobará automáticamente",
+      "deny": "se denegará automáticamente"
+    },
+    "decided": "Decidida",
+    "via": {
+      "app": "desde la aplicación",
+      "email": "desde el email",
+      "slack": "desde Slack",
+      "expiry": "por caducidad"
+    },
+    "comment": "Comentario",
+    "decide": "Tu decisión",
+    "expiredPending": "El plazo ha vencido; se resolverá automáticamente en breve.",
+    "approvedToast": "Aprobada. La ejecución se reanuda.",
+    "deniedToast": "Denegada. El agente recibirá tu motivo."
+  },
+  "email": {
+    "metaTitle": "Confirmar decisión",
+    "willApprove": "Vas a aprobar",
+    "willDeny": "Vas a denegar",
+    "fallbackTitle": "Solicitud para ejecutar {tool}",
+    "project": "Proyecto",
+    "agent": "Agente",
+    "tool": "Acción",
+    "expires": "Caduca",
+    "payload": "Datos de la acción",
+    "comment": "Comentario",
+    "denyReason": "Motivo de la denegación",
+    "denyReasonHint": "Obligatorio. El agente lo recibirá y quedará en la auditoría.",
+    "commentRequired": "Indica por qué deniegas la acción.",
+    "notice": "Abrir el enlace no decide nada: la decisión solo se registra al confirmar.",
+    "confirmApprove": "Confirmar aprobación",
+    "confirmDeny": "Confirmar denegación",
+    "changeMind": "¿Quieres decidir otra cosa o aprobar con cambios?",
+    "openInbox": "Abrir la bandeja de aprobaciones",
+    "alreadyDecided": "Esta aprobación ya está resuelta",
+    "done": {
+      "approved": "Aprobación registrada",
+      "denied": "Denegación registrada",
+      "resumed": "La ejecución continúa ahora. Puedes cerrar esta página.",
+      "waiting": "La ejecución continuará cuando se resuelvan las demás aprobaciones pendientes."
+    },
+    "problems": {
+      "invalid": {
+        "title": "Enlace no válido",
+        "description": "El enlace está incompleto o ha caducado. Decide desde la bandeja de aprobaciones."
+      },
+      "forbidden": {
+        "title": "Sin permiso",
+        "description": "Ya no tienes permiso para decidir esta aprobación."
+      },
+      "notFound": {
+        "title": "Aprobación no encontrada",
+        "description": "La solicitud ya no existe."
+      },
+      "decided": {
+        "title": "Ya estaba decidida",
+        "description": "Otra persona ha resuelto esta aprobación antes que tú."
+      },
+      "expired": {
+        "title": "Aprobación caducada",
+        "description": "El plazo para decidir ha vencido y se ha aplicado la acción por defecto."
+      },
+      "generic": {
+        "title": "No hemos podido cargar la aprobación",
+        "description": "Inténtalo de nuevo en unos segundos."
+      }
+    }
+  }
+}

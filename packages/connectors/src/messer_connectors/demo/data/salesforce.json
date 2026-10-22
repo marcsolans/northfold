@@ -1,0 +1,32 @@
+{
+  "org": {"id": "00D000000DEMO", "name": "Albor (demo)", "instance_url": "https://albor-demo.my.salesforce.example", "user": "demo@albor.example"},
+  "objects": {
+    "Account": [
+      {"Id": "001000000000001AAA", "Name": "Talleres Mendaro S.A.", "Industry": "Manufacturing", "BillingCity": "Eibar", "BillingCountry": "Spain", "Phone": "+34 943 000 101", "Website": "talleres-mendaro.example", "AnnualRevenue": 6200000, "NumberOfEmployees": 85, "offset_min": -200000},
+      {"Id": "001000000000002AAA", "Name": "Clínica Dental Arrieta", "Industry": "Healthcare", "BillingCity": "Getxo", "BillingCountry": "Spain", "Phone": "+34 944 000 202", "Website": "clinica-arrieta.example", "AnnualRevenue": 1100000, "NumberOfEmployees": 14, "offset_min": -180000},
+      {"Id": "001000000000003AAA", "Name": "Hostelería Ribera S.L.", "Industry": "Hospitality", "BillingCity": "Vitoria-Gasteiz", "BillingCountry": "Spain", "Phone": "+34 945 000 303", "Website": "hosteleria-ribera.example", "AnnualRevenue": 3400000, "NumberOfEmployees": 60, "offset_min": -150000},
+      {"Id": "001000000000004AAA", "Name": "Construcciones Ugalde S.L.", "Industry": "Construction", "BillingCity": "Bilbao", "BillingCountry": "Spain", "Phone": "+34 946 000 404", "Website": "construcciones-ugalde.example", "AnnualRevenue": 15800000, "NumberOfEmployees": 120, "offset_min": -120000},
+      {"Id": "001000000000005AAA", "Name": "Papelería Lurra", "Industry": "Retail", "BillingCity": "Pamplona", "BillingCountry": "Spain", "Phone": "+34 948 000 505", "Website": "papeleria-lurra.example", "AnnualRevenue": 420000, "NumberOfEmployees": 6, "offset_min": -90000}
+    ],
+    "Contact": [
+      {"Id": "003000000000001AAA", "FirstName": "Iker", "LastName": "Mendaro", "Email": "compras@talleres-mendaro.example", "Phone": "+34 943 000 101", "Title": "Responsable de compras", "AccountId": "001000000000001AAA", "offset_min": -199000},
+      {"Id": "003000000000002AAA", "FirstName": "Nerea", "LastName": "Arrieta", "Email": "administracion@clinica-arrieta.example", "Phone": "+34 944 000 202", "Title": "Administración", "AccountId": "001000000000002AAA", "offset_min": -179000},
+      {"Id": "003000000000003AAA", "FirstName": "Jon", "LastName": "Ribera", "Email": "jon@hosteleria-ribera.example", "Phone": "+34 945 000 303", "Title": "Gerente", "AccountId": "001000000000003AAA", "offset_min": -149000},
+      {"Id": "003000000000004AAA", "FirstName": "Ane", "LastName": "Ugalde", "Email": "ane.ugalde@construcciones-ugalde.example", "Phone": "+34 946 000 404", "Title": "Directora financiera", "AccountId": "001000000000004AAA", "offset_min": -119000}
+    ],
+    "Opportunity": [
+      {"Id": "006000000000001AAA", "Name": "Contrato anual consumibles", "AccountId": "001000000000001AAA", "StageName": "Negotiation/Review", "Amount": 21600, "CloseDate": "2026-11-15", "Probability": 70, "offset_min": -25000},
+      {"Id": "006000000000002AAA", "Name": "Archivo documental", "AccountId": "001000000000004AAA", "StageName": "Qualification", "Amount": 6250, "CloseDate": "2026-12-20", "Probability": 20, "offset_min": -3000},
+      {"Id": "006000000000003AAA", "Name": "Ampliación office", "AccountId": "001000000000003AAA", "StageName": "Closed Won", "Amount": 4900, "CloseDate": "2026-10-10", "Probability": 100, "offset_min": -8000}
+    ],
+    "Lead": [
+      {"Id": "00Q000000000001AAA", "FirstName": "Leire", "LastName": "Garmendia", "Company": "Coworking Arriaga", "Email": "leire@coworking-arriaga.example", "Status": "Working - Contacted", "LeadSource": "Web", "offset_min": -20000},
+      {"Id": "00Q000000000002AAA", "FirstName": "Asier", "LastName": "Etxeberria", "Company": "Ingeniería Txindoki", "Email": "asier@ingenieria-txindoki.example", "Status": "Open - Not Contacted", "LeadSource": "Trade Show", "offset_min": -6000}
+    ]
+  },
+  "incoming_leads": [
+    {"FirstName": "Maite", "LastName": "Zubiri", "Company": "Estudio Zubiri Arquitectos", "Email": "maite@estudio-zubiri.example", "Status": "Open - Not Contacted", "LeadSource": "Web"},
+    {"FirstName": "Gorka", "LastName": "Olano", "Company": "Olano Logística", "Email": "gorka@olano-logistica.example", "Status": "Open - Not Contacted", "LeadSource": "Phone Inquiry"},
+    {"FirstName": "Itziar", "LastName": "Basterra", "Company": "Academia Basterra", "Email": "itziar@academia-basterra.example", "Status": "Open - Not Contacted", "LeadSource": "Partner Referral"}
+  ]
+}

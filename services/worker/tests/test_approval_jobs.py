@@ -22,10 +22,18 @@ async def test_notify_approval_emails_eligible_members(make_org, make_user) -> N
         s.add(Membership(org_id=org.id, user_id=viewer.id, role="viewer"))
         s.add(Membership(org_id=org.id, user_id=admin.id, role="admin"))
         project = await create_project(s, principal_for(owner.id, org.id, "owner"), name="Pagos")
-        approval = Approval(org_id=org.id, project_id=project.id, run_id=uuid.uuid4(), engine_approval_id="ap1",
-                            workforce_name="pagos", tool_name="send_email", title="Enviar factura",
-                            payload={"to": "x@example.com"}, assigned_role="admin",
-                            expires_at=datetime.now(UTC) + timedelta(hours=72))
+        approval = Approval(
+            org_id=org.id,
+            project_id=project.id,
+            run_id=uuid.uuid4(),
+            engine_approval_id="ap1",
+            workforce_name="pagos",
+            tool_name="send_email",
+            title="Enviar factura",
+            payload={"to": "x@example.com"},
+            assigned_role="admin",
+            expires_at=datetime.now(UTC) + timedelta(hours=72),
+        )
         s.add(approval)
         await s.flush()
         approval_id = approval.id

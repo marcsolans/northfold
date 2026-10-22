@@ -36,7 +36,7 @@ from messer_common.models_config import DEMO_MODEL, bedrock_model_id, bedrock_re
 from messer_common.pricing import MTOK
 from messer_common.settings import get_settings
 
-from . import demo_model
+from . import demo_model, guard_bridge
 
 log = get_logger("messer.runtime.gateway")
 
@@ -267,6 +267,36 @@ async def handle(request: Request, ctx: CallContext) -> Response:
 
     streaming = bool(prepared.get("stream"))
     headers = {k.lower(): v for k, v in request.headers.items()}
+    guard = await guard_bridge.session_for(ctx, prepared)
+    if guard is None:
+        return await _call(prepared, full_model, ctx, info, headers, streaming)
+
+    # Guard: the turn is decided before and validated after the model call, so the upstream call is
+    # buffered (non-streaming) and re-streamed to the engine when it asked for SSE.
+    before = await guard.before(prepared)
+    if before.message is not None:
+        message = before.message
+    else:
+        body = {**before.body, "stream": False}
+        model = before.model or full_model
+        upstream = await _call(body, model, ctx, info, headers, streaming=False)
+        if upstream.status_code != 200:
+            return upstream
+        message = json.loads(bytes(upstream.body))
+        message = await guard.after(body, message)
+    if not streaming:
+        return JSONResponse(message)
+    return StreamingResponse(message_to_sse(message), media_type="text/event-stream")
+
+
+async def _call(
+    prepared: dict[str, Any],
+    full_model: str,
+    ctx: CallContext,
+    info: dict[str, Any],
+    headers: dict[str, str],
+    streaming: bool,
+) -> Response:
     last_error: str = "no provider available"
     for provider in _route(info):
         try:
@@ -291,6 +321,87 @@ async def handle(request: Request, ctx: CallContext) -> Response:
             log.warning("gateway.provider_error", provider=provider, error=str(exc))
             continue
     return _error(529, "overloaded_error", f"Ningún proveedor de modelos disponible ({last_error})")
+
+
+def _sse_event(name: str, data: dict[str, Any]) -> bytes:
+    return f"event: {name}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n".encode()
+
+
+async def message_to_sse(message: dict[str, Any]) -> AsyncIterator[bytes]:
+    """Re-stream a complete Anthropic message as Messages API server-sent events."""
+    usage = dict(message.get("usage") or {})
+    start = {
+        **message,
+        "content": [],
+        "stop_reason": None,
+        "stop_sequence": None,
+        "usage": {**usage, "output_tokens": 0},
+    }
+    yield _sse_event("message_start", {"type": "message_start", "message": start})
+    for index, block in enumerate(message.get("content") or []):
+        kind = block.get("type")
+        if kind == "text":
+            yield _sse_event(
+                "content_block_start",
+                {"type": "content_block_start", "index": index, "content_block": {"type": "text", "text": ""}},
+            )
+            yield _sse_event(
+                "content_block_delta",
+                {
+                    "type": "content_block_delta",
+                    "index": index,
+                    "delta": {"type": "text_delta", "text": block.get("text", "")},
+                },
+            )
+        elif kind == "tool_use":
+            yield _sse_event(
+                "content_block_start",
+                {"type": "content_block_start", "index": index, "content_block": {**block, "input": {}}},
+            )
+            yield _sse_event(
+                "content_block_delta",
+                {
+                    "type": "content_block_delta",
+                    "index": index,
+                    "delta": {"type": "input_json_delta", "partial_json": json.dumps(block.get("input") or {})},
+                },
+            )
+        elif kind == "thinking":
+            yield _sse_event(
+                "content_block_start",
+                {"type": "content_block_start", "index": index, "content_block": {"type": "thinking", "thinking": ""}},
+            )
+            yield _sse_event(
+                "content_block_delta",
+                {
+                    "type": "content_block_delta",
+                    "index": index,
+                    "delta": {"type": "thinking_delta", "thinking": block.get("thinking", "")},
+                },
+            )
+            if block.get("signature"):
+                yield _sse_event(
+                    "content_block_delta",
+                    {
+                        "type": "content_block_delta",
+                        "index": index,
+                        "delta": {"type": "signature_delta", "signature": block["signature"]},
+                    },
+                )
+        else:
+            yield _sse_event(
+                "content_block_start", {"type": "content_block_start", "index": index, "content_block": block}
+            )
+        yield _sse_event("content_block_stop", {"type": "content_block_stop", "index": index})
+    yield _sse_event(
+        "message_delta",
+        {
+            "type": "message_delta",
+            "delta": {"stop_reason": message.get("stop_reason"), "stop_sequence": message.get("stop_sequence")},
+            "usage": {"output_tokens": int(usage.get("output_tokens") or 0)},
+        },
+    )
+    yield _sse_event("message_stop", {"type": "message_stop"})
 
 
 async def _close(response: httpx.Response) -> None:

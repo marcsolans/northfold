@@ -5,17 +5,17 @@
 | Phase | Status |
 |---|---|
 | 1. Foundations | ✅ Closed |
-| 2. Business | ⏳ |
-| 3. Runtime and Agent builder | ⏳ |
-| 4. Knowledge and connectors | ⏳ |
-| 5. Workflows, triggers and approvals | ⏳ |
+| 2. Business | ✅ Closed |
+| 3. Runtime and Agent builder | ✅ Closed |
+| 4. Knowledge and connectors | 🔧 In progress (knowledge done, connectors finishing) |
+| 5. Workflows, triggers and approvals | 🔧 In progress (triggers, approvals inbox and email done; workflow builder in progress) |
 | 6. Composer | ⏳ |
-| 7. Interfaces, deployment and governance | ⏳ |
-| 8. Channels and voice | ⏳ |
+| 7. Interfaces, deployment and governance | 🔧 In progress (deployments, domains, GitHub sync, export done; interfaces and analytics in progress) |
+| 8. Channels and voice | 🔧 In progress |
 | 9. Templates | ⏳ |
 | 10. Developers | ⏳ |
-| 11. Enterprise | ⏳ |
-| 12. Guard | ⏳ |
+| 11. Enterprise | ✅ Closed |
+| 12. Guard | 🔧 In progress (gateway extension point done) |
 | 13. Final hardening | ⏳ |
 
 ## Phase 1 — Foundations (closed)
@@ -41,6 +41,55 @@ Done:
 
 Pending (later phases): remaining services and screens per phase plan.
 
+## Phase 2 — Business (closed)
+
+Done:
+- Plans (Starter €49, Pro €199, Business €799, Enterprise from €3,000; annual prices), credit packs, plan limits
+  (`services/limits.py`), 14-day Pro trial with credits, trial emails (day 1/3/7/12), dunning (grace period →
+  read-only), budgets per organization and project with alerts and hard stop, AI credits ledger with idempotent
+  usage charges and automatic top-up (D-026).
+- Stripe (Checkout, portal, Tax, webhooks state machine) **or** simulated test mode with the same flows.
+- Public website: landing with Composer animation, pricing from the live plans API, security, templates, contact,
+  status page, blog with RSS, docs, six legal documents (drafts pending a lawyer: company name, tax id, address, DPO,
+  jurisdiction placeholders), SEO (sitemap, robots, hreflang, OG, JSON-LD offers).
+- Onboarding (4 skippable steps from real data) and activation checklist.
+- Backoffice `/admin`: organizations, users, impersonation (audited, 2 h max), plans and Stripe sync, model prices,
+  templates, feature flags, MRR and usage metrics.
+- Verified by: pytest business suite (49) + website (23) and Playwright `02-website` (landing → pricing → sign-up
+  from a plan → onboarding); business acceptance test (sign up → Pro in test mode → MRR in /admin).
+
+## Phase 3 — Runtime and Agent builder (closed)
+
+Done:
+- `services/runtime`: sandbox per (project, commit) with scrubbed env and rlimits (D-021), code at exact commits,
+  engine platform API (tracing, files, tool proxy, knowledge, connector actions), run orchestration with spans, cost,
+  credits and approvals (D-018, D-022).
+- Model gateway: residency routing (EU strict → Bedrock only), failover, model policy, credits/budget checks on
+  every call, per-call cost; offline demo model when no key (D-019, D-020); Guard extension point.
+- Agent builder: config ↔ `agent.py` two-way sync (code wins otherwise), tools catalog with "requires approval" and
+  approver role on any tool, connector actions, MCP servers, knowledge bases, context files, guardrails (shadow /
+  enforce), memory, Monaco code editor, versions with diff/restore, evals; playground chat (streaming, tool cards,
+  inline approval cards incl. approve-with-changes, attachments, conversations, trace links).
+- Runs/traces API + UI (waterfall, per-span tokens/cost, re-run on the same commit, feedback), approvals inbox and
+  email links that never decide on GET (D-023), public run API with API keys (D-025), API keys and project secrets.
+- Verified by: pytest (runtime 15, studio/runs 5, deployments/triggers 9, keys/secrets 2) and Playwright
+  `03-studio` (agent created in the UI → chat → approval pauses → approve → resumes → trace with cost and credits).
+  Real-provider cost and credit deduction are verified with a mocked Anthropic transport (no key in this
+  environment); in demo mode runs cost 0.
+
+## Phase 11 — Enterprise (closed)
+
+Done:
+- SSO: OIDC (PKCE, JWKS validation) and SAML (signed assertions, replay protection), presets for Entra ID, Google
+  Workspace and Okta, group → role mapping, JIT provisioning, "enforce SSO"; verified email domains (D-029).
+- SCIM 2.0 (`/scim/v2`) users and groups with deprovisioning; MFA from phase 1.
+- Strict EU residency (Bedrock EU only, tested in the runtime), retention policies (scheduler), GDPR export and
+  erasure jobs for users and organizations, legal documents.
+- BYOC: Helm chart (lint/template pass) and Terraform for AWS, Azure and GCP (fmt/validate pass), mTLS script,
+  `docs/byoc.md`, `docs/on-prem.md`.
+- Verified by: pytest enterprise suite (72) — fake OIDC IdP and signed SAML login, SCIM flows, GDPR export/delete —
+  and the runtime test "EU strict uses Bedrock only".
+
 ## Pending keys
 
 Missing keys run in demo/sandbox mode. To enable each integration, set the variables in `.env` (local) or in the
@@ -57,6 +106,12 @@ provider's secret manager (Railway/Vercel) and restart the services.
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | Claude on Bedrock EU for `eu_strict` orgs | IAM user with `bedrock:InvokeModel*` in an EU region; enable Anthropic models in the Bedrock console. |
 | `GOOGLE_CLIENT_ID/SECRET`, `MICROSOFT_CLIENT_ID/SECRET` | Social login and connectors | OAuth apps with redirect `https://<web>/api/v1/auth/oauth/<provider>/callback`. |
 | `RAILWAY_TOKEN`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (GitHub secrets) | Auto-deploy staging/production | Connect the repo in Railway (EU) and Vercel (functions in `fra1`), add tokens as repository secrets. |
+| `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET` | Project sync via GitHub App (personal-token mode works without them) | Create a GitHub App (contents read/write, push webhook to `/api/github/webhook`). |
+| `MESSER_INBOUND_EMAIL_SECRET` (+ inbound provider) | Email triggers and email channel from real mailboxes (simulate endpoint works without it) | Configure Postmark inbound (or similar) for `MESSER_INBOUND_EMAIL_DOMAIN` with webhook `/api/inbound/email?token=…`. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Deleting the Supabase auth user during GDPR erasure (Supabase mode only) | From the Supabase project API settings. |
+| `VOYAGE_API_KEY` (optional) | Hosted embeddings (the local multilingual model is used otherwise) | Voyage AI dashboard. |
+| `MESSER_SALES_EMAIL`, `MESSER_OPS_EMAIL` | Contact form and service alerts recipients (fall back to the superadmin email) | Set the team addresses. |
+| `HAWK_API_KEY` | StackHawk DAST scan of the running app (security review) | StackHawk account API key. |
 
 ## Blockers
 

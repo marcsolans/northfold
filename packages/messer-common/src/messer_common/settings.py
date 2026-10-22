@@ -84,7 +84,16 @@ class Settings(BaseSettings):
     aws_region: str = "eu-central-1"
     openai_api_key: str = ""
     messer_embeddings_provider: Literal["local", "hash", "voyage", "bedrock"] = "local"
+    messer_embeddings_model: str = ""  # explicit model id for new knowledge bases (overrides the provider default)
+    messer_embeddings_batch_size: int = 32
     voyage_api_key: str = ""
+    voyage_embeddings_model: str = "voyage-3.5"
+    bedrock_embeddings_model: str = "amazon.titan-embed-text-v2:0"
+
+    # --- knowledge
+    messer_kb_max_file_mb: int = 100
+    messer_kb_max_files_per_upload: int = 20
+    messer_kb_docling_enabled: bool = True
 
     # --- stripe
     stripe_secret_key: str = ""
@@ -94,6 +103,10 @@ class Settings(BaseSettings):
     # --- email
     messer_email_provider: Literal["console", "smtp", "postmark", "resend"] = "smtp"
     messer_email_from: str = "Messer <no-reply@messer.local>"
+    # Recipients of public contact-form submissions and of service-health alerts.
+    # Both fall back to MESSER_SUPERADMIN_EMAIL when empty.
+    messer_sales_email: str = ""
+    messer_ops_email: str = ""
     smtp_host: str = "localhost"
     smtp_port: int = 1025
     smtp_user: str = ""
@@ -101,6 +114,13 @@ class Settings(BaseSettings):
     smtp_tls: bool = False
     postmark_server_token: str = ""
     resend_api_key: str = ""
+    # Processing region of the email/voice providers (e.g. "eu-west-1", "ie1"); eu_strict orgs require an EU one.
+    messer_email_region: str = ""
+    messer_voice_region: str = ""
+
+    # --- enterprise (GDPR, retention)
+    messer_data_export_ttl_days: int = 7
+    messer_retention_batch_size: int = 1000
 
     # --- observability
     sentry_dsn: str = ""
@@ -143,11 +163,26 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
 
     # --- tuning
-    runtime_sandbox_memory_mb: int = Field(default=1024)
+    runtime_sandbox_memory_mb: int = Field(default=2048)
     runtime_sandbox_cpu_seconds: int = Field(default=600)
     runtime_run_timeout_s: int = Field(default=300)
     sql_statement_timeout_ms: int = Field(default=5000)
     sql_row_limit: int = Field(default=1000)
+
+    # --- connectors
+    # Allow connector HTTP/MCP/database targets on private networks (always allowed in local/test).
+    messer_connectors_allow_private_networks: bool = False
+    # stdio MCP servers spawn a local process; enabled by default only in local/test (the runtime sandbox
+    # and on-prem agents run them in production).
+    messer_mcp_stdio_enabled: bool | None = None
+    messer_connector_agent_rpc_timeout_s: int = Field(default=30)
+    messer_connectors_max_file_mb: int = Field(default=100)
+
+    @property
+    def mcp_stdio_enabled(self) -> bool:
+        if self.messer_mcp_stdio_enabled is not None:
+            return self.messer_mcp_stdio_enabled
+        return self.messer_env in ("local", "test")
 
     # ------------------------------------------------------------------ helpers
     def model_post_init(self, __context: object) -> None:
@@ -181,6 +216,14 @@ class Settings(BaseSettings):
     @property
     def has_supabase_storage(self) -> bool:
         return bool(self.supabase_url and self.supabase_service_role_key)
+
+    @property
+    def sales_email(self) -> str:
+        return self.messer_sales_email or self.messer_superadmin_email
+
+    @property
+    def ops_email(self) -> str:
+        return self.messer_ops_email or self.messer_superadmin_email
 
     @property
     def jwt_secret(self) -> str:

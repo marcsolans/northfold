@@ -52,7 +52,7 @@ jobs:
       - name: Platform tests (API, RLS, services)
         run: |
           # Each package's test session recreates its database through MESSER_TEST_PG_ADMIN_URL.
-          uv run --no-sync pytest $(ls -d apps/api/tests packages/*/tests services/*/tests 2>/dev/null)
+          uv run --no-sync pytest $(ls -d apps/api/tests packages/*/tests services/*/tests tests/ops 2>/dev/null)
 
   web:
     name: Web — lint, types, build

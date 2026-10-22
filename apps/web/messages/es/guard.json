@@ -1,0 +1,288 @@
+{
+  "title": "Guard",
+  "subtitle": "Control de comportamiento en cada llamada al modelo: enruta los turnos sencillos al modelo pequeño, bloquea las acciones que incumplen el playbook y valida las respuestas. Todo queda en la traza.",
+  "toggle": {
+    "label": "Guard activo",
+    "on": "Activo",
+    "off": "Inactivo",
+    "needsPlaybook": "Genera o escribe el playbook para poder activar Guard.",
+    "unsaved": "Guarda los cambios del playbook antes de activarlo.",
+    "hasErrors": "Corrige los errores del playbook antes de activarlo.",
+    "enabled": "Guard activado en {member}",
+    "disabled": "Guard desactivado en {member}",
+    "disableTitle": "¿Desactivar Guard?",
+    "disableDescription": "Las llamadas de {member} dejarán de pasar por el playbook: no se enrutarán modelos, no se bloquearán acciones y las respuestas no se validarán.",
+    "disableConfirm": "Desactivar Guard",
+    "viewer": "Solo lectura: necesitas el rol constructor para cambiar Guard.",
+    "planTitle": "Guard no está incluido en tu plan",
+    "planDescription": "Puedes preparar el playbook ahora y activarlo al mejorar el plan.",
+    "seePlans": "Ver planes"
+  },
+  "generate": {
+    "button": "Generar playbook",
+    "regenerate": "Regenerar",
+    "running": "Generando…",
+    "confirmTitle": "¿Regenerar el playbook?",
+    "confirmDescription": "Las políticas actuales se sustituirán por una nueva propuesta a partir del código, la configuración y las herramientas del agente. El estado de Guard (activo o no) se mantiene.",
+    "confirm": "Regenerar",
+    "done": "Playbook generado",
+    "byLlm": "Propuesto por {model}",
+    "byRules": "Propuesto por reglas a partir de la configuración",
+    "byManual": "Editado a mano",
+    "updated": "Actualizado {when}",
+    "notes": "Notas de la generación"
+  },
+  "empty": {
+    "title": "Este agente aún no tiene playbook",
+    "description": "Genera una propuesta a partir del agente y ajústala, o empieza con un playbook vacío.",
+    "blank": "Empezar vacío",
+    "viewerDescription": "Un constructor del proyecto puede generar el playbook."
+  },
+  "tabs": {
+    "playbook": "Playbook",
+    "decisions": "Decisiones"
+  },
+  "editor": {
+    "form": "Formulario",
+    "json": "JSON",
+    "save": "Guardar playbook",
+    "saved": "Playbook guardado",
+    "discard": "Descartar",
+    "unsaved": "Cambios sin guardar",
+    "invalid": "El playbook tiene errores: revisa los campos marcados.",
+    "jsonInvalid": "JSON no válido: {error}",
+    "jsonLabel": "Playbook en JSON",
+    "readOnly": "Solo lectura",
+    "models": {
+      "title": "Modelos",
+      "small": "Modelo pequeño",
+      "smallHint": "Turnos sencillos y votaciones de las políticas semánticas.",
+      "large": "Modelo grande",
+      "largeHint": "Turnos complejos."
+    },
+    "policies": {
+      "title": "Políticas",
+      "description": "Las políticas de turno se evalúan en orden y la primera que coincide decide el modelo o la respuesta. Las políticas de herramienta se aplican a cada llamada y cualquier bloqueo prevalece.",
+      "addTurn": "Política de turno",
+      "addTool": "Política de herramienta",
+      "empty": "Sin políticas: todas las llamadas usan el modelo del agente y ninguna acción se bloquea.",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "remove": "Quitar política",
+      "removeTitle": "¿Quitar la política «{id}»?",
+      "removeDescription": "Se quitará del borrador. El cambio no se aplica hasta que guardes el playbook.",
+      "enabled": "Activa",
+      "turn": "Turno",
+      "tool": "Herramienta",
+      "semantic": "Semántica · 3 votos",
+      "deterministic": "Determinista",
+      "expand": "Editar «{id}»",
+      "summaryRoute": "→ modelo {model}",
+      "summaryAnswer": "→ respuesta fija",
+      "summaryTool": "{action} {tool}"
+    },
+    "policy": {
+      "id": "Id",
+      "idHint": "Minúsculas, números, guiones y guiones bajos.",
+      "description": "Descripción",
+      "condition": "Condición en lenguaje natural",
+      "conditionHint": "Opcional. Si la rellenas, el modelo pequeño vota tres veces. Sin condición, la política se resuelve sin ningún modelo.",
+      "confirmation": "Confirmación",
+      "confirmations": {
+        "none": "Basta un voto",
+        "majority": "Mayoría (2 de 3)",
+        "unanimous": "Unanimidad (3 de 3)"
+      },
+      "match": "Coincidencia determinista",
+      "matchHint": "Todas las comprobaciones que rellenes deben cumplirse.",
+      "lastMessage": "Último mensaje",
+      "lastMessages": {
+        "any": "Cualquiera",
+        "user_text": "Texto del usuario",
+        "tool_result": "Resultado de herramienta"
+      },
+      "toolResults": "Resultados de herramientas",
+      "toolResultsHint": "Nombres separados por comas; admite comodines (*).",
+      "textPatterns": "El texto coincide con",
+      "textExcludes": "El texto no coincide con",
+      "patternsHint": "Una expresión regular por línea, sin distinguir mayúsculas.",
+      "minChars": "Mínimo de caracteres",
+      "maxChars": "Máximo de caracteres",
+      "firstTurn": "Primer turno",
+      "firstTurnOptions": {
+        "any": "Indiferente",
+        "yes": "Solo el primero",
+        "no": "Excepto el primero"
+      },
+      "requires": "Requiere los hechos",
+      "provides": "Establece los hechos",
+      "factsHint": "Separados por comas. Integrados: tool:<herramienta> (ya devolvió un resultado) y approval:<herramienta> (un humano la aprobó).",
+      "route": "Modelo",
+      "routes": {
+        "keep": "El del agente",
+        "small": "Pequeño",
+        "large": "Grande"
+      },
+      "response": "Respuesta fija",
+      "responseHint": "Opcional. Responde sin llamar a ningún modelo.",
+      "tool": "Herramienta",
+      "otherTool": "Otra (nombre o patrón)",
+      "toolPattern": "Nombre o patrón",
+      "action": "Acción",
+      "actions": {
+        "allow": "Permitir",
+        "deny": "Bloquear",
+        "require_approval": "Pedir aprobación"
+      },
+      "constraints": {
+        "allow": "Permitir solo si se cumple",
+        "deny": "Bloquear cuando se cumple",
+        "require_approval": "Pedir aprobación cuando se cumple"
+      },
+      "constraintsAlways": "Sin condiciones: se aplica a todas las llamadas de la herramienta.",
+      "addConstraint": "Añadir condición",
+      "removeConstraint": "Quitar condición",
+      "arg": "Argumento",
+      "op": "Operador",
+      "value": "Valor",
+      "valueList": "Valores separados por comas",
+      "ops": {
+        "<": "menor que",
+        "<=": "menor o igual que",
+        ">": "mayor que",
+        ">=": "mayor o igual que",
+        "==": "igual a",
+        "!=": "distinto de",
+        "in": "es uno de",
+        "not_in": "no es ninguno de",
+        "contains": "contiene",
+        "matches": "coincide con (regex)",
+        "exists": "está presente",
+        "missing": "no está presente"
+      },
+      "message": "Mensaje al bloquear",
+      "messageHint": "Opcional. Sustituye a la llamada bloqueada en la respuesta del agente.",
+      "ungated": "«{tool}» no tiene puerta de aprobación en el agente: Guard bloqueará estas llamadas salvo que un humano ya las haya aprobado en la conversación.",
+      "gated": "«{tool}» requiere aprobación en el agente: la ejecución se pausará para que un humano decida."
+    },
+    "schema": {
+      "title": "Esquema de salida",
+      "description": "JSON Schema que deben cumplir las respuestas finales del agente. Si una respuesta no lo cumple, Guard pide una corrección al modelo una vez.",
+      "enable": "Validar las respuestas finales",
+      "label": "JSON Schema",
+      "invalid": "JSON no válido: {error}"
+    },
+    "issues": {
+      "errors": "{count, plural, one {# error} other {# errores}}",
+      "warnings": "{count, plural, one {# aviso} other {# avisos}}",
+      "playbook": "Playbook",
+      "codes": {
+        "unknown_model": "{model} no está en el catálogo de modelos.",
+        "fact_never_provided": "Ninguna política establece «{fact}»: la condición nunca se cumplirá.",
+        "noop_policy": "La política no enruta, no responde ni establece hechos.",
+        "matches_every_turn": "Sin coincidencia ni condición: se aplica a todos los turnos y oculta las políticas siguientes.",
+        "unknown_tool": "El agente no tiene ninguna herramienta «{tool}».",
+        "approval_not_gated": "«{tool}» no requiere aprobación en el agente: Guard bloqueará estas llamadas salvo aprobación previa. Marca «requiere aprobación» en la herramienta.",
+        "unknown_arg": "«{tool}» no tiene el argumento «{arg}».",
+        "non_numeric_arg": "«{arg}» no es numérico en «{tool}».",
+        "client": {
+          "invalid_id": "Id no válido: usa minúsculas, números, guiones y guiones bajos, empezando por letra.",
+          "duplicate_id": "Id repetido.",
+          "invalid_fact": "Hecho no válido (p. ej. identidad_verificada o approval:crear_abono).",
+          "invalid_regex": "Expresión regular no válida.",
+          "response_with_tool": "Una política con respuesta fija no puede actuar sobre herramientas.",
+          "required": "Campo obligatorio.",
+          "number": "Debe ser un número."
+        }
+      }
+    }
+  },
+  "metrics": {
+    "title": "Métricas",
+    "range": "Últimos {days} días",
+    "ranges": {
+      "7": "7 días",
+      "30": "30 días",
+      "90": "90 días"
+    },
+    "onPath": "Turnos en el recorrido",
+    "onPathHint": "{onPath} de {turns} turnos con política aplicada",
+    "costPerRun": "Coste por ejecución",
+    "costPerRunHint": "Sin Guard: {baseline}",
+    "savings": "Ahorro estimado",
+    "savingsHint": "Frente a los mismos tokens con el modelo del agente",
+    "blocked": "Acciones bloqueadas",
+    "blockedHint": "{runs, plural, one {en # ejecución} other {en # ejecuciones}}",
+    "overhead": "Coste propio de Guard (votaciones y correcciones): {value}",
+    "routes": "Enrutado de turnos",
+    "routeLabels": {
+      "small": "Modelo pequeño",
+      "large": "Modelo grande",
+      "default": "Modelo del agente",
+      "answer": "Respuesta fija"
+    },
+    "noData": "Aún no hay turnos con Guard en este periodo.",
+    "demo": "Modo demo: costes estimados a precios de lista con los tokens del modelo demo.",
+    "chartTitle": "Turnos por día",
+    "chartOnPath": "En recorrido",
+    "chartOffPath": "Fuera de recorrido",
+    "chartBlocked": "Bloqueos",
+    "issues": "{errors, plural, =0 {} one {# error de evaluación} other {# errores de evaluación}}"
+  },
+  "decisions": {
+    "title": "Decisiones recientes",
+    "description": "Cada llamada al modelo con Guard deja un span «guard» en la traza.",
+    "empty": {
+      "title": "Sin decisiones todavía",
+      "description": "Cuando el agente se ejecute con Guard activo verás aquí cada turno: la política aplicada, el modelo elegido y las acciones bloqueadas."
+    },
+    "columns": {
+      "at": "Cuándo",
+      "turn": "Turno",
+      "policy": "Política",
+      "model": "Modelo",
+      "result": "Resultado"
+    },
+    "status": {
+      "success": "Correcto",
+      "blocked": "Bloqueado",
+      "invalid_output": "Salida no válida",
+      "error": "Error"
+    },
+    "fallthrough": "Sin política",
+    "offPath": "Fuera de recorrido",
+    "toolResult": "Resultado de herramienta",
+    "answer": "Respuesta fija",
+    "trace": "Ver traza",
+    "toggle": "Detalle de la decisión",
+    "toolCalls": "Llamadas a herramientas",
+    "verdicts": {
+      "allow": "Permitida",
+      "deny": "Bloqueada",
+      "approval": "A aprobación",
+      "pass": "Sin regla aplicable"
+    },
+    "reasons": {
+      "constraints": "condiciones",
+      "requires": "faltan hechos",
+      "approval_required": "necesita aprobación",
+      "gated": "puerta de aprobación",
+      "approved": "ya aprobada",
+      "allowed": "dentro de límites",
+      "not_applicable": "no aplica"
+    },
+    "votes": "Votaciones",
+    "votesSkipped": {
+      "demo": "omitidas en modo demo",
+      "model_policy": "modelo no permitido por la política de la organización",
+      "residency": "modelo no disponible con residencia UE estricta"
+    },
+    "matched": "se cumple",
+    "notMatched": "no se cumple",
+    "facts": "Hechos",
+    "noFacts": "Ninguno",
+    "costs": "Coste de la llamada {priced} · sin Guard {baseline} · Guard {overhead}",
+    "demo": "Demo",
+    "errors": "Errores"
+  }
+}

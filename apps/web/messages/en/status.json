@@ -1,0 +1,65 @@
+{
+  "metaTitle": "Service status",
+  "metaDescription": "Real-time status of Messer's services and their availability over the last 90 days.",
+  "eyebrow": "Status",
+  "title": "Service status",
+  "overall": {
+    "operational": "All systems operational",
+    "degraded": "Some services are degraded",
+    "down": "Some services have an ongoing outage",
+    "unknown": "No recent data for every service"
+  },
+  "updated": "Last check: {time}",
+  "never": "No checks have been recorded yet.",
+  "refresh": "Refresh",
+  "servicesTitle": "Services",
+  "services": {
+    "web": "Website and dashboard",
+    "api": "Platform API",
+    "runtime": "Agent and workflow execution",
+    "worker": "Background jobs",
+    "scheduler": "Scheduler and triggers",
+    "voice": "Voice",
+    "mcp": "MCP server"
+  },
+  "statuses": {
+    "operational": "Operational",
+    "degraded": "Degraded",
+    "down": "Down",
+    "unknown": "No data",
+    "no_data": "No data"
+  },
+  "uptime": "{pct}% uptime over 90 days",
+  "uptimeUnknown": "No uptime data",
+  "uptimeShort": "{pct}%",
+  "latency": "{ms} ms",
+  "ninetyDaysAgo": "90 days ago",
+  "today": "Today",
+  "day": "{date}: {status}",
+  "dayWithUptime": "{date}: {status} ({pct}%)",
+  "legend": {
+    "operational": "No incidents",
+    "degraded": "Degradation or short outage",
+    "down": "Outage",
+    "no_data": "No data"
+  },
+  "incidentsTitle": "Recent incidents",
+  "noIncidents": "No incidents recorded in the last 90 days.",
+  "incident": {
+    "degraded": "Degradation",
+    "down": "Outage",
+    "ongoing": "Ongoing",
+    "resolved": "Resolved",
+    "started": "Started: {time}",
+    "ended": "Ended: {time}",
+    "duration": "Duration: {duration}"
+  },
+  "duration": {
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "hours": "{count, plural, one {# hour} other {# hours}}",
+    "hoursMinutes": "{hours} h {minutes} min"
+  },
+  "unavailableTitle": "We couldn't load the status",
+  "unavailableBody": "The status service is not responding right now. If the problem continues, there may be an ongoing incident.",
+  "note": "We check every service every minute from our EU infrastructure. Times are shown in UTC."
+}

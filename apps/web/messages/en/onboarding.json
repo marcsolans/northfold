@@ -1,0 +1,118 @@
+{
+  "metaTitle": "Getting started",
+  "exit": "Go to Messer",
+  "eyebrow": "Getting started",
+  "title": "Get your first agent running",
+  "subtitle": "Four steps to have an agent working with your data. You can skip any of them and come back whenever you want.",
+  "stepOf": "Step {current} of {total}",
+  "progress": "{done} of {total} completed",
+  "status": {
+    "done": "Done",
+    "pending": "Pending",
+    "skipped": "Skipped"
+  },
+  "skip": "Skip this step",
+  "back": "Back",
+  "continue": "Continue",
+  "saveContinue": "Save and continue",
+  "finish": "Finish and go to Messer",
+  "saveError": "We couldn't save your changes. Try again.",
+  "loadErrorTitle": "We couldn't load your progress",
+  "loadErrorBody": "Check your connection and try again.",
+  "retry": "Retry",
+  "readOnly": "You have a viewer role in this organization: you can see the progress, but only a builder or an admin can complete it.",
+  "noOrgTitle": "You don't belong to any organization yet",
+  "noOrgBody": "Create an organization or accept an invitation to get started.",
+  "noOrgCta": "Go to Messer",
+  "plan": {
+    "title": "You chose the {plan} plan",
+    "body": "Your 14-day Pro trial is already active. Whenever you want, you can subscribe to {plan} from Plan and billing.",
+    "trialBody": "Your 14-day Pro trial is already active, no card required.",
+    "cta": "Go to Plan and billing"
+  },
+  "steps": {
+    "describe": {
+      "nav": "What you want to solve",
+      "title": "What do you want to solve?",
+      "body": "Describe the problem in your own words: who has it, which data is involved and what should happen. We will use it to prepare the Composer.",
+      "label": "Your case",
+      "placeholder": "For example: we receive 300 emails a day with questions about invoices and want to answer them using our terms, asking for approval before issuing credit notes.",
+      "hint": "You can change it later.",
+      "examplesTitle": "Or start from an example",
+      "examples": [
+        "Answer customers about their invoices using our terms and ask for approval before issuing credit notes over €500.",
+        "Qualify the leads that arrive through the website, record them in the CRM and reply by email in under five minutes.",
+        "Extract supplier invoice data into a table and have a person validate unclear cases.",
+        "An internal assistant that answers employees about holidays, leave and the collective agreement."
+      ],
+      "useCaseLabel": "Type of case (optional)",
+      "useCaseNone": "Not specified",
+      "required": "Write at least one sentence or skip this step."
+    },
+    "template": {
+      "nav": "Template or Composer",
+      "title": "Pick a template or describe your case to the Composer",
+      "body": "Templates come with agents, workflows, sample data and evals ready. The Composer builds a tailored solution from your description.",
+      "templateTitle": "Start from a template",
+      "templateBody": "Eight complete industry solutions you can adapt to your data.",
+      "templateCta": "See templates",
+      "composerTitle": "Describe it to the Composer",
+      "composerBody": "It will ask a few questions, propose a plan and build it once you approve it.",
+      "composerBodyWithGoal": "We will open the Composer with what you wrote in the previous step.",
+      "composerCta": "Open the Composer",
+      "doneBody": "You already have the project {project}.",
+      "openProject": "Open project"
+    },
+    "data": {
+      "nav": "Your data",
+      "title": "Connect a data source or upload files",
+      "body": "Agents answer better with your documents and tables. Files are chunked and indexed automatically.",
+      "uploadTitle": "Upload files",
+      "uploadBody": "PDF, Word, Excel or CSV into a knowledge base.",
+      "uploadCta": "Go to Knowledge",
+      "connectTitle": "Connect a source",
+      "connectBody": "Google Drive, SharePoint, your database, your CRM and more, with sync.",
+      "connectCta": "Go to Connectors",
+      "doneBody": "Your data is already in Messer."
+    },
+    "test": {
+      "nav": "Test the agent",
+      "title": "Test your agent",
+      "body": "Open the agent in the Studio and ask it real questions in the test chat. Every answer is traced with its calls, tokens and cost.",
+      "cta": "Test {agent}",
+      "noAgent": "You don't have any agent yet. Create a project from a template or with the Composer and come back to this step.",
+      "noAgentCta": "Go to step 2",
+      "doneBody": "Your agent has completed its first run. The next step is deploying it to production."
+    }
+  },
+  "useCases": {
+    "customer_support": "Customer service",
+    "lead_qualification": "Sales and leads",
+    "document_extraction": "Document extraction",
+    "internal_assistant": "Internal assistant",
+    "contract_analysis": "Contracts and legal",
+    "operations": "Operations",
+    "voice_reception": "Phone support",
+    "reporting": "Reporting",
+    "other": "Other"
+  },
+  "checklist": {
+    "title": "Getting started",
+    "subtitle": "Complete these steps to have your first agent in production.",
+    "progress": "{done} of {total} completed",
+    "progressLabel": "Activation progress",
+    "hide": "Hide",
+    "hideError": "We couldn't hide the list. Try again.",
+    "errorTitle": "We couldn't load the getting-started steps",
+    "retry": "Retry",
+    "go": "Start",
+    "done": "Completed",
+    "steps": {
+      "describe": { "title": "Describe what you want to solve", "body": "Tell us the problem to prepare the Composer." },
+      "template": { "title": "Create your first project", "body": "From a template or with the Composer." },
+      "data": { "title": "Add your data", "body": "Upload files or connect a source." },
+      "test": { "title": "Test your agent", "body": "Ask it questions in the Studio chat." },
+      "deploy": { "title": "Deploy to production", "body": "Publish in one click, with versions and evals." }
+    }
+  }
+}

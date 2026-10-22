@@ -1,6 +1,666 @@
 {
-  "heroTitle": "Describe tu problema. Messer construye la solución y la pone en producción.",
-  "heroSubtitle": "Agentes, flujos, conocimiento e interfaces en una sola herramienta, con gobierno, trazabilidad y control de costes. Infraestructura en la UE.",
-  "ctaPrimary": "Empieza gratis 14 días",
-  "login": "Iniciar sesión"
+  "meta": {
+    "homeTitle": "Messer — IA en producción para empresas, con gobierno y en la UE",
+    "homeDescription": "Describe tu problema y Messer construye la solución completa —agentes, flujos, conocimiento e interfaces— y la pone en producción con aprobación humana, trazabilidad y control de costes. Infraestructura en la UE.",
+    "ogTagline": "Agentes, flujos, conocimiento e interfaces. En producción, con gobierno y en la UE."
+  },
+  "nav": {
+    "product": "Producto",
+    "templates": "Plantillas",
+    "pricing": "Precios",
+    "security": "Seguridad",
+    "docs": "Docs",
+    "blog": "Blog",
+    "login": "Iniciar sesión",
+    "cta": "Empieza gratis",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "primary": "Navegación principal",
+    "skip": "Saltar al contenido",
+    "home": "Messer, página de inicio"
+  },
+  "footer": {
+    "tagline": "Una sola herramienta para construir, desplegar y gobernar la IA de tu empresa.",
+    "product": "Producto",
+    "resources": "Recursos",
+    "legal": "Legal",
+    "overview": "Visión general",
+    "templates": "Plantillas",
+    "pricing": "Precios",
+    "security": "Seguridad",
+    "status": "Estado del servicio",
+    "docs": "Documentación",
+    "quickstart": "Guía rápida",
+    "blog": "Blog",
+    "rss": "RSS del blog",
+    "contact": "Contacto",
+    "terms": "Términos del servicio",
+    "privacy": "Privacidad",
+    "cookies": "Cookies",
+    "dpa": "Acuerdo de tratamiento (DPA)",
+    "subprocessors": "Subencargados",
+    "aup": "Uso aceptable",
+    "eu": "Datos e infraestructura en regiones de la Unión Europea. Residencia estricta con Claude en AWS Bedrock UE.",
+    "rights": "© {year} Messer. Todos los derechos reservados.",
+    "language": "Idioma",
+    "spanish": "Español",
+    "english": "English"
+  },
+  "hero": {
+    "eyebrow": "Agentes · Flujos · Conocimiento · Interfaces",
+    "title": "Describe tu problema. Messer construye la solución y la pone en producción.",
+    "subtitle": "Crea agentes y flujos de trabajo conectados a tus datos, publícalos en web, WhatsApp, Slack o teléfono y gobiérnalos con aprobación humana, trazas y presupuestos. Todo lo que construyes es código exportable.",
+    "ctaPrimary": "Empieza gratis",
+    "ctaSecondary": "Ver precios",
+    "note": "14 días del plan Pro, sin tarjeta. Infraestructura en la UE."
+  },
+  "composer": {
+    "label": "Animación del Composer: una petición se convierte en preguntas, un plan, la construcción de cada pieza y una solución desplegada.",
+    "windowTitle": "Composer",
+    "steps": {
+      "request": "Petición",
+      "questions": "Preguntas",
+      "plan": "Plan",
+      "builders": "Construcción",
+      "deployed": "En producción"
+    },
+    "you": "Tú",
+    "request": "Quiero un asistente que responda a los clientes sobre sus facturas con nuestras condiciones y la tabla de facturas, y que pida aprobación antes de emitir un abono de más de 500 €.",
+    "questionsTitle": "El Composer pregunta",
+    "q1": "¿Dónde están las facturas?",
+    "a1": "Tabla en PostgreSQL",
+    "q2": "¿Por qué canales escriben los clientes?",
+    "a2": "Web y WhatsApp",
+    "planTitle": "Plan propuesto",
+    "planItems": [
+      {
+        "kind": "Agente",
+        "name": "Atención de facturas"
+      },
+      {
+        "kind": "Flujo",
+        "name": "Abono con aprobación por encima de 500 €"
+      },
+      {
+        "kind": "Conocimiento",
+        "name": "Condiciones (PDF) y tabla de facturas"
+      },
+      {
+        "kind": "Interfaz",
+        "name": "Chat web y WhatsApp"
+      }
+    ],
+    "approve": "Aprobar plan",
+    "buildersTitle": "Constructores",
+    "builders": [
+      "Agente",
+      "Flujo",
+      "Base de conocimiento",
+      "Interfaz",
+      "Evals 12/12"
+    ],
+    "deployedTitle": "En producción",
+    "deployedMeta": "production · v1 · evals superados"
+  },
+  "pillars": {
+    "eyebrow": "Producto",
+    "title": "Todo lo necesario para llevar la IA a producción, en una sola herramienta",
+    "subtitle": "Cada pieza funciona por separado y encaja con las demás. Sin integrar cinco proveedores ni mantener código de pegamento.",
+    "items": [
+      {
+        "key": "composer",
+        "title": "Composer",
+        "body": "Describe el problema por escrito o por voz. El Composer hace las preguntas justas, propone la arquitectura y, cuando la apruebas, construye cada pieza mientras ves el progreso.",
+        "points": [
+          "Plan revisable antes de construir",
+          "Constructores en paralelo y en tiempo real",
+          "Modos rápido, estándar y potente"
+        ]
+      },
+      {
+        "key": "agents",
+        "title": "Agentes",
+        "body": "Define el modelo, las instrucciones, las herramientas y los archivos de contexto de cada agente, y pruébalo en un chat mientras lo editas.",
+        "points": [
+          "Herramientas con aprobación humana",
+          "Memoria y guardrails",
+          "Evals como puerta de calidad"
+        ]
+      },
+      {
+        "key": "workflows",
+        "title": "Flujos",
+        "body": "Un lienzo de nodos para procesos con pasos explícitos, disparadores por horario, webhook, email o eventos de tus herramientas, y seguimiento de cada ejecución.",
+        "points": [
+          "Pausa y reanudación tras reinicios",
+          "Nodos predefinidos y de código",
+          "Reintentos y traza por paso"
+        ]
+      },
+      {
+        "key": "knowledge",
+        "title": "Conocimiento",
+        "body": "Bases de conocimiento con documentos y tablas. Los archivos se trocean, se indexan y quedan listos para búsqueda semántica, por palabras clave o híbrida, combinable con SQL.",
+        "points": [
+          "PDF, Word, Excel, CSV y más",
+          "Conectores con sincronización",
+          "SQL de solo lectura para agentes"
+        ]
+      },
+      {
+        "key": "interfaces",
+        "title": "Interfaces",
+        "body": "Publica lo que construyes como API, chat embebible, canal de WhatsApp, Slack, Teams, email o teléfono, o como aplicación web conectada a tus agentes y datos.",
+        "points": [
+          "Despliegue con un clic",
+          "Entornos y versiones",
+          "Dominio propio"
+        ]
+      },
+      {
+        "key": "governance",
+        "title": "Gobierno",
+        "body": "Organizaciones, roles y SSO; presupuestos con corte automático; analítica de coste y uso; auditoría completa y residencia de datos en la UE.",
+        "points": [
+          "Traza de cada llamada y herramienta",
+          "Presupuestos y alertas",
+          "Registro de auditoría inmutable"
+        ]
+      }
+    ]
+  },
+  "code": {
+    "eyebrow": "Código, no cajas negras",
+    "title": "Todo lo que construyes es código que puedes llevarte",
+    "body": "Cada agente, flujo e interfaz se guarda como código y configuración versionados, en un repositorio git por proyecto. La interfaz edita ese código. Exporta un .zip ejecutable o sincroniza con GitHub cuando quieras.",
+    "points": [
+      "Un repositorio git por proyecto, con historial y diferencias entre versiones",
+      "Ejecución en local con la CLI: messer start",
+      "Sin dependencia del proveedor: tus agentes funcionan fuera de Messer"
+    ],
+    "fileName": "workforce/atencion_facturas/herramientas.py",
+    "snippet": "from messer import Tool\n\n\ndef emitir_abono(factura_id: str, importe: float) -> dict:\n    \"\"\"Emite un abono sobre una factura del cliente.\"\"\"\n    return facturacion.crear_abono(factura_id, importe)\n\n\n# Los abonos de más de 500 € esperan una aprobación humana:\n# la ejecución se pausa y continúa tras la decisión.\nabono = Tool(\n    handler=emitir_abono,\n    requires_approval=lambda importe, **_: importe > 500,\n    approval_prompt=lambda factura_id, importe, **_: (\n        f\"¿Emitir un abono de {importe} € sobre {factura_id}?\"\n    ),\n)"
+  },
+  "security": {
+    "eyebrow": "Seguridad y UE",
+    "title": "Pensado para datos de empresa desde el primer día",
+    "subtitle": "Controles que tu equipo de seguridad y tu DPO van a pedir, activados por defecto.",
+    "items": [
+      {
+        "key": "residency",
+        "title": "Residencia en la UE",
+        "body": "Toda la infraestructura funciona en regiones de la UE. En modo estricto, los modelos se usan solo a través de Claude en AWS Bedrock UE y los embeddings se calculan en local."
+      },
+      {
+        "key": "isolation",
+        "title": "Aislamiento por organización",
+        "body": "Cada consulta pasa por Row Level Security en la base de datos: una organización no puede leer datos de otra, y lo comprobamos con tests en cada cambio."
+      },
+      {
+        "key": "secrets",
+        "title": "Secretos cifrados",
+        "body": "Credenciales y secretos cifrados en reposo con una clave maestra. Las API keys se muestran una sola vez y se guardan como hash."
+      },
+      {
+        "key": "approvals",
+        "title": "Aprobación humana",
+        "body": "Las herramientas con efectos externos piden aprobación por defecto. La ejecución se pausa, se guarda y continúa tras la decisión, incluso después de un reinicio."
+      },
+      {
+        "key": "access",
+        "title": "SSO, SCIM y roles",
+        "body": "SAML y OIDC con asignación de grupos a roles, aprovisionamiento SCIM y cuatro roles: propietario, administrador, constructor y lector."
+      },
+      {
+        "key": "audit",
+        "title": "Auditoría y trazas",
+        "body": "Cada acción relevante queda en un registro de auditoría de solo inserción, y cada ejecución guarda su traza completa con tokens, coste y latencia."
+      }
+    ],
+    "cta": "Ir al centro de confianza"
+  },
+  "templates": {
+    "eyebrow": "Plantillas por sector",
+    "title": "Empieza desde una solución completa",
+    "subtitle": "Ocho plantillas con agentes, flujos, una base de conocimiento de ejemplo, una interfaz y evals que pasan. Clonas una y tienes un proyecto listo para ejecutar.",
+    "cta": "Ver todas las plantillas",
+    "includes": "Incluye",
+    "items": [
+      {
+        "id": "invoice-support",
+        "sector": "Finanzas y atención al cliente",
+        "title": "Atención al cliente sobre facturas",
+        "body": "Responde dudas sobre facturas con tus condiciones y tu tabla de facturas, y pide aprobación antes de emitir abonos de más de 500 €.",
+        "includes": [
+          "Agente con voz",
+          "Flujo de abono con aprobación",
+          "Condiciones en PDF y tabla de facturas",
+          "Chat web y WhatsApp"
+        ]
+      },
+      {
+        "id": "lead-qualification",
+        "sector": "Ventas",
+        "title": "Cualificación y respuesta de leads",
+        "body": "Puntúa cada lead entrante con tus criterios, lo registra en el CRM y responde por email o WhatsApp en minutos.",
+        "includes": [
+          "Agente cualificador",
+          "Flujo con CRM y email",
+          "Criterios de cualificación",
+          "Formulario y WhatsApp"
+        ]
+      },
+      {
+        "id": "document-extraction",
+        "sector": "Administración",
+        "title": "Extracción de facturas y albaranes",
+        "body": "Extrae proveedor, importes, fechas y líneas de facturas y albaranes a una tabla, con validación humana de los casos dudosos.",
+        "includes": [
+          "Agente extractor",
+          "Flujo con validación humana",
+          "Tabla de documentos",
+          "Bandeja de revisión"
+        ]
+      },
+      {
+        "id": "hr-assistant",
+        "sector": "Recursos humanos",
+        "title": "Asistente interno de RR. HH.",
+        "body": "Responde a la plantilla sobre políticas internas, vacaciones y convenio colectivo, citando el documento y el artículo.",
+        "includes": [
+          "Agente con citas",
+          "Políticas y convenio",
+          "Slack o Teams",
+          "Escalado a RR. HH."
+        ]
+      },
+      {
+        "id": "contract-analysis",
+        "sector": "Legal",
+        "title": "Análisis de contratos",
+        "body": "Identifica cláusulas, riesgos y fechas clave de cada contrato y genera un resumen con avisos de vencimiento.",
+        "includes": [
+          "Agente de revisión",
+          "Flujo de avisos",
+          "Biblioteca de contratos",
+          "Panel de vencimientos"
+        ]
+      },
+      {
+        "id": "orders-stock",
+        "sector": "Operaciones",
+        "title": "Pedidos y stock con alertas",
+        "body": "Consulta pedidos y existencias, avisa cuando un producto baja del mínimo y prepara la propuesta de reposición.",
+        "includes": [
+          "Agente de operaciones",
+          "Flujo de alertas de stock",
+          "Tablas de pedidos y stock",
+          "Panel de operaciones"
+        ]
+      },
+      {
+        "id": "phone-receptionist",
+        "sector": "Atención telefónica",
+        "title": "Recepcionista telefónica con agenda",
+        "body": "Atiende llamadas, resuelve preguntas frecuentes y reserva, cambia o cancela citas en tu calendario.",
+        "includes": [
+          "Agente de voz",
+          "Flujo de reservas",
+          "Preguntas frecuentes",
+          "Teléfono y web"
+        ]
+      },
+      {
+        "id": "weekly-sales-report",
+        "sector": "Dirección comercial",
+        "title": "Informe semanal de ventas",
+        "body": "Cada lunes consulta tu base de datos, calcula las métricas clave y envía por email un informe con la evolución y los puntos de atención.",
+        "includes": [
+          "Flujo programado",
+          "Consultas SQL",
+          "Agente redactor",
+          "Email al equipo"
+        ]
+      }
+    ]
+  },
+  "useCases": {
+    "eyebrow": "Casos de uso",
+    "title": "Qué resuelven los equipos con Messer",
+    "items": [
+      {
+        "team": "Atención al cliente",
+        "examples": [
+          "Respuestas con tus documentos y los datos del cliente",
+          "Escalado a una persona con todo el contexto",
+          "WhatsApp, chat web y teléfono"
+        ]
+      },
+      {
+        "team": "Finanzas y administración",
+        "examples": [
+          "Extracción de facturas a tablas",
+          "Conciliaciones con validación humana",
+          "Abonos y pagos con aprobación"
+        ]
+      },
+      {
+        "team": "Ventas",
+        "examples": [
+          "Cualificación de leads entrantes",
+          "Preparación de reuniones con datos del CRM",
+          "Informes que llegan solos"
+        ]
+      },
+      {
+        "team": "Personas y RR. HH.",
+        "examples": [
+          "Asistente de políticas y convenio",
+          "Acogida de nuevas incorporaciones",
+          "Preguntas frecuentes sobre nóminas"
+        ]
+      },
+      {
+        "team": "Legal y cumplimiento",
+        "examples": [
+          "Revisión de contratos",
+          "Avisos de vencimientos",
+          "Búsqueda en normativa interna"
+        ]
+      },
+      {
+        "team": "Operaciones",
+        "examples": [
+          "Pedidos y stock con alertas",
+          "Procesos con disparadores y reintentos",
+          "Paneles con datos en directo"
+        ]
+      }
+    ]
+  },
+  "pricingTeaser": {
+    "eyebrow": "Precios",
+    "title": "Precios a la vista",
+    "subtitle": "Sabes lo que pagas antes de empezar. Cada plan incluye créditos de IA todos los meses.",
+    "perMonth": "/mes",
+    "from": "Desde",
+    "cta": "Comparar planes",
+    "unavailable": "Consulta los precios actualizados en la página de precios."
+  },
+  "faq": {
+    "eyebrow": "Preguntas frecuentes",
+    "title": "Lo que nos suelen preguntar",
+    "items": [
+      {
+        "q": "¿Qué es exactamente Messer?",
+        "a": "Una plataforma para construir, desplegar y gobernar soluciones de IA: agentes, flujos de trabajo, bases de conocimiento e interfaces. Describes el problema y el Composer construye la solución; después la publicas con entornos, versiones, trazas y control de costes."
+      },
+      {
+        "q": "¿Necesito saber programar?",
+        "a": "No para empezar: el Composer y el Studio cubren el trabajo diario desde la interfaz. Si programas, todo es código Python versionado que puedes editar, ejecutar en local con la CLI o sincronizar con GitHub."
+      },
+      {
+        "q": "¿Dónde se guardan mis datos?",
+        "a": "En regiones de la Unión Europea. En el modo de residencia estricta, los modelos se usan solo a través de AWS Bedrock en la UE y los embeddings se calculan sin salir de nuestra infraestructura. La lista de subencargados es pública."
+      },
+      {
+        "q": "¿Qué modelos de IA usa?",
+        "a": "Claude, de Anthropic, por defecto y en tres niveles: Rápido, Estándar y Potente. El enrutador admite otros proveedores y puedes limitar qué modelos se permiten en tu organización."
+      },
+      {
+        "q": "¿Se usan mis datos para entrenar modelos?",
+        "a": "No. Tus datos se usan solo para prestarte el servicio. Anthropic y AWS Bedrock no entrenan sus modelos con los datos que reciben a través de su API."
+      },
+      {
+        "q": "¿Puedo llevarme lo que construya?",
+        "a": "Sí. Cada proyecto se exporta como un .zip ejecutable o se sincroniza con un repositorio de GitHub. Tus agentes y flujos funcionan fuera de Messer."
+      },
+      {
+        "q": "¿Cómo funcionan la prueba y la facturación?",
+        "a": "Empiezas con 14 días del plan Pro sin tarjeta. Después eliges un plan mensual o anual; el uso de IA se descuenta de los créditos incluidos y puedes comprar paquetes adicionales."
+      },
+      {
+        "q": "¿Qué pasa con las acciones delicadas?",
+        "a": "Cualquier herramienta o paso puede exigir aprobación humana. La ejecución se pausa, avisa a quien debe decidir en la app o por email y continúa cuando se aprueba o se deniega."
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "Empieza con un problema real",
+    "subtitle": "Crea tu cuenta, describe lo que quieres resolver y ten tu primer agente funcionando en minutos.",
+    "primary": "Empieza gratis",
+    "secondary": "Hablar con ventas"
+  },
+  "features": {
+    "public_chat": "Chat público y widget",
+    "api": "API pública y API keys",
+    "connectors": "Conectores",
+    "channels": "Canales (WhatsApp, Slack, Teams, email, Telegram)",
+    "deployments": "Despliegue con un clic y entornos",
+    "voice": "Voz (navegador y teléfono)",
+    "sso": "SSO SAML/OIDC",
+    "audit": "Registro de auditoría",
+    "guard": "Guard: control de comportamiento",
+    "priority_support": "Soporte prioritario",
+    "eu_strict": "Residencia UE estricta (Bedrock UE)",
+    "byoc": "Despliegue en tu nube",
+    "scim": "SCIM",
+    "sla": "SLA",
+    "dedicated_engineer": "Ingeniero dedicado"
+  },
+  "pricing": {
+    "metaTitle": "Precios",
+    "metaDescription": "Planes de Messer con precios a la vista: Starter, Pro, Business y Enterprise. Créditos de IA incluidos y prueba de 14 días sin tarjeta.",
+    "eyebrow": "Precios",
+    "title": "Precios claros para llevar la IA a producción",
+    "subtitle": "Todos los planes incluyen créditos de IA cada mes. Empieza con 14 días del plan Pro sin tarjeta.",
+    "billingLabel": "Periodo de facturación",
+    "monthly": "Mensual",
+    "annual": "Anual",
+    "annualSave": "Ahorra hasta un {pct} %",
+    "perMonth": "/mes",
+    "perYear": "/año",
+    "from": "Desde",
+    "equivalent": "Equivale a {price}/mes",
+    "save": "Ahorras {amount} al año",
+    "billedMonthly": "Facturación mensual",
+    "vat": "Precios sin IVA. La facturación se gestiona con Stripe.",
+    "trialBadge": "14 días gratis",
+    "ctaTrial": "Prueba 14 días gratis",
+    "ctaStart": "Empezar con {plan}",
+    "ctaContact": "Hablar con ventas",
+    "includesPrevious": "Todo lo de {plan}, y además:",
+    "includes": "Incluye:",
+    "seats": "{count, plural, one {# usuario} other {# usuarios}}",
+    "seatsUnlimited": "Usuarios ilimitados",
+    "projects": "{count, plural, one {# proyecto} other {# proyectos}}",
+    "projectsUnlimited": "Proyectos ilimitados",
+    "runs": "{count, number} ejecuciones al mes",
+    "runsUnlimited": "Ejecuciones ilimitadas",
+    "credits": "{count, number} créditos de IA al mes",
+    "storage": "{count, number} GB de almacenamiento",
+    "unavailableTitle": "No hemos podido cargar los precios",
+    "unavailableBody": "Los precios se leen en directo de nuestra configuración y ahora mismo no están disponibles. Vuelve a intentarlo en unos minutos o escríbenos y te los enviamos.",
+    "reload": "Recargar",
+    "contact": "Contactar",
+    "compareTitle": "Comparativa de planes",
+    "compareFeature": "Función",
+    "limitsGroup": "Límites",
+    "featuresGroup": "Funciones",
+    "included": "Incluido",
+    "notIncluded": "No incluido",
+    "unlimited": "Ilimitado",
+    "rows": {
+      "price": "Precio",
+      "seats": "Usuarios",
+      "projects": "Proyectos",
+      "runs_month": "Ejecuciones al mes",
+      "credits_month": "Créditos de IA al mes",
+      "storage_gb": "Almacenamiento (GB)"
+    },
+    "creditsTitle": "Créditos de IA",
+    "creditsSubtitle": "El uso de modelos se descuenta de los créditos incluidos en tu plan. Si necesitas más, compra un paquete o activa la recarga automática.",
+    "creditValue": "1 crédito = {usd} USD de consumo",
+    "creditMargin": "Coste del modelo + {pct} % de margen",
+    "packsTitle": "Paquetes de créditos",
+    "packCredits": "{count, number} créditos",
+    "packPer1000": "{price} por cada 1.000 créditos",
+    "packsUnavailable": "Los paquetes de créditos no están disponibles en este momento.",
+    "ratesTitle": "Lo que cuesta cada nivel de modelo",
+    "ratesNote": "Créditos por millón de tokens. Las tarifas siguen el precio público de cada proveedor.",
+    "rateTier": "Nivel",
+    "rateModel": "Modelo",
+    "rateInput": "Entrada",
+    "rateOutput": "Salida",
+    "ratesUnavailable": "Las tarifas por modelo no están disponibles en este momento.",
+    "tiers": {
+      "fast": "Rápido",
+      "standard": "Estándar",
+      "powerful": "Potente"
+    },
+    "faqTitle": "Preguntas sobre precios y créditos",
+    "faq": {
+      "creditQ": "¿Qué es un crédito?",
+      "creditA": "Es la unidad con la que medimos el uso de IA. Un crédito equivale a {usd} USD de consumo de modelo, y cada plan incluye una cantidad de créditos cada mes.",
+      "creditAGeneric": "Es la unidad con la que medimos el uso de IA. Cada plan incluye una cantidad de créditos cada mes.",
+      "usageQ": "¿Cómo se calcula el consumo?",
+      "usageA": "Cada llamada a un modelo registra sus tokens de entrada y de salida. Los multiplicamos por la tarifa pública del modelo, sumamos un margen del {pct} % y lo convertimos a créditos. El coste de cada ejecución aparece en sus trazas.",
+      "usageAGeneric": "Cada llamada a un modelo registra sus tokens de entrada y de salida. Los multiplicamos por la tarifa pública del modelo, sumamos un margen y lo convertimos a créditos. El coste de cada ejecución aparece en sus trazas.",
+      "outQ": "¿Qué pasa si me quedo sin créditos?",
+      "outA": "Puedes comprar un paquete en cualquier momento o activar la recarga automática cuando el saldo baje de un umbral. Además, puedes fijar presupuestos por organización o por proyecto, con aviso y corte automático.",
+      "changeQ": "¿Puedo cambiar de plan?",
+      "changeA": "Sí, cuando quieras desde Plan y facturación o desde el portal de cliente de Stripe, donde también descargas tus facturas.",
+      "trialQ": "¿Qué incluye la prueba?",
+      "trialA": "14 días del plan Pro con sus funciones y sus créditos, sin tarjeta. Al terminar eliges plan; si no lo haces, la organización pasa a modo solo lectura y conservas tus proyectos.",
+      "vatQ": "¿Emitís factura con IVA?",
+      "vatA": "Sí. La facturación se gestiona con Stripe, que aplica el IVA que corresponda según tu país y tu número de IVA intracomunitario.",
+      "enterpriseQ": "¿Qué incluye Enterprise?",
+      "enterpriseA": "Residencia UE estricta, despliegue en tu nube o en tus servidores, SCIM, SLA e ingeniero dedicado. El precio parte de {price} al mes y depende del volumen.",
+      "enterpriseAGeneric": "Residencia UE estricta, despliegue en tu nube o en tus servidores, SCIM, SLA e ingeniero dedicado. El precio depende del volumen."
+    },
+    "enterpriseTitle": "¿Necesitas Enterprise?",
+    "enterpriseBody": "Residencia estricta en la UE, despliegue en tu nube, SCIM, SLA e ingeniero dedicado.",
+    "enterpriseCta": "Hablar con ventas"
+  },
+  "securityPage": {
+    "metaTitle": "Seguridad y cumplimiento",
+    "metaDescription": "Centro de confianza de Messer: residencia de datos en la UE, aislamiento por organización, cifrado, SSO y SCIM, auditoría, subencargados y DPA.",
+    "eyebrow": "Centro de confianza",
+    "title": "Seguridad, privacidad y cumplimiento",
+    "subtitle": "Cómo protegemos los datos de tu empresa y qué controles tienes sobre ellos.",
+    "quickLinks": {
+      "dpa": "Acuerdo de tratamiento (DPA)",
+      "subprocessors": "Subencargados",
+      "privacy": "Política de privacidad",
+      "status": "Estado del servicio"
+    },
+    "sections": [
+      {
+        "key": "residency",
+        "title": "Residencia de datos en la UE",
+        "body": "La base de datos, el almacenamiento de archivos, la cola de trabajos, los servicios de ejecución y la web funcionan en regiones de la Unión Europea.",
+        "points": [
+          "Modo estándar: modelos de Anthropic a través de su API, con el resto del servicio y tus datos en la UE.",
+          "Modo estricto (Enterprise): los modelos se usan solo a través de Claude en AWS Bedrock en una región de la UE y los embeddings se calculan en local.",
+          "En modo estricto, los proveedores de voz y email deben tener región UE o quedan desactivados."
+        ]
+      },
+      {
+        "key": "isolation",
+        "title": "Aislamiento entre organizaciones",
+        "body": "Cada petición se ejecuta con un rol de base de datos sin privilegios para saltarse la seguridad, con Row Level Security en todas las tablas de negocio.",
+        "points": [
+          "Las políticas filtran por organización y por rol en la propia base de datos.",
+          "Tests automáticos comprueban que una organización no puede leer nada de otra.",
+          "El SQL de los agentes y de la consola es de solo lectura, con límite de tiempo y de filas, y se limita al esquema de cada base de conocimiento."
+        ]
+      },
+      {
+        "key": "encryption",
+        "title": "Cifrado",
+        "body": "Los datos viajan cifrados con TLS y nuestros proveedores de infraestructura los guardan cifrados en reposo.",
+        "points": [
+          "Las credenciales de conectores y los secretos de proyecto se cifran además con una clave maestra (Fernet: AES-128 y HMAC-SHA256).",
+          "Contraseñas con Argon2id; API keys y tokens guardados solo como hash.",
+          "Cookies de sesión httpOnly y seguras, y política de seguridad de contenido estricta."
+        ]
+      },
+      {
+        "key": "access",
+        "title": "Identidad y acceso",
+        "body": "Controla quién entra y qué puede hacer cada persona.",
+        "points": [
+          "SSO con SAML 2.0 u OIDC y asignación de grupos a roles.",
+          "Aprovisionamiento de usuarios con SCIM 2.0.",
+          "Cuatro roles: propietario, administrador, constructor y lector.",
+          "Doble factor con TOTP y códigos de recuperación."
+        ]
+      },
+      {
+        "key": "audit",
+        "title": "Auditoría y trazabilidad",
+        "body": "Sabes qué ha pasado, quién lo hizo y cuánto costó.",
+        "points": [
+          "Registro de auditoría de solo inserción, exportable a CSV.",
+          "Traza completa de cada ejecución: llamadas a modelos y herramientas con entrada, salida, tokens, coste y latencia.",
+          "Retención configurable de trazas y conversaciones por organización."
+        ]
+      },
+      {
+        "key": "ai",
+        "title": "Controles de IA",
+        "body": "Los agentes actúan dentro de los límites que fijas.",
+        "points": [
+          "Aprobación humana por defecto para herramientas con efectos externos.",
+          "Protección frente a la inyección de instrucciones activada por defecto en el Composer, los chats públicos y los canales. Los documentos se tratan como datos, nunca como instrucciones.",
+          "Políticas de modelos por organización y presupuestos con corte automático.",
+          "Transparencia: los chats públicos indican que se está hablando con una IA y se registra qué modelo respondió."
+        ]
+      },
+      {
+        "key": "operations",
+        "title": "Desarrollo y operación",
+        "body": "La seguridad también está en cómo construimos y operamos el servicio.",
+        "points": [
+          "Integración continua con tests, análisis de dependencias (pip-audit y npm audit) y detección de secretos.",
+          "Copias de seguridad automáticas de la base de datos y del almacenamiento, con restauración probada.",
+          "Monitorización de errores en la UE y página de estado pública."
+        ]
+      },
+      {
+        "key": "gdpr",
+        "title": "Privacidad y RGPD",
+        "body": "Actuamos como encargado del tratamiento de los datos que subes a Messer.",
+        "points": [
+          "Acuerdo de tratamiento de datos (DPA) conforme al artículo 28 del RGPD.",
+          "Exportación y borrado verificable de los datos de una persona o de toda la organización.",
+          "Lista pública de subencargados, con aviso previo de cambios."
+        ]
+      }
+    ],
+    "subprocessorsTitle": "Subencargados",
+    "subprocessorsBody": "Trabajamos con pocos proveedores, todos con región UE salvo los proveedores de modelos que decidas usar fuera del modo estricto.",
+    "subprocessorsCta": "Ver la lista completa",
+    "reportTitle": "¿Has encontrado una vulnerabilidad?",
+    "reportBody": "Escríbenos desde el formulario de contacto con el tema «Seguridad y cumplimiento». Lo revisaremos con prioridad y te mantendremos informado hasta que esté resuelto.",
+    "reportCta": "Informar de un problema",
+    "dpaCta": "Leer el DPA"
+  },
+  "templatesPage": {
+    "metaTitle": "Plantillas por sector",
+    "metaDescription": "Ocho plantillas completas para empezar en minutos: atención al cliente, ventas, administración, RR. HH., legal, operaciones, voz e informes.",
+    "eyebrow": "Plantillas",
+    "title": "Plantillas listas para producción",
+    "subtitle": "Cada plantilla incluye agentes, flujos, una base de conocimiento de ejemplo, una interfaz y evals que pasan. Al clonarla se crea un proyecto que puedes ejecutar al momento y adaptar a tus datos.",
+    "stepsTitle": "Cómo funciona",
+    "steps": [
+      "Elige una plantilla y clónala en tu organización.",
+      "Sustituye los datos de ejemplo por tus documentos y tablas.",
+      "Prueba el agente, revisa las evals y despliega con un clic."
+    ],
+    "ctaTitle": "Prueba cualquier plantilla gratis",
+    "ctaBody": "Crea tu cuenta y clona la plantilla que necesites desde la galería de la app.",
+    "cta": "Empieza gratis",
+    "ctaSecondary": "¿No ves tu caso? Cuéntanoslo"
+  }
 }

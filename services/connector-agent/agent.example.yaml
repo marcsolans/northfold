@@ -1,0 +1,13 @@
+# Messer on-prem connector agent configuration (copy to /etc/messer-agent/agent.yaml).
+# Connection strings never leave this machine: Messer only sees source names and types.
+sources:
+  erp:
+    type: postgresql            # postgresql | mysql | sqlserver
+    dsn_env: ERP_DSN            # read from the environment, e.g. postgresql://reader:…@10.0.0.5:5432/erp
+  crm:
+    type: sqlserver
+    dsn: "Server=tcp:10.0.0.7,1433;Database=crm;User ID=reader;Password=change-me;Encrypt=True"
+paths:
+  - /srv/documentos             # folders whose files can be copied into knowledge bases
+max_file_mb: 25
+max_concurrency: 8

@@ -34,6 +34,9 @@ worker: ## Run the background job worker
 scheduler: ## Run the scheduler (periodic tasks, triggers)
 	$(DB_ENV) $(PY) python -m messer_scheduler
 
+voice: ## Run the voice gateway (browser, phone, LiveKit) on :8300
+	$(DB_ENV) $(PY) python -m messer_voice
+
 web: ## Run the web app on :3000
 	pnpm --filter @messer/web dev
 
@@ -43,7 +46,7 @@ test-core: ## Engine (messer-core) test suite
 	cd packages/messer-core && ../../.venv/bin/python -m pytest -q --no-cov -n 4 -o addopts="" -m "not integration" python/tests
 
 test-api: ## Platform tests (needs local Postgres + Redis)
-	$(PY) pytest $$(ls -d apps/api/tests packages/*/tests services/*/tests 2>/dev/null)
+	$(PY) pytest $$(ls -d apps/api/tests packages/*/tests services/*/tests tests/ops 2>/dev/null)
 
 lint: ## Ruff + ESLint
 	$(PY) ruff check $$(ls -d packages/messer-common apps/api services/* packages/connectors packages/messer-sdk-py infra/migrations 2>/dev/null)

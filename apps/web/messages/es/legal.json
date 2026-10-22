@@ -1,0 +1,21 @@
+{
+  "draftTitle": "Borrador — pendiente de revisión por un abogado",
+  "draftBody": "Este documento es una plantilla de trabajo y todavía no ha sido revisado por asesoría jurídica.",
+  "updated": "Última actualización: {date}",
+  "version": "Versión {version}",
+  "onlySpanish": "Este documento solo está disponible en español.",
+  "otherDocs": "Documentos legales",
+  "docs": {
+    "terms": "Términos del servicio",
+    "privacy": "Política de privacidad",
+    "cookies": "Política de cookies",
+    "dpa": "Acuerdo de tratamiento de datos (DPA)",
+    "subprocessors": "Subencargados",
+    "aup": "Política de uso aceptable"
+  },
+  "questions": "¿Tienes preguntas sobre este documento?",
+  "contact": "Contacta con nosotros",
+  "copy": "Copiar",
+  "plainText": "texto",
+  "anchor": "Enlace a esta sección"
+}

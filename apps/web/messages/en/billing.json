@@ -1,0 +1,273 @@
+{
+  "billing": {
+    "title": "Plan and billing",
+    "description": "Your plan, usage against limits, invoices and payment method.",
+    "portal": "Billing portal",
+    "portalUnavailable": "The Stripe portal (payment method, tax details and invoices) becomes available once Stripe is configured.",
+    "ownerOnly": "Only the organization owner can change the plan or manage payments."
+  },
+  "testMode": {
+    "badge": "Test mode",
+    "hint": "Simulated billing: nothing is charged.",
+    "title": "Billing in test mode",
+    "banner": "Stripe is not configured. Subscriptions and purchases are simulated without charges and follow exactly the same flow as with Stripe.",
+    "simulateFailure": "Simulate failed payment",
+    "simulateSuccess": "Simulate successful charge"
+  },
+  "status": {
+    "trialing": "Trial",
+    "trial_expired": "Trial ended",
+    "active": "Active",
+    "past_due": "Payment due",
+    "canceled": "Canceled",
+    "incomplete": "Incomplete",
+    "none": "No subscription"
+  },
+  "interval": {
+    "month": "Monthly",
+    "year": "Annual"
+  },
+  "intervalUnit": {
+    "month": "month",
+    "year": "year"
+  },
+  "alerts": {
+    "pastDueTitle": "We couldn't charge your subscription",
+    "pastDue": "Update your payment method before {date} to avoid read-only mode.",
+    "readOnlyTitle": "Organization is read-only",
+    "readOnly": "Your projects and data are still available, but nothing can run or be edited. Choose a plan to continue.",
+    "trialExpired": "The trial has ended. Choose a plan to run, edit and deploy again.",
+    "cancelingTitle": "Cancellation scheduled",
+    "canceling": "The subscription ends on {date}. Everything keeps working until then."
+  },
+  "current": {
+    "title": "Current plan",
+    "noPlan": "No plan",
+    "trialUntil": "Free trial until {date} ({days, plural, one {# day left} other {# days left}})",
+    "price": "{amount} / {interval} + VAT",
+    "renews": "Renews on {date}",
+    "choosePlanHint": "Choose a plan to keep your projects running when the trial ends.",
+    "cancel": "Cancel subscription",
+    "cancelTitle": "Cancel the subscription?",
+    "cancelDescription": "You keep full access until {date}. After that the organization becomes read-only.",
+    "cancelConfirm": "Cancel at period end",
+    "keep": "Keep",
+    "cancelScheduled": "The subscription will be canceled at the end of the period.",
+    "resume": "Reactivate subscription",
+    "resumed": "Subscription reactivated."
+  },
+  "usage": {
+    "title": "Usage",
+    "period": "This month: {start} – {end}",
+    "unlimited": "unlimited",
+    "creditsUsed": "Credits used this month",
+    "balance": "Credit balance"
+  },
+  "limits": {
+    "seats": "Users",
+    "projects": "Projects",
+    "runs_month": "Runs this month",
+    "credits_month": "Credits per month",
+    "storage_gb": "Storage"
+  },
+  "limitsCount": {
+    "seats": "{count, plural, one {1 user} other {{value} users}}",
+    "projects": "{count, plural, one {1 project} other {{value} projects}}",
+    "runs_month": "{value} runs per month",
+    "credits_month": "{value} AI credits per month",
+    "storage_gb": "{value} GB of storage"
+  },
+  "limitsUnlimited": {
+    "seats": "Unlimited users",
+    "projects": "Unlimited projects",
+    "runs_month": "Unlimited runs",
+    "credits_month": "Unlimited credits",
+    "storage_gb": "Unlimited storage"
+  },
+  "features": {
+    "public_chat": "Public chat and widget",
+    "api": "Public API and API keys",
+    "connectors": "Connectors",
+    "channels": "Channels (WhatsApp, Slack, Teams, email, Telegram)",
+    "deployments": "One-click deployment and environments",
+    "voice": "Voice (browser and phone)",
+    "sso": "SAML/OIDC SSO",
+    "audit": "Audit log",
+    "guard": "Guard: behavior control",
+    "priority_support": "Priority support",
+    "eu_strict": "Strict EU residency",
+    "byoc": "Deployment in your cloud",
+    "scim": "SCIM",
+    "sla": "SLA",
+    "dedicated_engineer": "Dedicated engineer"
+  },
+  "plans": {
+    "title": "Plans",
+    "description": "Prices exclude VAT. VAT is calculated for your country at checkout.",
+    "interval": "Billing interval",
+    "current": "Current",
+    "currentPlan": "Current plan",
+    "from": "From",
+    "perMonth": "/ month",
+    "billedYearly": "{amount} per year · save {discount}%",
+    "vatExcluded": "VAT not included",
+    "included": "included",
+    "notIncluded": "not included",
+    "subscribe": "Subscribe to {plan}",
+    "upgrade": "Upgrade",
+    "downgrade": "Switch to this plan",
+    "switchInterval": "Change interval",
+    "contactSales": "Talk to sales",
+    "changed": "Plan updated.",
+    "confirmTitle": "Switch to the {plan} plan?",
+    "confirmDescription": "The change is immediate. The current period is prorated; afterwards you pay {amount} / {interval} + VAT.",
+    "confirm": "Change plan"
+  },
+  "invoices": {
+    "title": "Invoices",
+    "description": "VAT invoices for every period and for credit purchases.",
+    "emptyTitle": "No invoices yet",
+    "emptyDescription": "They appear here once you subscribe to a plan or buy credits.",
+    "number": "Number",
+    "date": "Date",
+    "period": "Period",
+    "amount": "Amount",
+    "tax": "VAT",
+    "download": "PDF",
+    "noPdf": "No PDF"
+  },
+  "invoiceStatus": {
+    "paid": "Paid",
+    "open": "Open",
+    "draft": "Draft",
+    "void": "Void",
+    "uncollectible": "Uncollectible"
+  },
+  "checkout": {
+    "title": "Confirm payment",
+    "description": "Organization: {org}",
+    "testNotice": "Test mode — no charge will be made",
+    "testExplanation": "Stripe is not configured. When you confirm, Messer processes the same events Stripe would send (subscription, invoice and credits) without asking for a card or charging anything.",
+    "summary": "Summary",
+    "planLine": "{plan} plan",
+    "planIncludes": "includes {credits} credits per month",
+    "packLine": "{credits} credits pack",
+    "total": "Total",
+    "vatNote": "Amount excludes VAT. With Stripe configured, Stripe Tax calculates VAT for your country.",
+    "expires": "This payment link expires on {date}.",
+    "confirm": "Confirm test payment ({amount})",
+    "notFoundTitle": "We couldn't find this payment",
+    "successToast": "Payment completed. Your plan is now active.",
+    "canceledToast": "Payment canceled. Nothing was charged.",
+    "status": {
+      "open": "Pending",
+      "completed": "Completed",
+      "canceled": "Canceled",
+      "expired": "Expired"
+    }
+  },
+  "credits": {
+    "title": "Credits",
+    "description": "Credits pay for AI model usage. Each credit is worth {value}: model cost plus the service margin.",
+    "unit": "credits",
+    "balance": "Balance",
+    "balanceUsd": "Worth {value}",
+    "usedThisMonth": "Used this month",
+    "addedThisMonth": "Added this month",
+    "included": "Included in the plan",
+    "perMonth": "every month",
+    "exhaustedTitle": "You're out of credits",
+    "exhausted": "Runs are stopped. Buy a pack or enable automatic top-up.",
+    "lowTitle": "Credits are running low",
+    "low": "Buy a pack or enable automatic top-up so your agents don't stop.",
+    "buyTitle": "Buy credits",
+    "buyDescription": "Packs are added to your balance and never expire.",
+    "per1k": "{price} per 1,000",
+    "buy": "Buy",
+    "purchased": "Credits added to your balance."
+  },
+  "autoTopup": {
+    "title": "Automatic top-up",
+    "description": "Buy a pack automatically when the balance drops below the threshold, using the saved payment method.",
+    "needsPaymentMethod": "You need a saved payment method: subscribe to a plan or buy a pack first.",
+    "enable": "Enable automatic top-up",
+    "threshold": "Top up when the balance drops below",
+    "thresholdHint": "In credits. At most one top-up every 10 minutes and five per day.",
+    "pack": "Pack to buy",
+    "saved": "Automatic top-up saved.",
+    "last": {
+      "pending": "Last top-up requested on {date}, awaiting confirmation.",
+      "succeeded": "Last top-up completed on {date}.",
+      "failed": "The last top-up ({date}) failed"
+    }
+  },
+  "ledger": {
+    "title": "Transactions",
+    "description": "Everything that adds or removes credits: plan allowance, purchases, usage and adjustments.",
+    "filter": "Filter by type",
+    "kinds": {
+      "grant": "Plan",
+      "purchase": "Purchase",
+      "usage": "Usage",
+      "adjustment": "Adjustment"
+    },
+    "emptyTitle": "No transactions",
+    "emptyDescription": "There are no transactions of this type.",
+    "date": "Date",
+    "kind": "Type",
+    "detail": "Detail",
+    "amount": "Credits",
+    "cost": "Model cost",
+    "pageOf": "Page {page} of {pages} · {total} transactions",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "budgets": {
+    "description": "Cap AI model spend per organization and per project. We warn at the threshold and, with hard stop, new runs are refused once the limit is reached.",
+    "new": "New budget",
+    "newTitle": "New budget",
+    "editTitle": "Edit budget",
+    "formDescription": "Spend is the real model cost (USD) of the period's runs.",
+    "scope": "Scope",
+    "orgScope": "Whole organization",
+    "period": "Period",
+    "periods": {
+      "month": "Monthly",
+      "week": "Weekly",
+      "day": "Daily"
+    },
+    "limit": "Limit (USD)",
+    "limitInvalid": "Enter an amount greater than zero.",
+    "threshold": "Warn at (%)",
+    "thresholdHint": "Admins get an email and a notification, once per period.",
+    "thresholdInvalid": "Between 1 and 100.",
+    "hardStop": "Hard stop",
+    "hardStopHint": "Once the limit is reached, new runs are refused until the next period.",
+    "hardStopBadge": "Hard stop",
+    "alertAt": "Warn at {pct}%",
+    "spend": "Period spend",
+    "states": {
+      "ok": "On track",
+      "alert": "Warning",
+      "exceeded": "Exhausted"
+    },
+    "emptyTitle": "No budgets",
+    "emptyDescription": "Create a budget for the organization or a project and get warned before overspending.",
+    "created": "Budget created.",
+    "updated": "Budget updated.",
+    "deleted": "Budget deleted.",
+    "deleteTitle": "Delete the budget for {scope}?",
+    "deleteDescription": "Its alerts and hard stop will no longer apply. This action is audited.",
+    "footnote": "Periods are computed in UTC. Spend includes every run in scope, from any channel."
+  },
+  "upgrade": {
+    "limitTitle": "You've reached a plan limit",
+    "featureTitle": "Your plan doesn't include this feature",
+    "readOnlyTitle": "The organization is read-only",
+    "recommended": "Recommended plan:",
+    "seePlans": "See plans",
+    "choosePlan": "Choose a plan",
+    "notNow": "Not now",
+    "askOwner": "Ask the organization owner to change the plan."
+  }
+}

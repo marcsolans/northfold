@@ -29,6 +29,8 @@ import { http } from "@/lib/api";
 import { useMe } from "@/lib/hooks/use-me";
 import type { Me } from "@/lib/types";
 
+import { ApprovalsNavBadge } from "@/components/approvals/approvals-nav-badge";
+
 import { MAIN_NAV } from "./nav-config";
 import { NotificationsBell } from "./notifications-bell";
 
@@ -333,6 +335,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <item.icon />
                 {t(item.key)}
+                {item.key === "approvals" ? <ApprovalsNavBadge /> : null}
               </Link>
             ))}
           </nav>

@@ -1,0 +1,98 @@
+/*
+ * Composer animation: one 16 s timeline shared by every element (no per-element delays, so the loop stays in sync).
+ * Static by default; animated only when the visitor has not asked for reduced motion.
+ * Only opacity and transform are animated (compositor-only, no layout work).
+ */
+
+.bar {
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .request,
+  .q1,
+  .a1,
+  .q2,
+  .a2,
+  .plan,
+  .builders,
+  .deployed,
+  .approve,
+  .step1,
+  .step2,
+  .step3,
+  .step4,
+  .step5,
+  .bar1,
+  .bar2,
+  .bar3,
+  .bar4,
+  .bar5,
+  .check1,
+  .check2,
+  .check3,
+  .check4,
+  .check5 {
+    animation-duration: 16s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+
+  .request { animation-name: request; }
+  .q1 { animation-name: q1; }
+  .a1 { animation-name: a1; }
+  .q2 { animation-name: q2; }
+  .a2 { animation-name: a2; }
+  .plan { animation-name: plan; }
+  .approve { animation-name: approve; }
+  .builders { animation-name: builders; }
+  .deployed { animation-name: deployed; }
+  .step1 { animation-name: step1; }
+  .step2 { animation-name: step2; }
+  .step3 { animation-name: step3; }
+  .step4 { animation-name: step4; }
+  .step5 { animation-name: step5; }
+  .bar1 { animation-name: bar1; }
+  .bar2 { animation-name: bar2; }
+  .bar3 { animation-name: bar3; }
+  .bar4 { animation-name: bar4; }
+  .bar5 { animation-name: bar5; }
+  .check1 { animation-name: check1; }
+  .check2 { animation-name: check2; }
+  .check3 { animation-name: check3; }
+  .check4 { animation-name: check4; }
+  .check5 { animation-name: check5; }
+}
+
+/* ---- appear: hidden → visible at N% → hidden again at the end of the loop */
+@keyframes request { 0%, 2% { opacity: 0; transform: translateY(6px); } 5%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes q1 { 0%, 10% { opacity: 0; transform: translateY(6px); } 12%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes a1 { 0%, 15% { opacity: 0; transform: translateY(4px); } 17%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes q2 { 0%, 20% { opacity: 0; transform: translateY(6px); } 22%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes a2 { 0%, 25% { opacity: 0; transform: translateY(4px); } 27%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes plan { 0%, 32% { opacity: 0; transform: translateY(8px); } 35%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes builders { 0%, 45% { opacity: 0; transform: translateY(8px); } 47%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+@keyframes deployed { 0%, 70% { opacity: 0; transform: translateY(8px); } 73%, 94% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+
+/* ---- the "approve" button is pressed once, just before the builders start */
+@keyframes approve { 0%, 40% { transform: none; opacity: 1; } 41.5% { transform: scale(0.96); opacity: 0.85; } 43%, 100% { transform: none; opacity: 1; } }
+
+/* ---- step indicator: each step lights up when its stage starts */
+@keyframes step1 { 0%, 1% { opacity: 0.35; } 3%, 94% { opacity: 1; } 98%, 100% { opacity: 0.35; } }
+@keyframes step2 { 0%, 9% { opacity: 0.35; } 11%, 94% { opacity: 1; } 98%, 100% { opacity: 0.35; } }
+@keyframes step3 { 0%, 31% { opacity: 0.35; } 33%, 94% { opacity: 1; } 98%, 100% { opacity: 0.35; } }
+@keyframes step4 { 0%, 44% { opacity: 0.35; } 46%, 94% { opacity: 1; } 98%, 100% { opacity: 0.35; } }
+@keyframes step5 { 0%, 69% { opacity: 0.35; } 71%, 94% { opacity: 1; } 98%, 100% { opacity: 0.35; } }
+
+/* ---- builder progress bars and their check marks */
+@keyframes bar1 { 0%, 47% { transform: scaleX(0); } 55%, 100% { transform: scaleX(1); } }
+@keyframes bar2 { 0%, 48% { transform: scaleX(0); } 58%, 100% { transform: scaleX(1); } }
+@keyframes bar3 { 0%, 49% { transform: scaleX(0); } 62%, 100% { transform: scaleX(1); } }
+@keyframes bar4 { 0%, 50% { transform: scaleX(0); } 60%, 100% { transform: scaleX(1); } }
+@keyframes bar5 { 0%, 53% { transform: scaleX(0); } 66%, 100% { transform: scaleX(1); } }
+@keyframes check1 { 0%, 55% { opacity: 0; } 56%, 100% { opacity: 1; } }
+@keyframes check2 { 0%, 58% { opacity: 0; } 59%, 100% { opacity: 1; } }
+@keyframes check3 { 0%, 62% { opacity: 0; } 63%, 100% { opacity: 1; } }
+@keyframes check4 { 0%, 60% { opacity: 0; } 61%, 100% { opacity: 1; } }
+@keyframes check5 { 0%, 66% { opacity: 0; } 67%, 100% { opacity: 1; } }

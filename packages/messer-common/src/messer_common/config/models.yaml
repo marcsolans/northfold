@@ -74,3 +74,41 @@ prices:
     cache_read: 0.0
     cache_write: 0.0
     context_window: 200000
+
+# Voice — speech providers of the engine's voice module and seed prices (USD) used to cost calls: STT per audio
+# minute, TTS per 1,000 characters, telephony per call minute. The voice service uses the first provider of each
+# list whose key is configured and that the organization's residency allows; `eu_host` is the provider's EU
+# processing endpoint, used when MESSER_VOICE_REGION is an EU region. `voices` are the default voice per
+# language (the agent's own voice setting wins).
+voice:
+  stt:
+    - provider: deepgram
+      model: flux-general-multi
+      per_minute: 0.0077
+      eu_host: api.eu.deepgram.com
+    - provider: elevenlabs
+      model: scribe_v2_realtime
+      per_minute: 0.0065
+      eu_host: api.eu.residency.elevenlabs.io
+    - provider: openai
+      model: gpt-transcribe
+      per_minute: 0.006
+  tts:
+    - provider: elevenlabs
+      model: eleven_v4_turbo
+      per_1k_chars: 0.05
+      eu_host: api.eu.residency.elevenlabs.io
+      voices: {es: 1SM7GgM6IMuvQlz2BwM3, en: 1SM7GgM6IMuvQlz2BwM3}
+    - provider: deepgram
+      model: aura-2
+      per_1k_chars: 0.030
+      eu_host: api.eu.deepgram.com
+      voices: {es: aura-2-celeste-es, en: aura-2-thalia-en}
+    - provider: openai
+      model: gpt-4o-mini-tts
+      per_1k_chars: 0.015
+      voices: {es: coral, en: coral}
+  telephony:
+    twilio: {inbound_per_minute: 0.0085, outbound_per_minute: 0.0140}
+    telnyx: {inbound_per_minute: 0.0035, outbound_per_minute: 0.0070}
+    livekit: {inbound_per_minute: 0.0005, outbound_per_minute: 0.0005}

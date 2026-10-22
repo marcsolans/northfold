@@ -1,0 +1,118 @@
+{
+  "metaTitle": "Primeros pasos",
+  "exit": "Ir a Messer",
+  "eyebrow": "Primeros pasos",
+  "title": "Pon en marcha tu primer agente",
+  "subtitle": "Cuatro pasos para tener un agente funcionando con tus datos. Puedes saltarte cualquiera y volver cuando quieras.",
+  "stepOf": "Paso {current} de {total}",
+  "progress": "{done} de {total} completados",
+  "status": {
+    "done": "Hecho",
+    "pending": "Pendiente",
+    "skipped": "Saltado"
+  },
+  "skip": "Saltar este paso",
+  "back": "Anterior",
+  "continue": "Continuar",
+  "saveContinue": "Guardar y continuar",
+  "finish": "Terminar e ir a Messer",
+  "saveError": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
+  "loadErrorTitle": "No hemos podido cargar tu progreso",
+  "loadErrorBody": "Comprueba tu conexión e inténtalo de nuevo.",
+  "retry": "Reintentar",
+  "readOnly": "Tienes un rol de lectura en esta organización: puedes ver el progreso, pero solo un constructor o un administrador puede completarlo.",
+  "noOrgTitle": "Todavía no perteneces a ninguna organización",
+  "noOrgBody": "Crea una organización o acepta una invitación para empezar.",
+  "noOrgCta": "Ir a Messer",
+  "plan": {
+    "title": "Has elegido el plan {plan}",
+    "body": "Tu prueba de 14 días del plan Pro ya está activa. Cuando quieras, puedes contratar {plan} desde Plan y facturación.",
+    "trialBody": "Tu prueba de 14 días del plan Pro ya está activa, sin tarjeta.",
+    "cta": "Ir a Plan y facturación"
+  },
+  "steps": {
+    "describe": {
+      "nav": "Qué quieres resolver",
+      "title": "¿Qué quieres resolver?",
+      "body": "Describe el problema con tus palabras: quién lo tiene, qué datos intervienen y qué debería pasar. Lo usaremos para preparar el Composer.",
+      "label": "Tu caso",
+      "placeholder": "Por ejemplo: recibimos 300 correos al día con dudas sobre facturas y queremos responderlos con nuestras condiciones, pidiendo aprobación antes de emitir abonos.",
+      "hint": "Puedes cambiarlo más adelante.",
+      "examplesTitle": "O empieza con un ejemplo",
+      "examples": [
+        "Responder a los clientes sobre sus facturas con nuestras condiciones y pedir aprobación antes de emitir abonos de más de 500 €.",
+        "Cualificar los leads que llegan por la web, registrarlos en el CRM y responderles por email en menos de cinco minutos.",
+        "Extraer los datos de las facturas de proveedores a una tabla y que una persona valide los casos dudosos.",
+        "Un asistente interno que conteste a la plantilla sobre vacaciones, permisos y el convenio colectivo."
+      ],
+      "useCaseLabel": "Tipo de caso (opcional)",
+      "useCaseNone": "Sin especificar",
+      "required": "Escribe al menos una frase o salta este paso."
+    },
+    "template": {
+      "nav": "Plantilla o Composer",
+      "title": "Elige una plantilla o describe tu caso al Composer",
+      "body": "Las plantillas traen agentes, flujos, datos de ejemplo y evals listos. El Composer construye una solución a medida a partir de tu descripción.",
+      "templateTitle": "Empezar desde una plantilla",
+      "templateBody": "Ocho soluciones completas por sector que puedes adaptar a tus datos.",
+      "templateCta": "Ver plantillas",
+      "composerTitle": "Describírselo al Composer",
+      "composerBody": "Te hará unas preguntas, propondrá un plan y lo construirá cuando lo apruebes.",
+      "composerBodyWithGoal": "Abriremos el Composer con lo que has escrito en el paso anterior.",
+      "composerCta": "Abrir el Composer",
+      "doneBody": "Ya tienes el proyecto {project}.",
+      "openProject": "Abrir proyecto"
+    },
+    "data": {
+      "nav": "Tus datos",
+      "title": "Conecta una fuente o sube archivos",
+      "body": "Los agentes responden mejor con tus documentos y tablas. Los archivos se trocean e indexan automáticamente.",
+      "uploadTitle": "Subir archivos",
+      "uploadBody": "PDF, Word, Excel o CSV en una base de conocimiento.",
+      "uploadCta": "Ir a Conocimiento",
+      "connectTitle": "Conectar una fuente",
+      "connectBody": "Google Drive, SharePoint, tu base de datos, tu CRM y más, con sincronización.",
+      "connectCta": "Ir a Conectores",
+      "doneBody": "Tus datos ya están en Messer."
+    },
+    "test": {
+      "nav": "Probar el agente",
+      "title": "Prueba tu agente",
+      "body": "Abre el agente en el Studio y hazle preguntas reales en el chat de prueba. Cada respuesta queda trazada con sus llamadas, tokens y coste.",
+      "cta": "Probar {agent}",
+      "noAgent": "Todavía no tienes ningún agente. Crea un proyecto desde una plantilla o con el Composer y vuelve a este paso.",
+      "noAgentCta": "Ir al paso 2",
+      "doneBody": "Tu agente ya ha hecho su primera ejecución. El siguiente paso es desplegarlo a producción."
+    }
+  },
+  "useCases": {
+    "customer_support": "Atención al cliente",
+    "lead_qualification": "Ventas y leads",
+    "document_extraction": "Extracción de documentos",
+    "internal_assistant": "Asistente interno",
+    "contract_analysis": "Contratos y legal",
+    "operations": "Operaciones",
+    "voice_reception": "Atención telefónica",
+    "reporting": "Informes",
+    "other": "Otro"
+  },
+  "checklist": {
+    "title": "Primeros pasos",
+    "subtitle": "Completa estos pasos para tener tu primer agente en producción.",
+    "progress": "{done} de {total} completados",
+    "progressLabel": "Progreso de activación",
+    "hide": "Ocultar",
+    "hideError": "No hemos podido ocultar la lista. Inténtalo de nuevo.",
+    "errorTitle": "No hemos podido cargar los primeros pasos",
+    "retry": "Reintentar",
+    "go": "Empezar",
+    "done": "Completado",
+    "steps": {
+      "describe": { "title": "Describe qué quieres resolver", "body": "Cuéntanos el problema para preparar el Composer." },
+      "template": { "title": "Crea tu primer proyecto", "body": "Desde una plantilla o con el Composer." },
+      "data": { "title": "Añade tus datos", "body": "Sube archivos o conecta una fuente." },
+      "test": { "title": "Prueba tu agente", "body": "Hazle preguntas en el chat del Studio." },
+      "deploy": { "title": "Despliega a producción", "body": "Publica con un clic, con versiones y evals." }
+    }
+  }
+}

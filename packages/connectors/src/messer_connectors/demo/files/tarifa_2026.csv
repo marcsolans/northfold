@@ -1,0 +1,13 @@
+referencia,producto,categoria,unidad,precio_eur,iva_pct,stock
+AL-1001,Papel A4 80 g (500 hojas),Papel,paquete,4.95,21,1840
+AL-1002,Papel A4 reciclado 80 g (500 hojas),Papel,paquete,5.40,21,960
+AL-1010,Bolígrafo gel azul (caja 12),Escritura,caja,9.60,21,420
+AL-1011,Marcador fluorescente surtido (pack 6),Escritura,pack,6.80,21,310
+AL-1020,Archivador de palanca A4 lomo 80 mm,Archivo,unidad,2.35,21,1200
+AL-1021,Carpeta colgante A4 (caja 50),Archivo,caja,18.90,21,150
+AL-1030,Tóner compatible HP 59A,Consumibles,unidad,64.00,21,85
+AL-1031,Cartucho tinta negra Epson 603XL,Consumibles,unidad,21.50,21,140
+AL-1040,Silla ergonómica Ergo Plus,Mobiliario,unidad,189.00,21,36
+AL-1041,Mesa elevable eléctrica 140x70,Mobiliario,unidad,429.00,21,12
+AL-1050,Destructora de papel nivel P-4,Equipos,unidad,149.00,21,22
+AL-1060,Café en grano 1 kg,Office,paquete,16.40,10,75

@@ -62,11 +62,25 @@ async def _principal_from_api_key(token: str) -> Principal:
         key = (await s.execute(select(ApiKey).where(ApiKey.hashed_key == hash_token(token)))).scalar_one_or_none()
         if key is None or key.revoked_at is not None:
             raise Unauthorized("API key no válida o revocada", code="invalid_api_key")
-        await s.execute(update(ApiKey).where(ApiKey.id == key.id).values(last_used_at=datetime.now(UTC)))
+        now = datetime.now(UTC)
+        if key.expires_at is not None and key.expires_at <= now:
+            raise Unauthorized("El token ha caducado", code="token_expired")
+        role = "builder"
+        if key.oauth_grant_id is not None:
+            # OAuth access tokens act with the user's current role in the organization, at most builder.
+            member_role = (
+                await s.execute(
+                    select(Membership.role).where(Membership.org_id == key.org_id, Membership.user_id == key.created_by)
+                )
+            ).scalar_one_or_none()
+            if member_role is None:
+                raise Unauthorized("El usuario ya no pertenece a la organización", code="invalid_api_key")
+            role = member_role if ROLE_RANK.get(member_role, 0) < ROLE_RANK["builder"] else "builder"
+        await s.execute(update(ApiKey).where(ApiKey.id == key.id).values(last_used_at=now))
         return Principal(
             user_id=key.created_by,
             org_id=key.org_id,
-            role="builder",
+            role=role,
             api_key_id=key.id,
             scopes=list(key.scopes or []),
             project_id=key.project_id,

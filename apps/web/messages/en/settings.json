@@ -11,6 +11,7 @@
     "apiKeys": "API keys",
     "secrets": "Secrets",
     "models": "Models and prices",
+    "modelPolicy": "Model policy",
     "residency": "Residency and retention",
     "audit": "Audit",
     "data": "Export and deletion"

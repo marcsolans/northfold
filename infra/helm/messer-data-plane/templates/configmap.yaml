@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "messer.fullname" . }}
+  labels:
+    {{- include "messer.labels" . | nindent 4 }}
+data:
+  MESSER_ENV: {{ .Values.global.environment | quote }}
+  MESSER_API_URL: {{ required "controlPlane.url is required" .Values.controlPlane.url | quote }}
+  MESSER_WEB_URL: {{ .Values.controlPlane.webUrl | quote }}
+  MESSER_DATA_PLANE_ID: {{ .Values.controlPlane.dataPlaneId | quote }}
+  MESSER_RUNTIME_URL: {{ printf "http://%s-runtime:%v" (include "messer.fullname" .) .Values.components.runtime.port | quote }}
+  {{- if .Values.mtls.enabled }}
+  MESSER_MTLS_CA: {{ printf "%s/ca.crt" .Values.mtls.mountPath | quote }}
+  MESSER_MTLS_CERT: {{ printf "%s/tls.crt" .Values.mtls.mountPath | quote }}
+  MESSER_MTLS_KEY: {{ printf "%s/tls.key" .Values.mtls.mountPath | quote }}
+  {{- end }}
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | toString | quote }}
+  {{- end }}

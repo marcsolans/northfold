@@ -1,0 +1,55 @@
+{
+  "metaTitle": "Contact",
+  "metaDescription": "Talk to the Messer team about sales, the Enterprise plan, support, security or partnerships.",
+  "eyebrow": "Contact",
+  "title": "Let's talk",
+  "subtitle": "Tell us what you want to solve and a person from the team will get back to you.",
+  "form": {
+    "name": "Name",
+    "email": "Work email",
+    "company": "Company",
+    "optional": "optional",
+    "topic": "Topic",
+    "message": "How can we help?",
+    "messageHint": "At least 10 characters.",
+    "messagePlaceholder": "For example: we want an assistant to answer our customers' questions about their invoices and ask for approval before credit notes.",
+    "honeypot": "Leave this field empty",
+    "submit": "Send message",
+    "privacy": "We will only use this data to answer your message. See the <link>privacy policy</link>.",
+    "topics": {
+      "sales": "Sales",
+      "enterprise": "Enterprise plan",
+      "support": "Support",
+      "security": "Security and compliance",
+      "partnership": "Partnerships",
+      "press": "Press",
+      "other": "Other"
+    }
+  },
+  "errors": {
+    "required": "This field is required.",
+    "email": "Enter a valid email.",
+    "messageShort": "The message must be at least 10 characters long.",
+    "tooLong": "The text is too long.",
+    "validation": "Check the highlighted fields.",
+    "rateLimited": "You have sent several messages in a row. Try again in a few minutes.",
+    "generic": "We couldn't send the message. Try again in a few minutes."
+  },
+  "success": {
+    "title": "Message sent",
+    "body": "Thank you, {name}. We will reply to {email}.",
+    "another": "Send another message"
+  },
+  "aside": {
+    "enterpriseTitle": "Enterprise",
+    "enterpriseBody": "Strict EU residency, deployment in your cloud, SCIM, SLA and a dedicated engineer.",
+    "enterpriseFrom": "From {price} per month.",
+    "pricingLink": "See pricing",
+    "supportTitle": "Support",
+    "supportBody": "If you already use Messer, include your organization's name so we can help you sooner.",
+    "docsLink": "Read the documentation",
+    "securityTitle": "Security",
+    "securityBody": "To report a vulnerability, choose the “Security and compliance” topic.",
+    "trustLink": "Trust center"
+  }
+}

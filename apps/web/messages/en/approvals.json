@@ -1,0 +1,138 @@
+{
+  "title": "Approvals",
+  "description": "Actions waiting for a human decision. The run resumes as soon as you decide, even after a restart.",
+  "pendingCount": "{count, plural, one {# pending approval} other {# pending approvals}}",
+  "fallbackTitle": "Request to run {tool}",
+  "needsRole": "Requires {role}",
+  "expires": "Expires {when}",
+  "filters": {
+    "status": "Status",
+    "project": "Project",
+    "agent": "Agent",
+    "mine": "Only the ones I can decide"
+  },
+  "empty": {
+    "pendingTitle": "No pending approvals",
+    "pendingDescription": "When an agent or workflow needs your go-ahead, it will show up here and you will get a notification.",
+    "title": "No results",
+    "description": "No approval matches the filters."
+  },
+  "status": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "denied": "Denied",
+    "expired": "Expired"
+  },
+  "payload": {
+    "empty": "The action receives no data."
+  },
+  "editor": {
+    "mode": "Edit mode",
+    "form": "Form",
+    "json": "JSON",
+    "jsonLabel": "Values as JSON",
+    "invalidJson": "Invalid JSON: it must be an object.",
+    "invalidNumber": "Enter a valid number.",
+    "missing": "Required fields missing: {fields}"
+  },
+  "decide": {
+    "approve": "Approve",
+    "deny": "Deny",
+    "approveWithChanges": "Approve with changes",
+    "denyReason": "Reason for denying",
+    "denyReasonHint": "Required. The agent receives it and it is kept in the audit log.",
+    "commentRequired": "Say why you are denying the action.",
+    "confirmDeny": "Deny",
+    "comment": "Comment",
+    "confirmChanges": "Approve with these changes",
+    "noChanges": "You have not changed any value. Use “Approve” or edit a field.",
+    "invalidChanges": "Check the values before approving.",
+    "needsRole": "This approval requires the {role} role or above.",
+    "cannotDecide": "You cannot decide this approval."
+  },
+  "detail": {
+    "title": "Approval",
+    "assignedTo": "Decided by: {role} or above",
+    "payload": "Action data",
+    "context": "Context",
+    "details": "Details",
+    "project": "Project",
+    "agent": "Agent",
+    "run": "Run",
+    "viewTrace": "View trace",
+    "viewResumed": "View the resumed run",
+    "environment": "Environment",
+    "channel": "Channel",
+    "created": "Requested",
+    "expires": "Expires",
+    "expiryAction": {
+      "approve": "it will be approved automatically",
+      "deny": "it will be denied automatically"
+    },
+    "decided": "Decided",
+    "via": {
+      "app": "from the app",
+      "email": "from the email",
+      "slack": "from Slack",
+      "expiry": "on expiry"
+    },
+    "comment": "Comment",
+    "decide": "Your decision",
+    "expiredPending": "The deadline has passed; it will be resolved automatically shortly.",
+    "approvedToast": "Approved. The run resumes.",
+    "deniedToast": "Denied. The agent will receive your reason."
+  },
+  "email": {
+    "metaTitle": "Confirm decision",
+    "willApprove": "You are about to approve",
+    "willDeny": "You are about to deny",
+    "fallbackTitle": "Request to run {tool}",
+    "project": "Project",
+    "agent": "Agent",
+    "tool": "Action",
+    "expires": "Expires",
+    "payload": "Action data",
+    "comment": "Comment",
+    "denyReason": "Reason for denying",
+    "denyReasonHint": "Required. The agent receives it and it is kept in the audit log.",
+    "commentRequired": "Say why you are denying the action.",
+    "notice": "Opening the link decides nothing: the decision is only recorded when you confirm.",
+    "confirmApprove": "Confirm approval",
+    "confirmDeny": "Confirm denial",
+    "changeMind": "Want to decide something else or approve with changes?",
+    "openInbox": "Open the approvals inbox",
+    "alreadyDecided": "This approval has already been resolved",
+    "done": {
+      "approved": "Approval recorded",
+      "denied": "Denial recorded",
+      "resumed": "The run continues now. You can close this page.",
+      "waiting": "The run will continue once the other pending approvals are resolved."
+    },
+    "problems": {
+      "invalid": {
+        "title": "Invalid link",
+        "description": "The link is incomplete or has expired. Decide from the approvals inbox."
+      },
+      "forbidden": {
+        "title": "Not allowed",
+        "description": "You are no longer allowed to decide this approval."
+      },
+      "notFound": {
+        "title": "Approval not found",
+        "description": "The request no longer exists."
+      },
+      "decided": {
+        "title": "Already decided",
+        "description": "Someone else resolved this approval before you."
+      },
+      "expired": {
+        "title": "Approval expired",
+        "description": "The deadline passed and the default action was applied."
+      },
+      "generic": {
+        "title": "We could not load the approval",
+        "description": "Try again in a few seconds."
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "title": "Projects",
+  "description": "Each project is a repository with its agents, workflows, knowledge and interfaces, versioned as code.",
+  "new": "New project",
+  "tabsLabel": "Project sections",
+  "noDescription": "No description",
+  "updated": "Updated {when}",
+  "stats": {
+    "agents": "Agents",
+    "agentsCount": "{count, plural, =0 {No agents} one {# agent} other {# agents}}",
+    "workflows": "Workflows",
+    "workflowsCount": "{count, plural, =0 {No workflows} one {# workflow} other {# workflows}}",
+    "runs": "Runs in 30 days",
+    "runsCount": "{count, plural, =0 {No runs} one {# run} other {{value} runs}}"
+  },
+  "empty": {
+    "title": "No projects yet",
+    "description": "Create an empty project to build agents by hand, or describe your problem to the Composer and let it build it for you.",
+    "composer": "Use the Composer"
+  },
+  "notFound": {
+    "title": "Project not found",
+    "description": "The project does not exist, has been archived or you do not have access.",
+    "back": "Back to projects"
+  },
+  "create": {
+    "title": "New project",
+    "description": "A repository is created with development and production environments.",
+    "name": "Name",
+    "namePlaceholder": "Invoice support",
+    "nameRequired": "Enter a project name.",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "What problem this project solves",
+    "tier": "Default model tier",
+    "submit": "Create project",
+    "created": "Project “{name}” created"
+  },
+  "overview": {
+    "newAgent": "New agent",
+    "agents": "Agents",
+    "workflows": "Workflows",
+    "defaultTier": "Default model",
+    "recentRuns": "Recent runs",
+    "recentRunsHint": "Latest runs across every channel, with their cost.",
+    "allTraces": "View all traces",
+    "noRuns": "No runs yet",
+    "noRunsHint": "Try an agent in the playground and its trace will show up here.",
+    "workforce": "AI workforce",
+    "workforceHint": "Agents and workflows in this project.",
+    "noMembers": "No agents or workflows yet.",
+    "kind": {
+      "agent": "Agent",
+      "workflow": "Workflow"
+    },
+    "environments": "Environments",
+    "env": {
+      "development": "Development",
+      "production": "Production"
+    },
+    "deployed": "Deployed",
+    "notDeployed": "Not deployed",
+    "noUrl": "No public URL",
+    "idle": "Idle",
+    "updated": "Project updated {when}"
+  },
+  "settings": {
+    "title": "Project settings",
+    "description": "Name, description and the default model for new agents.",
+    "general": "General",
+    "readOnly": "Your role can only view these settings. Ask a builder or an admin to change them.",
+    "name": "Name",
+    "nameRequired": "The name cannot be empty.",
+    "descriptionLabel": "Description",
+    "tier": "Default model tier",
+    "tierHint": "Applies to new agents that do not pick their own tier.",
+    "unsaved": "Unsaved changes",
+    "saved": "Settings saved",
+    "details": "Details",
+    "projectId": "Project ID",
+    "slug": "Slug",
+    "github": "GitHub repository",
+    "githubNone": "Not synced",
+    "archiveTitle": "Archive project",
+    "archiveDescription": "The project is hidden and can no longer run. Its repository, traces and audit trail are kept.",
+    "archive": "Archive project",
+    "archiveConfirmTitle": "Archive “{name}”?",
+    "archiveConfirmDescription": "Its agents and workflows will stop answering on every channel.",
+    "archiveConfirmLabel": "Type “{name}” to confirm",
+    "archiveConfirmMismatch": "The name does not match.",
+    "archived": "Project “{name}” archived",
+    "leaveTitle": "Leave without saving?",
+    "leaveDescription": "Your unsaved changes will be lost.",
+    "leave": "Leave without saving"
+  }
+}

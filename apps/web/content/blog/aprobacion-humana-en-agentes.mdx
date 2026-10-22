@@ -1,0 +1,87 @@
+---
+title: "Aprobación humana en agentes: dónde ponerla y cómo diseñarla"
+description: Un agente que puede emitir abonos, enviar emails o modificar tu CRM necesita frenos. Cómo decidir qué acciones requieren aprobación, qué necesita ver quien aprueba y cómo evitar que las aprobaciones se conviertan en un trámite.
+date: 2026-10-14
+author: Equipo de Messer
+tags: [agentes, gobierno, aprobaciones]
+---
+
+Un agente que solo responde preguntas puede equivocarse, pero el daño se limita a una mala respuesta. Un agente que **actúa** —emite un abono, envía un email a un cliente, cambia un pedido o mueve datos entre sistemas— puede causar daños difíciles de deshacer. La aprobación humana es el mecanismo que permite dar a los agentes capacidad de actuar sin perder el control.
+
+Este artículo resume lo que hemos aprendido al diseñar las aprobaciones de Messer.
+
+## Qué acciones necesitan aprobación
+
+No todas. Si cada paso pide permiso, las personas acaban aprobando sin leer y el control desaparece. Un criterio práctico tiene en cuenta tres preguntas:
+
+1. **¿Tiene efectos fuera del sistema?** Leer una tabla no; enviar un email o llamar a una API que escribe, sí.
+2. **¿Es reversible?** Un borrador se puede descartar; un pago o un mensaje enviado, no.
+3. **¿Cuánto cuesta un error?** Un abono de 20 € no es lo mismo que uno de 5.000 €.
+
+En Messer, las herramientas con efectos externos piden aprobación **por defecto**. Quien construye el agente puede relajar esa regla de forma explícita, y lo más útil suele ser una **condición**: pedir aprobación solo por encima de un umbral.
+
+```python
+from messer import Tool
+
+
+def emitir_abono(factura_id: str, importe: float, motivo: str) -> dict:
+    """Emite un abono sobre una factura."""
+    ...
+
+
+abono = Tool(
+    handler=emitir_abono,
+    requires_approval=lambda importe, **_: importe > 500,
+    approval_prompt=lambda factura_id, importe, **_: f"¿Emitir un abono de {importe} € sobre {factura_id}?",
+    approval_description="El abono se registra en facturación y se comunica al cliente.",
+)
+```
+
+La condición se evalúa con los mismos argumentos que recibiría la herramienta, antes de ejecutar una sola línea de su código. Si la evaluación falla, la acción no se ejecuta: un error en la política nunca se convierte en una aprobación implícita.
+
+## Qué necesita ver quien aprueba
+
+Una solicitud de aprobación que dice «¿Aprobar herramienta emitir_abono?» no sirve. La persona que decide necesita:
+
+- **Qué** va a pasar, en lenguaje claro: «Abono de 750 € sobre la factura F-2026-0412».
+- **Los datos exactos** con los que se va a ejecutar la acción, en un formulario legible.
+- **Por qué** lo propone el agente: la conversación o el paso del flujo que llevó hasta ahí.
+- **Quién** lo solicita y para qué cliente o caso.
+
+En Messer cada solicitud llega a la bandeja de **Aprobaciones** con la entrada validada de la herramienta, el texto de la solicitud y un enlace a la traza completa de la ejecución. También llega por email con enlaces de un solo uso, para que se pueda decidir desde el móvil.
+
+## Aprobar, denegar o aprobar con cambios
+
+Las decisiones no son solo sí o no:
+
+- **Aprobar** ejecuta la acción tal como se propuso.
+- **Denegar** con un comentario. El agente recibe el motivo y puede continuar la conversación con el cliente sin ejecutar la acción: «He consultado con el equipo y no podemos emitir el abono porque…».
+- **Aprobar con cambios** permite corregir un dato —por ejemplo, rebajar el importe a 500 €— y ejecutar la acción corregida.
+
+Cada decisión queda en el registro de auditoría: quién decidió, cuándo, qué cambió y por qué.
+
+## Pausar de verdad
+
+Una aprobación puede tardar minutos u horas. Mientras tanto, la ejecución no puede quedarse ocupando memoria en un proceso que tal vez se reinicie. El estado completo de la ejecución —en qué paso estaba, qué había decidido el agente, qué datos tenía— se guarda, y la ejecución se reanuda desde ese punto cuando llega la decisión, aunque el servidor se haya reiniciado entretanto.
+
+Las solicitudes también deben **caducar**. Una aprobación pendiente desde hace una semana probablemente ya no tiene sentido; mejor que caduque y que el agente lo gestione como una denegación.
+
+## Cómo evitar la fatiga de aprobación
+
+El riesgo de las aprobaciones es que se conviertan en un trámite. Algunas prácticas que ayudan:
+
+| Práctica | Efecto |
+| --- | --- |
+| Umbrales en lugar de aprobaciones universales | Menos solicitudes, cada una más relevante. |
+| Asignar la aprobación a un rol concreto | Decide quien tiene criterio y responsabilidad. |
+| Mostrar el contexto completo | Las decisiones son rápidas y fundadas. |
+| Revisar periódicamente las aprobaciones | Si siempre se aprueba lo mismo, quizá el umbral es demasiado bajo. |
+| Medir el tiempo hasta la decisión | Las solicitudes que esperan horas suelen indicar un problema de asignación. |
+
+## Supervisión humana y normativa
+
+El Reglamento Europeo de Inteligencia Artificial exige supervisión humana efectiva para los sistemas de alto riesgo: personas que entiendan el sistema, puedan interpretar sus resultados y puedan decidir no usarlos o intervenir. Aunque muchos agentes de empresa no son de alto riesgo, diseñar con aprobaciones explícitas, trazas y auditoría te prepara para cuando lo sean y, sobre todo, hace que tu equipo confíe en lo que el agente hace.
+
+## En resumen
+
+Pide aprobación para lo que tiene efectos externos, es irreversible o es caro; usa condiciones en lugar de pedirla siempre; da a quien aprueba el contexto completo; permite denegar y corregir; y asegúrate de que la ejecución se pausa y se reanuda de forma fiable. Con esas piezas, un agente puede actuar en tu nombre sin que pierdas el control.

@@ -163,8 +163,11 @@ class GuardPlaybook(Base, IdMixin, OrgScoped, CreatedMixin):
     workforce_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workforce.id", ondelete="CASCADE"), unique=True)
     # {"version": 1, "small_model": ..., "large_model": ..., "policies": [...], "output_schema": {...}}
     playbook: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
-    generated_by: Mapped[str] = mapped_column(String(20), default="llm", server_default="llm")  # llm | manual
+    generated_by: Mapped[str] = mapped_column(String(20), default="llm", server_default="llm")  # llm | rules | manual
     updated_at: Mapped[datetime] = mapped_column(server_default=text("now()"))
+    # Guard (0012): how the playbook was produced (model, cost, warnings) and who last changed it.
+    meta: Mapped[dict[str, Any]] = mapped_column(default=dict, server_default=text("'{}'::jsonb"))
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
 
 
 rls("guard_playbooks", read="viewer", write="builder")

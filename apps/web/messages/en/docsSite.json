@@ -1,0 +1,18 @@
+{
+  "metaTitle": "Documentation",
+  "metaDescription": "Messer documentation: quickstart, concepts, guides and reference to build, deploy and govern agents and workflows.",
+  "title": "Documentation",
+  "nav": "Documentation navigation",
+  "menu": "Documentation contents",
+  "onThisPage": "On this page",
+  "onlySpanish": "This page is only available in Spanish.",
+  "previous": "Previous",
+  "next": "Next",
+  "unavailableTitle": "The documentation is not available",
+  "unavailableBody": "We couldn't find the documentation pages on this server. Try again later.",
+  "copy": "Copy",
+  "plainText": "text",
+  "anchor": "Link to this section",
+  "help": "Can't find what you need?",
+  "contact": "Write to us"
+}

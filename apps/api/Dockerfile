@@ -13,6 +13,8 @@ COPY infra/migrations infra/migrations
 RUN uv sync --frozen --no-dev --package messer-api
 
 FROM python:3.12-slim
+# uv builds the engine wheel bundled into project exports (once, cached); git ≥ 2.38 for project repositories.
+COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /usr/local/bin/uv
 ENV PYTHONUNBUFFERED=1 PATH="/app/.venv/bin:$PATH" MESSER_ENV=production
 RUN apt-get update && apt-get install -y --no-install-recommends git libpq5 ca-certificates \
     && rm -rf /var/lib/apt/lists/* && useradd --create-home --uid 10001 messer \

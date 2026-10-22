@@ -14,8 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from messer_common import audit
 from messer_common.db import Principal
-from messer_common.db.models import Environment, Org, Plan, Project, User, Version, Workforce
-from messer_common.plans import limit_value
+from messer_common.db.models import Environment, Project, User, Version, Workforce
 from messer_common.projects_repo import ProjectRepo
 from messer_common.studio.agent_spec import (
     AgentConfig,
@@ -26,7 +25,8 @@ from messer_common.studio.agent_spec import (
 )
 from messer_common.studio.project_files import agent_member_files, initial_project_files, member_manifest
 
-from ..errors import ApiError, Conflict, NotFound, PlanLimitExceeded
+from ..errors import ApiError, Conflict, NotFound
+from . import limits
 
 ENVIRONMENTS = ("development", "production")
 
@@ -46,25 +46,7 @@ async def author_for(session: AsyncSession, principal: Principal) -> Author:
 
 
 async def _check_project_capacity(session: AsyncSession, org_id: uuid.UUID) -> None:
-    org = await session.get(Org, org_id)
-    plan = await session.get(Plan, org.plan_id) if org and org.plan_id else None
-    if plan is None:
-        return
-    limit = limit_value(plan.limits, "projects")
-    if limit == -1:
-        return
-    used = int(
-        (
-            await session.execute(
-                select(func.count()).select_from(Project).where(Project.org_id == org_id, Project.archived_at.is_(None))
-            )
-        ).scalar_one()
-    )
-    if used >= limit:
-        raise PlanLimitExceeded(
-            f"Tu plan {plan.name} incluye {limit} proyecto(s). Mejora el plan para crear más.",
-            details={"limit": "projects", "value": limit, "used": used},
-        )
+    await limits.require_project_capacity(session, org_id)
 
 
 async def _unique_project_slug(session: AsyncSession, org_id: uuid.UUID, name: str) -> str:

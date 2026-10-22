@@ -1,0 +1,9 @@
+numero_factura,cliente,cif,fecha_emision,fecha_vencimiento,importe_eur,estado,dias_vencida
+F-2026-0412,Talleres Mendaro S.A.,A00000001,2026-08-03,2026-09-02,1284.60,vencida,49
+F-2026-0455,Clínica Dental Arrieta,B00000002,2026-08-21,2026-09-20,642.10,vencida,31
+F-2026-0471,Hostelería Ribera S.L.,B00000003,2026-09-01,2026-10-01,2310.00,vencida,20
+F-2026-0488,Construcciones Ugalde S.L.,B00000004,2026-09-12,2026-10-12,875.25,vencida,9
+F-2026-0502,Papelería Lurra,B00000005,2026-09-25,2026-10-25,198.40,pendiente,0
+F-2026-0519,Talleres Mendaro S.A.,A00000001,2026-10-02,2026-11-01,1532.80,pendiente,0
+F-2026-0533,Asesoría Iturbe,B00000006,2026-10-08,2026-11-07,356.90,pendiente,0
+F-2026-0540,Hostelería Ribera S.L.,B00000003,2026-10-14,2026-11-13,4120.00,pendiente,0

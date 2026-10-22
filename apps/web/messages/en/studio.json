@@ -1,0 +1,512 @@
+{
+  "tiers": {
+    "fast": {
+      "label": "Fast",
+      "description": "Instant answers at a low cost."
+    },
+    "standard": {
+      "label": "Standard",
+      "description": "Balance between quality and cost. Recommended."
+    },
+    "powerful": {
+      "label": "Powerful",
+      "description": "Top quality for complex tasks."
+    }
+  },
+  "agents": {
+    "title": "Agents",
+    "description": "The project's agents. Each one is a versioned agent.py you can edit as a form or as code.",
+    "new": "New agent",
+    "version": "Version",
+    "codeMode": "Code",
+    "delete": "Delete {name}",
+    "deleteTitle": "Delete the agent “{name}”?",
+    "deleteDescription": "Its files are removed from the repository (they stay in the git history). Its traces are kept.",
+    "deleted": "Agent “{name}” deleted",
+    "empty": {
+      "title": "This project has no agents",
+      "description": "Create an agent, give it instructions and tools, and try it in the playground."
+    },
+    "create": {
+      "title": "New agent",
+      "description": "The name identifies the agent in code, the API and traces. It cannot be changed later.",
+      "name": "Name",
+      "nameHint": "Lowercase letters, numbers and underscores; starts with a letter (max. 63).",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What this agent does",
+      "submit": "Create agent",
+      "created": "Agent “{name}” created",
+      "errors": {
+        "empty": "Enter a name.",
+        "start": "The name must start with a lowercase letter.",
+        "chars": "Use only lowercase letters, numbers and underscores.",
+        "length": "63 characters at most.",
+        "taken": "An agent with that name already exists in the project."
+      }
+    }
+  },
+  "tools": {
+    "title": "Tools",
+    "description": "What the agent can do. Actions with external effects ask for human approval by default.",
+    "add": "Add tool",
+    "empty": "The agent has no tools: it can only talk.",
+    "pickerTitle": "Add tool",
+    "pickerDescription": "Messer built-in tools and actions from your active connections.",
+    "searchPlaceholder": "Search tools…",
+    "groups": {
+      "builtin": "Built-in",
+      "connectors": "Connector actions"
+    },
+    "catalogError": "The tool catalog could not be loaded.",
+    "connectionsError": "Connections could not be loaded.",
+    "actionsError": "This connection's actions could not be loaded.",
+    "noConnections": "No active connections. Connect a tool in Connectors to use its actions.",
+    "noMatches": "No results.",
+    "sideEffect": "External effects",
+    "added": "Added",
+    "types": {
+      "builtin": "Built-in",
+      "connector": "Connector",
+      "custom": "Custom"
+    },
+    "remove": "Remove {name}",
+    "requiresApproval": "Requires approval",
+    "approver": "Approver",
+    "approverRole": "{role} or above",
+    "locked": {
+      "always": "Sending emails always requires human approval.",
+      "non_get": "Requests other than GET always require human approval."
+    },
+    "allowedHosts": "Allowed domains",
+    "allowedHostsHint": "Empty = any public domain. Press Enter to add.",
+    "removeHost": "Remove {host}",
+    "timezone": "Time zone",
+    "sqlKb": "Knowledge base for SQL",
+    "sqlKbPlaceholder": "Pick a base",
+    "knowledgeSearchNoKb": "Knowledge search has no linked bases. Pick at least one in the Knowledge section.",
+    "builtin": {
+      "knowledge_search": {
+        "label": "Knowledge search",
+        "description": "Searches the linked knowledge bases (vector, keyword or hybrid) and cites sources."
+      },
+      "sql_query": {
+        "label": "SQL query (read-only)",
+        "description": "Queries a knowledge base's tables with a read-only role."
+      },
+      "read_url": {
+        "label": "Read URL",
+        "description": "Downloads a public web page and extracts its text."
+      },
+      "web_search": {
+        "label": "Web search",
+        "description": "Looks up current information on the internet."
+      },
+      "calculator": {
+        "label": "Calculator",
+        "description": "Evaluates arithmetic expressions without calculation mistakes."
+      },
+      "current_datetime": {
+        "label": "Date and time",
+        "description": "Returns the current date and time in a time zone."
+      },
+      "http_request": {
+        "label": "HTTP request",
+        "description": "Calls external APIs. Anything other than GET requires approval."
+      },
+      "send_email": {
+        "label": "Send email",
+        "description": "Sends an email on behalf of the organization after human approval."
+      }
+    },
+    "mcp": {
+      "title": "MCP servers",
+      "description": "Tools from remote servers that speak the MCP protocol (HTTP).",
+      "add": "Add server",
+      "empty": "No MCP servers.",
+      "name": "Name",
+      "url": "URL",
+      "remove": "Remove the server {name}",
+      "approval": "Approval",
+      "approvals": {
+        "none": {
+          "label": "Never",
+          "description": "No tool from this server asks for approval."
+        },
+        "destructive": {
+          "label": "Destructive actions",
+          "description": "Tools marked as destructive ask for approval."
+        },
+        "all": {
+          "label": "Always",
+          "description": "Every call to the server asks for approval."
+        }
+      },
+      "headers": "Headers",
+      "addHeader": "Add header",
+      "noHeaders": "No headers.",
+      "headerName": "Header name",
+      "headerValue": "Header value",
+      "removeHeader": "Remove the header {name}",
+      "headersHint": "Use $SECRET_NAME to reference a project secret instead of typing the key.",
+      "secretsUsed": "Project secrets used: {names}"
+    }
+  },
+  "builder": {
+    "editorLabel": "Agent editor",
+    "playgroundLabel": "Playground",
+    "back": "Back to agents",
+    "noDescription": "No description",
+    "codeModeBadge": "Edited as code",
+    "unsaved": "Unsaved changes",
+    "discard": "Discard",
+    "save": "Save",
+    "saveCode": "Save code",
+    "saveShortcut": "Save (⌘S)",
+    "configSaved": "Configuration saved",
+    "codeSaved": "Code saved; the configuration has been synced",
+    "codeSavedCodeMode": "Code saved. The agent is now in code mode: the configuration is read-only",
+    "fixErrors": "Fix the highlighted fields before saving.",
+    "notAnAgent": "“{name}” is a workflow and is edited in the workflow builder.",
+    "tabs": {
+      "config": "Configuration",
+      "code": "Code",
+      "versions": "Versions",
+      "evals": "Evals"
+    },
+    "notFound": {
+      "title": "Agent not found",
+      "description": "There is no agent “{name}” in this project.",
+      "back": "Back to agents"
+    },
+    "codeModeTitle": "Edited as code",
+    "codeModeBanner": "agent.py no longer matches the form, so the configuration is read-only. Edit the agent in the Code tab.",
+    "openCode": "Open code",
+    "codeDirtyBanner": "You have unsaved code changes. Save or discard them to edit the configuration.",
+    "viewerBanner": "Your role can view the agent but not change it.",
+    "leaveTitle": "Leave without saving?",
+    "leaveDescription": "This agent has unsaved changes. They will be lost if you leave.",
+    "leave": "Leave without saving",
+    "errors": {
+      "model_format": "Use the provider/model format.",
+      "temperature_range": "Between 0 and 1.",
+      "max_tokens_range": "An integer between 1 and 200,000.",
+      "max_iter_range": "An integer between 1 and 100.",
+      "timeout_range": "An integer between 1 and 3,600 seconds, or empty for no limit.",
+      "keep_last_n_range": "An integer between 1 and 1,000.",
+      "variable_name": "Variable names use letters, numbers and underscores, and do not start with a number.",
+      "variable_duplicate": "Some variables share the same name.",
+      "topics_required": "Add at least one banned topic.",
+      "rubric_required": "Write the rubric the judge must apply.",
+      "mcp_name": "The name uses lowercase letters, numbers and underscores, starting with a letter.",
+      "mcp_duplicate": "Another MCP server already uses this name.",
+      "mcp_url": "The URL must start with https:// (or http:// locally).",
+      "mcp_header": "Header names only allow letters, numbers and hyphens."
+    },
+    "general": {
+      "title": "General",
+      "description": "Description",
+      "descriptionHint": "Shown in the project and helps other agents know when to delegate to this one."
+    },
+    "model": {
+      "title": "Model and parameters",
+      "description": "Pick a tier; Messer resolves the actual model from the configuration and the organization's data residency.",
+      "tier": "Model tier",
+      "advanced": "Advanced options",
+      "explicit": "Specific model",
+      "explicitHint": "Optional. Overrides the tier (provider/model format).",
+      "explicitActive": "This model overrides the tier. Clear it to use a tier again.",
+      "explicitPlaceholder": "provider/model",
+      "useTier": "Use tier",
+      "temperature": "Temperature",
+      "temperatureHint": "0 = more precise, 1 = more creative. Empty = model default.",
+      "default": "Default",
+      "maxTokens": "Max tokens per answer",
+      "maxIter": "Max iterations",
+      "maxIterHint": "Reasoning and tool rounds per message.",
+      "timeout": "Timeout (seconds)",
+      "timeoutHint": "Empty = no agent limit (the environment limit applies).",
+      "noLimit": "No limit"
+    },
+    "prompt": {
+      "title": "System instructions",
+      "description": "What the agent is, how it should behave and what it must not do. Supports Markdown and '{{name}}' variables.",
+      "hint": "Variables are replaced on every run by the values the channel sends or, if none arrives, by their default value.",
+      "placeholder": "You are the billing assistant of '{{company}}'. Answer in the customer's language…",
+      "insertVariable": "Insert variable",
+      "insertVariableHint": "Inserted at the cursor position",
+      "noVariables": "No variables yet.",
+      "newVariable": "New variable",
+      "declare": "Declare them",
+      "undeclared": "Variables used but not declared: {names}",
+      "variables": "Variables",
+      "addVariable": "Add variable",
+      "variablesEmpty": "No variables. Type '{{name}}' in the instructions or add one.",
+      "variableName": "Variable name",
+      "variableDescription": "Description",
+      "variableDefault": "Default value",
+      "unused": "Unused",
+      "removeVariable": "Remove the variable {name}"
+    },
+    "knowledge": {
+      "title": "Knowledge",
+      "description": "Knowledge bases the agent can query with the search tool.",
+      "empty": "The organization has no knowledge bases yet.",
+      "missing": "Base unavailable ({id})",
+      "unlink": "Unlink",
+      "needsTool": "Add the “Knowledge search” tool so the agent can use these bases."
+    },
+    "contextFiles": {
+      "title": "Context files",
+      "description": "Reference documents whose text is added to the agent's instructions.",
+      "upload": "Upload files",
+      "uploaded": "{count, plural, one {File added} other {# files added}}",
+      "empty": "No context files.",
+      "formats": "Formats: .md, .txt, .csv, .json, .yaml, .xml, .tsv, .html, .pdf and .docx. 5 MB per file at most.",
+      "unsupported": "“{name}” is not a supported format.",
+      "tooLarge": "“{name}” is larger than 5 MB.",
+      "remove": "Remove {name}",
+      "removeTitle": "Remove “{name}”?",
+      "removeDescription": "The agent will stop receiving its content. The file stays in the repository history.",
+      "codeMode": "In code mode, add context files by editing agent.py."
+    },
+    "guardrails": {
+      "title": "Guardrails",
+      "description": "Checks on input and output. In shadow mode they are only recorded in the trace; in enforce mode they act.",
+      "mode": "Mode",
+      "modes": {
+        "enforce": "Enforce",
+        "enforceHint": "Blocks or fixes when triggered.",
+        "shadow": "Shadow",
+        "shadowHint": "Only records it in the trace."
+      },
+      "types": {
+        "pii": {
+          "label": "Personal data (PII)",
+          "description": "Detects and masks emails, phone numbers, ID numbers, IBANs and the like."
+        },
+        "secrets": {
+          "label": "Secrets",
+          "description": "Masks API keys, tokens and passwords."
+        },
+        "injection": {
+          "label": "Prompt injection",
+          "description": "Detects attempts to change the agent's instructions."
+        },
+        "topics": {
+          "label": "Banned topics",
+          "description": "Refuses conversations about the topics you list."
+        },
+        "judge": {
+          "label": "Judge with rubric",
+          "description": "A fast model reviews each answer against your rubric and asks for a retry if it fails."
+        }
+      },
+      "topics": "Topics",
+      "topicsHint": "Press Enter or comma to add.",
+      "topicsPlaceholder": "politics, medical advice…",
+      "removeTopic": "Remove {topic}",
+      "rubric": "Rubric",
+      "rubricHint": "Concrete, checkable criteria.",
+      "rubricPlaceholder": "The answer cites its source, makes no promises about deadlines and keeps a professional tone."
+    },
+    "memory": {
+      "title": "Memory and compaction",
+      "description": "How the agent remembers the conversation between messages.",
+      "enabled": "Remember the conversation",
+      "disabledHint": "Each message is handled without history.",
+      "compaction": "Compaction",
+      "keepLastN": "Turns to keep",
+      "strategies": {
+        "none": {
+          "label": "No compaction",
+          "description": "Keeps the whole history."
+        },
+        "tool_results": {
+          "label": "Tool results",
+          "description": "Summarizes long, older tool results."
+        },
+        "last_turns": {
+          "label": "Last turns",
+          "description": "Keeps only the last N turns."
+        },
+        "summarize": {
+          "label": "Summary",
+          "description": "Summarizes the history when it grows too large."
+        }
+      }
+    },
+    "code": {
+      "editorLabel": "Editor for {path}",
+      "syncHint": "The form and the code stay in sync while agent.py uses Messer's patterns. If you write your own logic, the code wins.",
+      "codeModeTitle": "Code mode",
+      "codeModeBanner": "This agent is edited as code: the form configuration is read-only.",
+      "configDirtyBanner": "You have unsaved configuration changes. Save or discard them to edit the code.",
+      "viewerBanner": "Your role can view the code but not change it.",
+      "syntaxError": "Syntax error"
+    },
+    "versions": {
+      "message": "Version message",
+      "messageHint": "A version pins the agent's current state so it can be deployed or restored.",
+      "dirtyHint": "Save or discard your changes before creating a version.",
+      "messagePlaceholder": "Version {version}",
+      "save": "Save version",
+      "saved": "Version {version} saved",
+      "noMessage": "No message",
+      "compare": "Diff",
+      "restore": "Restore",
+      "restoreTitle": "Restore version {version}?",
+      "restoreDescription": "The agent's files go back to that version in a new commit. No history is lost.",
+      "restoreDirty": "Your unsaved changes will be discarded.",
+      "restored": "Version {version} restored",
+      "diffTitle": "Changes since version {version}",
+      "compareWith": "Compare with",
+      "current": "Current",
+      "file": "File",
+      "noChanges": "No differences in this file.",
+      "empty": {
+        "title": "No versions",
+        "description": "Save a version when the agent works as expected."
+      }
+    },
+    "evals": {
+      "description": "YAML test cases ({path}) with validators. They run in the sandbox against the saved code.",
+      "run": "Run evals",
+      "running": "Running…",
+      "history": "Previous runs",
+      "allPassed": "{count, plural, one {The case passed} other {All # cases passed}}",
+      "someFailed": "{failed} of {total} cases failed",
+      "passedCount": "{count, plural, one {# passed} other {# passed}}",
+      "failedCount": "{count, plural, one {# failed} other {# failed}}",
+      "runError": "The evals could not run",
+      "status": {
+        "passed": "Passed",
+        "failed": "Failures",
+        "error": "Error",
+        "running": "Running"
+      },
+      "trigger": {
+        "manual": "Manual",
+        "deploy": "Deployment",
+        "composer": "Composer"
+      },
+      "case": "Case",
+      "result": "Result",
+      "validators": "Validators",
+      "duration": "Duration",
+      "validatorsCount": "{passed}/{total}",
+      "pass": "Passed",
+      "fail": "Failed",
+      "toggleCase": "Details of {name}",
+      "noValidators": "This case has no validators.",
+      "notEvaluated": "Not evaluated",
+      "expected": "Expected",
+      "actual": "Actual",
+      "error": "Error",
+      "output": "Agent output",
+      "empty": {
+        "title": "No evals run yet",
+        "description": "Run the evals to check the agent before deploying it."
+      },
+      "noCases": {
+        "title": "No evals defined",
+        "description": "Add YAML files in {path} to define test cases."
+      }
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "balance": "Balance: {value} credits",
+    "balanceHint": "Credits available in the organization",
+    "conversation": "Conversation",
+    "pickConversation": "Previous conversations",
+    "currentConversation": "Current conversation",
+    "justNow": "Now",
+    "untitled": "Untitled",
+    "messages": "{count, plural, one {# message} other {# messages}}",
+    "newConversation": "New conversation",
+    "deleteConversation": "Delete conversation",
+    "deleteConversationTitle": "Delete this conversation?",
+    "deleteConversationDescription": "Its history and memory are deleted. The traces of its runs are kept.",
+    "conversationDeleted": "Conversation deleted",
+    "unsaved": "There are unsaved changes: the playground uses the last saved version of the agent.",
+    "emptyTitle": "Try the agent",
+    "emptyDescription": "Type a message. You will see the answer in real time, the tools it uses and its cost.",
+    "transcript": "Conversation with the agent",
+    "streamingStatus": "The agent is answering",
+    "needsBuilder": "You need the Builder role to try the agent.",
+    "you": "You",
+    "assistant": "Agent",
+    "attachments": "Attachments",
+    "resumed": "Continued after the decision",
+    "thinking": "Reasoning",
+    "thinkingNow": "Thinking…",
+    "waitingOthers": "Decision recorded. The run will continue once the other approvals are decided.",
+    "stopped": "Stopped. The run may continue on the server; check its trace.",
+    "errorTitle": "The run failed",
+    "guardrail": "Guardrail {rail}: {action} on {stage}",
+    "shadow": "shadow mode",
+    "guardrailActions": {
+      "block": "blocked",
+      "replace": "content fixed",
+      "retry": "answer retried",
+      "escalate": "escalated",
+      "warn": "warning",
+      "error": "guardrail error"
+    },
+    "guardrailStages": {
+      "input": "the input",
+      "model_output": "the answer",
+      "tool_args": "a tool's arguments",
+      "tool_result": "a tool's result"
+    },
+    "tool": {
+      "call": "Tool",
+      "input": "Input",
+      "noInput": "No arguments",
+      "result": "Result",
+      "error": "Error",
+      "noResult": "No result.",
+      "awaitingResult": "It will run once approved.",
+      "state": {
+        "streaming": "Preparing",
+        "running": "Running",
+        "done": "Executed",
+        "error": "Error",
+        "awaiting_approval": "Awaiting approval",
+        "denied": "Denied",
+        "blocked": "Blocked",
+        "approved": "Approved"
+      },
+      "resumedResult": "The result shows in the continuation."
+    },
+    "approval": {
+      "label": "Approval required for {tool}",
+      "title": "Approval required",
+      "fallback": "The agent wants to run {tool}",
+      "registering": "Recording the approval request…",
+      "comment": "Comment: {comment}",
+      "openInbox": "Open in Approvals"
+    },
+    "footer": {
+      "duration": "Duration",
+      "cost": "Cost",
+      "credits": "{value} credits",
+      "viewTrace": "View trace",
+      "demo": "The offline demo model answered (no model API key is configured)."
+    },
+    "composer": {
+      "label": "Message",
+      "placeholder": "Write a message for the agent…",
+      "send": "Send",
+      "stop": "Stop",
+      "attach": "Attach files",
+      "attachments": "Attached files",
+      "uploading": "Uploading",
+      "removeAttachment": "Remove {name}",
+      "tooMany": "{max} attachments per message at most.",
+      "tooLarge": "“{name}” is larger than 20 MB.",
+      "sendHint": "sends",
+      "newlineHint": "new line"
+    }
+  }
+}

@@ -15,12 +15,12 @@ from messer_common import audit
 from messer_common.db import Principal, system_session
 from messer_common.db.models import AuthCredential, Invitation, Membership, Org, Plan, User
 from messer_common.email import send_template
-from messer_common.plans import limit_value
 from messer_common.settings import get_settings
 
 from ..deps import ORG_COOKIE, get_db, get_principal, get_user_db, org_billing_state, require_role
 from ..errors import ApiError, Conflict, Forbidden, NotFound, PlanLimitExceeded
-from ..services.orgs import create_invitation, create_org, member_count, pending_invitation_count
+from ..services.limits import require_seat
+from ..services.orgs import create_invitation, create_org
 
 router = APIRouter(tags=["orgs"])
 
@@ -397,15 +397,7 @@ async def invite(
         raise Forbidden("Solo un owner puede invitar a otro owner")
     org = await db.get(Org, principal.org_id)
     assert org is not None
-    plan = await db.get(Plan, org.plan_id) if org.plan_id else None
-    if plan is not None:
-        seats = limit_value(plan.limits, "seats")
-        used = await member_count(db, org.id) + await pending_invitation_count(db, org.id)
-        if seats != -1 and used >= seats:
-            raise PlanLimitExceeded(
-                f"Tu plan {plan.name} incluye {seats} usuarios. Mejora el plan para invitar a más.",
-                details={"limit": "seats", "value": seats, "used": used},
-            )
+    await require_seat(db, org.id)
     invitation, token = await create_invitation(db, principal=principal, email=body.email, role=body.role)
     inviter = await db.get(User, principal.user_id) if principal.user_id else None
     url = f"{get_settings().messer_web_url}/invite/{token}"

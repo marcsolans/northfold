@@ -1,0 +1,512 @@
+{
+  "tiers": {
+    "fast": {
+      "label": "Rápido",
+      "description": "Respuestas inmediatas y bajo coste."
+    },
+    "standard": {
+      "label": "Estándar",
+      "description": "Equilibrio entre calidad y coste. Recomendado."
+    },
+    "powerful": {
+      "label": "Potente",
+      "description": "Máxima calidad para tareas complejas."
+    }
+  },
+  "agents": {
+    "title": "Agentes",
+    "description": "Agentes del proyecto. Cada uno es un archivo agent.py versionado que puedes editar como formulario o como código.",
+    "new": "Nuevo agente",
+    "version": "Versión",
+    "codeMode": "Código",
+    "delete": "Eliminar {name}",
+    "deleteTitle": "¿Eliminar el agente «{name}»?",
+    "deleteDescription": "Se borran sus archivos del repositorio (quedan en el historial de git). Sus trazas se conservan.",
+    "deleted": "Agente «{name}» eliminado",
+    "empty": {
+      "title": "Este proyecto no tiene agentes",
+      "description": "Crea un agente, dale instrucciones y herramientas, y pruébalo en el playground."
+    },
+    "create": {
+      "title": "Nuevo agente",
+      "description": "El nombre identifica al agente en el código, la API y las trazas. No se puede cambiar después.",
+      "name": "Nombre",
+      "nameHint": "Minúsculas, números y guiones bajos; empieza por una letra (máx. 63).",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Qué hace este agente",
+      "submit": "Crear agente",
+      "created": "Agente «{name}» creado",
+      "errors": {
+        "empty": "Indica un nombre.",
+        "start": "El nombre debe empezar por una letra minúscula.",
+        "chars": "Usa solo minúsculas, números y guiones bajos.",
+        "length": "Máximo 63 caracteres.",
+        "taken": "Ya existe un agente con ese nombre en el proyecto."
+      }
+    }
+  },
+  "tools": {
+    "title": "Herramientas",
+    "description": "Lo que el agente puede hacer. Las acciones con efectos externos piden aprobación humana por defecto.",
+    "add": "Añadir herramienta",
+    "empty": "El agente no tiene herramientas: solo puede conversar.",
+    "pickerTitle": "Añadir herramienta",
+    "pickerDescription": "Herramientas integradas de Messer y acciones de tus conexiones activas.",
+    "searchPlaceholder": "Buscar herramientas…",
+    "groups": {
+      "builtin": "Integradas",
+      "connectors": "Acciones de conectores"
+    },
+    "catalogError": "No se ha podido cargar el catálogo de herramientas.",
+    "connectionsError": "No se han podido cargar las conexiones.",
+    "actionsError": "No se han podido cargar las acciones de esta conexión.",
+    "noConnections": "No hay conexiones activas. Conecta una herramienta en Conectores para usar sus acciones.",
+    "noMatches": "Sin resultados.",
+    "sideEffect": "Efectos externos",
+    "added": "Añadida",
+    "types": {
+      "builtin": "Integrada",
+      "connector": "Conector",
+      "custom": "Propia"
+    },
+    "remove": "Quitar {name}",
+    "requiresApproval": "Requiere aprobación",
+    "approver": "Quién aprueba",
+    "approverRole": "{role} o superior",
+    "locked": {
+      "always": "Enviar emails siempre requiere aprobación humana.",
+      "non_get": "Las peticiones distintas de GET siempre requieren aprobación humana."
+    },
+    "allowedHosts": "Dominios permitidos",
+    "allowedHostsHint": "Vacío = cualquier dominio público. Pulsa Intro para añadir.",
+    "removeHost": "Quitar {host}",
+    "timezone": "Zona horaria",
+    "sqlKb": "Base de conocimiento para SQL",
+    "sqlKbPlaceholder": "Elige una base",
+    "knowledgeSearchNoKb": "La búsqueda en conocimiento no tiene bases vinculadas. Elige al menos una en la sección Conocimiento.",
+    "builtin": {
+      "knowledge_search": {
+        "label": "Búsqueda en conocimiento",
+        "description": "Busca en las bases de conocimiento vinculadas (vectorial, por palabras o híbrida) y cita las fuentes."
+      },
+      "sql_query": {
+        "label": "Consulta SQL (solo lectura)",
+        "description": "Consulta las tablas de una base de conocimiento con un rol de solo lectura."
+      },
+      "read_url": {
+        "label": "Leer URL",
+        "description": "Descarga una página web pública y extrae su texto."
+      },
+      "web_search": {
+        "label": "Búsqueda web",
+        "description": "Busca información actual en internet."
+      },
+      "calculator": {
+        "label": "Calculadora",
+        "description": "Evalúa expresiones aritméticas sin errores de cálculo."
+      },
+      "current_datetime": {
+        "label": "Fecha y hora",
+        "description": "Devuelve la fecha y hora actuales en una zona horaria."
+      },
+      "http_request": {
+        "label": "Petición HTTP",
+        "description": "Llama a APIs externas. Todo lo que no sea GET requiere aprobación."
+      },
+      "send_email": {
+        "label": "Enviar email",
+        "description": "Envía un email en nombre de la organización tras la aprobación humana."
+      }
+    },
+    "mcp": {
+      "title": "Servidores MCP",
+      "description": "Herramientas de servidores remotos con el protocolo MCP (HTTP).",
+      "add": "Añadir servidor",
+      "empty": "Sin servidores MCP.",
+      "name": "Nombre",
+      "url": "URL",
+      "remove": "Quitar el servidor {name}",
+      "approval": "Aprobación",
+      "approvals": {
+        "none": {
+          "label": "Nunca",
+          "description": "Ninguna herramienta del servidor pide aprobación."
+        },
+        "destructive": {
+          "label": "Acciones destructivas",
+          "description": "Piden aprobación las herramientas marcadas como destructivas."
+        },
+        "all": {
+          "label": "Siempre",
+          "description": "Cada llamada al servidor pide aprobación."
+        }
+      },
+      "headers": "Cabeceras",
+      "addHeader": "Añadir cabecera",
+      "noHeaders": "Sin cabeceras.",
+      "headerName": "Nombre de la cabecera",
+      "headerValue": "Valor de la cabecera",
+      "removeHeader": "Quitar la cabecera {name}",
+      "headersHint": "Usa $NOMBRE_SECRETO para referenciar un secreto del proyecto en lugar de escribir la clave.",
+      "secretsUsed": "Secretos del proyecto usados: {names}"
+    }
+  },
+  "builder": {
+    "editorLabel": "Editor del agente",
+    "playgroundLabel": "Playground",
+    "back": "Volver a agentes",
+    "noDescription": "Sin descripción",
+    "codeModeBadge": "Editado como código",
+    "unsaved": "Cambios sin guardar",
+    "discard": "Descartar",
+    "save": "Guardar",
+    "saveCode": "Guardar código",
+    "saveShortcut": "Guardar (⌘S)",
+    "configSaved": "Configuración guardada",
+    "codeSaved": "Código guardado; la configuración se ha sincronizado",
+    "codeSavedCodeMode": "Código guardado. El agente queda en modo código: la configuración es de solo lectura",
+    "fixErrors": "Corrige los campos marcados antes de guardar.",
+    "notAnAgent": "«{name}» es un flujo y se edita en el constructor de flujos.",
+    "tabs": {
+      "config": "Configuración",
+      "code": "Código",
+      "versions": "Versiones",
+      "evals": "Evals"
+    },
+    "notFound": {
+      "title": "Agente no encontrado",
+      "description": "No existe ningún agente «{name}» en este proyecto.",
+      "back": "Volver a agentes"
+    },
+    "codeModeTitle": "Editado como código",
+    "codeModeBanner": "El código de agent.py ya no se corresponde con el formulario, así que la configuración es de solo lectura. Edita el agente en la pestaña Código.",
+    "openCode": "Abrir código",
+    "codeDirtyBanner": "Tienes cambios sin guardar en el código. Guárdalos o descártalos para editar la configuración.",
+    "viewerBanner": "Tu rol permite ver el agente pero no modificarlo.",
+    "leaveTitle": "¿Salir sin guardar?",
+    "leaveDescription": "Tienes cambios sin guardar en este agente. Si sales, se perderán.",
+    "leave": "Salir sin guardar",
+    "errors": {
+      "model_format": "Usa el formato proveedor/modelo.",
+      "temperature_range": "Entre 0 y 1.",
+      "max_tokens_range": "Un entero entre 1 y 200.000.",
+      "max_iter_range": "Un entero entre 1 y 100.",
+      "timeout_range": "Un entero entre 1 y 3.600 segundos, o vacío para no limitar.",
+      "keep_last_n_range": "Un entero entre 1 y 1.000.",
+      "variable_name": "Los nombres de variable usan letras, números y guiones bajos, sin empezar por número.",
+      "variable_duplicate": "Hay variables con el mismo nombre.",
+      "topics_required": "Añade al menos un tema prohibido.",
+      "rubric_required": "Escribe la rúbrica que debe aplicar el juez.",
+      "mcp_name": "El nombre usa minúsculas, números y guiones bajos, empezando por letra.",
+      "mcp_duplicate": "Ya hay otro servidor MCP con este nombre.",
+      "mcp_url": "La URL debe empezar por https:// (o http:// en local).",
+      "mcp_header": "Los nombres de cabecera solo admiten letras, números y guiones."
+    },
+    "general": {
+      "title": "General",
+      "description": "Descripción",
+      "descriptionHint": "Se muestra en el proyecto y ayuda a otros agentes a saber cuándo delegar en este."
+    },
+    "model": {
+      "title": "Modelo y parámetros",
+      "description": "Elige un nivel; Messer resuelve el modelo concreto según la configuración y la residencia de datos de la organización.",
+      "tier": "Nivel de modelo",
+      "advanced": "Opciones avanzadas",
+      "explicit": "Modelo concreto",
+      "explicitHint": "Opcional. Sustituye al nivel elegido (formato proveedor/modelo).",
+      "explicitActive": "Este modelo sustituye al nivel. Vacíalo para volver a usar un nivel.",
+      "explicitPlaceholder": "proveedor/modelo",
+      "useTier": "Usar nivel",
+      "temperature": "Temperatura",
+      "temperatureHint": "0 = más preciso, 1 = más creativo. Vacío = valor del modelo.",
+      "default": "Por defecto",
+      "maxTokens": "Máximo de tokens por respuesta",
+      "maxIter": "Máximo de iteraciones",
+      "maxIterHint": "Vueltas de razonamiento y herramientas por mensaje.",
+      "timeout": "Tiempo máximo (segundos)",
+      "timeoutHint": "Vacío = sin límite propio (aplica el límite del entorno).",
+      "noLimit": "Sin límite"
+    },
+    "prompt": {
+      "title": "Instrucciones del sistema",
+      "description": "Qué es el agente, cómo debe comportarse y qué no debe hacer. Admite Markdown y variables '{{nombre}}'.",
+      "hint": "Las variables se sustituyen en cada ejecución por los valores que envía el canal o, si no llega ninguno, por su valor por defecto.",
+      "placeholder": "Eres el asistente de facturación de '{{empresa}}'. Responde en el idioma del cliente…",
+      "insertVariable": "Insertar variable",
+      "insertVariableHint": "Se inserta en la posición del cursor",
+      "noVariables": "Aún no hay variables.",
+      "newVariable": "Nueva variable",
+      "declare": "Declararlas",
+      "undeclared": "Variables usadas sin declarar: {names}",
+      "variables": "Variables",
+      "addVariable": "Añadir variable",
+      "variablesEmpty": "Sin variables. Escribe '{{nombre}}' en las instrucciones o añade una.",
+      "variableName": "Nombre de la variable",
+      "variableDescription": "Descripción",
+      "variableDefault": "Valor por defecto",
+      "unused": "Sin usar",
+      "removeVariable": "Quitar la variable {name}"
+    },
+    "knowledge": {
+      "title": "Conocimiento",
+      "description": "Bases de conocimiento que el agente puede consultar con la herramienta de búsqueda.",
+      "empty": "La organización no tiene bases de conocimiento todavía.",
+      "missing": "Base no disponible ({id})",
+      "unlink": "Desvincular",
+      "needsTool": "Añade la herramienta «Búsqueda en conocimiento» para que el agente use estas bases."
+    },
+    "contextFiles": {
+      "title": "Archivos de contexto",
+      "description": "Documentos de referencia cuyo texto se añade a las instrucciones del agente.",
+      "upload": "Subir archivos",
+      "uploaded": "{count, plural, one {Archivo añadido} other {# archivos añadidos}}",
+      "empty": "Sin archivos de contexto.",
+      "formats": "Formatos: .md, .txt, .csv, .json, .yaml, .xml, .tsv, .html, .pdf y .docx. Máximo 5 MB por archivo.",
+      "unsupported": "«{name}» no tiene un formato admitido.",
+      "tooLarge": "«{name}» supera los 5 MB.",
+      "remove": "Quitar {name}",
+      "removeTitle": "¿Quitar «{name}»?",
+      "removeDescription": "El agente dejará de recibir su contenido. El archivo queda en el historial del repositorio.",
+      "codeMode": "En modo código, añade los archivos de contexto editando agent.py."
+    },
+    "guardrails": {
+      "title": "Guardarraíles",
+      "description": "Controles sobre la entrada y la salida. En modo sombra solo se registran en la traza; en modo aplicar actúan.",
+      "mode": "Modo",
+      "modes": {
+        "enforce": "Aplicar",
+        "enforceHint": "Bloquea o corrige cuando se activa.",
+        "shadow": "Sombra",
+        "shadowHint": "Solo lo registra en la traza."
+      },
+      "types": {
+        "pii": {
+          "label": "Datos personales (PII)",
+          "description": "Detecta y oculta emails, teléfonos, DNI, IBAN y similares."
+        },
+        "secrets": {
+          "label": "Secretos",
+          "description": "Oculta claves de API, tokens y contraseñas."
+        },
+        "injection": {
+          "label": "Inyección de instrucciones",
+          "description": "Detecta intentos de cambiar las instrucciones del agente."
+        },
+        "topics": {
+          "label": "Temas prohibidos",
+          "description": "Rechaza conversaciones sobre los temas que indiques."
+        },
+        "judge": {
+          "label": "Juez con rúbrica",
+          "description": "Un modelo rápido revisa cada respuesta según tu rúbrica y pide repetirla si no cumple."
+        }
+      },
+      "topics": "Temas",
+      "topicsHint": "Pulsa Intro o coma para añadir.",
+      "topicsPlaceholder": "política, asesoramiento médico…",
+      "removeTopic": "Quitar {topic}",
+      "rubric": "Rúbrica",
+      "rubricHint": "Criterios concretos y verificables.",
+      "rubricPlaceholder": "La respuesta cita la fuente, no promete plazos y mantiene un tono profesional."
+    },
+    "memory": {
+      "title": "Memoria y compactación",
+      "description": "Cómo recuerda el agente la conversación entre mensajes.",
+      "enabled": "Recordar la conversación",
+      "disabledHint": "Cada mensaje se procesa sin historial.",
+      "compaction": "Compactación",
+      "keepLastN": "Turnos a conservar",
+      "strategies": {
+        "none": {
+          "label": "Sin compactar",
+          "description": "Conserva todo el historial."
+        },
+        "tool_results": {
+          "label": "Resultados de herramientas",
+          "description": "Resume los resultados largos de herramientas antiguos."
+        },
+        "last_turns": {
+          "label": "Últimos turnos",
+          "description": "Conserva solo los N últimos turnos."
+        },
+        "summarize": {
+          "label": "Resumen",
+          "description": "Resume el historial cuando crece demasiado."
+        }
+      }
+    },
+    "code": {
+      "editorLabel": "Editor de {path}",
+      "syncHint": "El formulario y el código se sincronizan mientras agent.py use los patrones de Messer. Si escribes lógica propia, el código manda.",
+      "codeModeTitle": "Modo código",
+      "codeModeBanner": "Este agente se edita como código: la configuración del formulario es de solo lectura.",
+      "configDirtyBanner": "Tienes cambios sin guardar en la configuración. Guárdalos o descártalos para editar el código.",
+      "viewerBanner": "Tu rol permite ver el código pero no modificarlo.",
+      "syntaxError": "Error de sintaxis"
+    },
+    "versions": {
+      "message": "Mensaje de la versión",
+      "messageHint": "Una versión fija el estado actual del agente para desplegarlo o restaurarlo.",
+      "dirtyHint": "Guarda o descarta los cambios antes de crear una versión.",
+      "messagePlaceholder": "Versión {version}",
+      "save": "Guardar versión",
+      "saved": "Versión {version} guardada",
+      "noMessage": "Sin mensaje",
+      "compare": "Diferencias",
+      "restore": "Restaurar",
+      "restoreTitle": "¿Restaurar la versión {version}?",
+      "restoreDescription": "Los archivos del agente vuelven a esa versión con un nuevo commit. El historial no se pierde.",
+      "restoreDirty": "Se descartarán los cambios que no has guardado.",
+      "restored": "Versión {version} restaurada",
+      "diffTitle": "Cambios desde la versión {version}",
+      "compareWith": "Comparar con",
+      "current": "Actual",
+      "file": "Archivo",
+      "noChanges": "No hay diferencias en este archivo.",
+      "empty": {
+        "title": "Sin versiones",
+        "description": "Guarda una versión cuando el agente funcione como esperas."
+      }
+    },
+    "evals": {
+      "description": "Casos de prueba en YAML ({path}) con validadores. Se ejecutan en el entorno aislado con el código guardado.",
+      "run": "Ejecutar evals",
+      "running": "Ejecutando…",
+      "history": "Ejecuciones anteriores",
+      "allPassed": "{count, plural, one {El caso ha pasado} other {Los # casos han pasado}}",
+      "someFailed": "Han fallado {failed} de {total} casos",
+      "passedCount": "{count, plural, one {# correcto} other {# correctos}}",
+      "failedCount": "{count, plural, one {# fallido} other {# fallidos}}",
+      "runError": "No se pudieron ejecutar las evals",
+      "status": {
+        "passed": "Superadas",
+        "failed": "Con fallos",
+        "error": "Error",
+        "running": "En curso"
+      },
+      "trigger": {
+        "manual": "Manual",
+        "deploy": "Despliegue",
+        "composer": "Composer"
+      },
+      "case": "Caso",
+      "result": "Resultado",
+      "validators": "Validadores",
+      "duration": "Duración",
+      "validatorsCount": "{passed}/{total}",
+      "pass": "Correcto",
+      "fail": "Fallido",
+      "toggleCase": "Detalles de {name}",
+      "noValidators": "Este caso no tiene validadores.",
+      "notEvaluated": "No evaluado",
+      "expected": "Esperado",
+      "actual": "Obtenido",
+      "error": "Error",
+      "output": "Salida del agente",
+      "empty": {
+        "title": "Aún no se han ejecutado evals",
+        "description": "Ejecuta las evals para comprobar el agente antes de desplegarlo."
+      },
+      "noCases": {
+        "title": "No hay evals definidas",
+        "description": "Añade archivos YAML en {path} para definir casos de prueba."
+      }
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "balance": "Saldo: {value} créditos",
+    "balanceHint": "Créditos disponibles en la organización",
+    "conversation": "Conversación",
+    "pickConversation": "Conversaciones anteriores",
+    "currentConversation": "Conversación actual",
+    "justNow": "Ahora",
+    "untitled": "Sin título",
+    "messages": "{count, plural, one {# mensaje} other {# mensajes}}",
+    "newConversation": "Nueva conversación",
+    "deleteConversation": "Eliminar conversación",
+    "deleteConversationTitle": "¿Eliminar esta conversación?",
+    "deleteConversationDescription": "Se borra el historial y la memoria de la conversación. Las trazas de sus ejecuciones se conservan.",
+    "conversationDeleted": "Conversación eliminada",
+    "unsaved": "Hay cambios sin guardar: el playground usa la última versión guardada del agente.",
+    "emptyTitle": "Prueba el agente",
+    "emptyDescription": "Escribe un mensaje. Verás la respuesta en tiempo real, las herramientas que usa y su coste.",
+    "transcript": "Conversación con el agente",
+    "streamingStatus": "El agente está respondiendo",
+    "needsBuilder": "Necesitas el rol Constructor para probar el agente.",
+    "you": "Tú",
+    "assistant": "Agente",
+    "attachments": "Adjuntos",
+    "resumed": "Continuación tras la decisión",
+    "thinking": "Razonamiento",
+    "thinkingNow": "Pensando…",
+    "waitingOthers": "Decisión registrada. La ejecución continuará cuando se decidan las demás aprobaciones.",
+    "stopped": "Detenido. La ejecución puede seguir en el servidor; consulta su traza.",
+    "errorTitle": "La ejecución ha fallado",
+    "guardrail": "Guardarraíl {rail}: {action} en {stage}",
+    "shadow": "modo sombra",
+    "guardrailActions": {
+      "block": "bloqueado",
+      "replace": "contenido corregido",
+      "retry": "respuesta repetida",
+      "escalate": "escalado",
+      "warn": "aviso",
+      "error": "error del guardarraíl"
+    },
+    "guardrailStages": {
+      "input": "la entrada",
+      "model_output": "la respuesta",
+      "tool_args": "los argumentos de una herramienta",
+      "tool_result": "el resultado de una herramienta"
+    },
+    "tool": {
+      "call": "Herramienta",
+      "input": "Entrada",
+      "noInput": "Sin argumentos",
+      "result": "Resultado",
+      "error": "Error",
+      "noResult": "Sin resultado.",
+      "awaitingResult": "Se ejecutará cuando se apruebe.",
+      "state": {
+        "streaming": "Preparando",
+        "running": "Ejecutando",
+        "done": "Ejecutada",
+        "error": "Error",
+        "awaiting_approval": "Esperando aprobación",
+        "denied": "Denegada",
+        "blocked": "Bloqueada",
+        "approved": "Aprobada"
+      },
+      "resumedResult": "El resultado aparece en la continuación."
+    },
+    "approval": {
+      "label": "Aprobación requerida para {tool}",
+      "title": "Aprobación requerida",
+      "fallback": "El agente quiere ejecutar {tool}",
+      "registering": "Registrando la solicitud de aprobación…",
+      "comment": "Comentario: {comment}",
+      "openInbox": "Abrir en Aprobaciones"
+    },
+    "footer": {
+      "duration": "Duración",
+      "cost": "Coste",
+      "credits": "{value} créditos",
+      "viewTrace": "Ver traza",
+      "demo": "Ha respondido el modelo de demostración sin conexión (no hay clave de API de modelos configurada)."
+    },
+    "composer": {
+      "label": "Mensaje",
+      "placeholder": "Escribe un mensaje para el agente…",
+      "send": "Enviar",
+      "stop": "Detener",
+      "attach": "Adjuntar archivos",
+      "attachments": "Archivos adjuntos",
+      "uploading": "Subiendo",
+      "removeAttachment": "Quitar {name}",
+      "tooMany": "Máximo {max} adjuntos por mensaje.",
+      "tooLarge": "«{name}» supera los 20 MB.",
+      "sendHint": "envía",
+      "newlineHint": "nueva línea"
+    }
+  }
+}

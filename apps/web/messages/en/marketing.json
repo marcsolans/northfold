@@ -1,6 +1,560 @@
 {
-  "heroTitle": "Describe your problem. Messer builds the solution and puts it into production.",
-  "heroSubtitle": "Agents, workflows, knowledge and interfaces in one tool, with governance, traceability and cost control. EU infrastructure.",
-  "ctaPrimary": "Start free for 14 days",
-  "login": "Log in"
+  "meta": {
+    "homeTitle": "Messer — AI in production for companies, governed and in the EU",
+    "homeDescription": "Describe your problem and Messer builds the complete solution —agents, workflows, knowledge and interfaces— and puts it into production with human approval, traceability and cost control. EU infrastructure.",
+    "ogTagline": "Agents, workflows, knowledge and interfaces. In production, governed and in the EU."
+  },
+  "nav": {
+    "product": "Product",
+    "templates": "Templates",
+    "pricing": "Pricing",
+    "security": "Security",
+    "docs": "Docs",
+    "blog": "Blog",
+    "login": "Log in",
+    "cta": "Start free",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "primary": "Main navigation",
+    "skip": "Skip to content",
+    "home": "Messer home page"
+  },
+  "footer": {
+    "tagline": "One tool to build, deploy and govern your company's AI.",
+    "product": "Product",
+    "resources": "Resources",
+    "legal": "Legal",
+    "overview": "Overview",
+    "templates": "Templates",
+    "pricing": "Pricing",
+    "security": "Security",
+    "status": "Service status",
+    "docs": "Documentation",
+    "quickstart": "Quickstart",
+    "blog": "Blog",
+    "rss": "Blog RSS",
+    "contact": "Contact",
+    "terms": "Terms of service",
+    "privacy": "Privacy",
+    "cookies": "Cookies",
+    "dpa": "Data processing agreement (DPA)",
+    "subprocessors": "Sub-processors",
+    "aup": "Acceptable use",
+    "eu": "Data and infrastructure in European Union regions. Strict residency with Claude on AWS Bedrock EU.",
+    "rights": "© {year} Messer. All rights reserved.",
+    "language": "Language",
+    "spanish": "Español",
+    "english": "English"
+  },
+  "hero": {
+    "eyebrow": "Agents · Workflows · Knowledge · Interfaces",
+    "title": "Describe your problem. Messer builds the solution and puts it into production.",
+    "subtitle": "Create agents and workflows connected to your data, publish them on the web, WhatsApp, Slack or the phone, and govern them with human approval, traces and budgets. Everything you build is exportable code.",
+    "ctaPrimary": "Start free",
+    "ctaSecondary": "See pricing",
+    "note": "14 days of the Pro plan, no card required. EU infrastructure."
+  },
+  "composer": {
+    "label": "Composer animation: a request turns into questions, a plan, the build of every piece and a deployed solution.",
+    "windowTitle": "Composer",
+    "steps": {
+      "request": "Request",
+      "questions": "Questions",
+      "plan": "Plan",
+      "builders": "Build",
+      "deployed": "In production"
+    },
+    "you": "You",
+    "request": "I want an assistant that answers customer questions about their invoices using our terms and the invoices table, and asks for approval before issuing a credit note over €500.",
+    "questionsTitle": "The Composer asks",
+    "q1": "Where are the invoices?",
+    "a1": "PostgreSQL table",
+    "q2": "Which channels do customers use?",
+    "a2": "Web and WhatsApp",
+    "planTitle": "Proposed plan",
+    "planItems": [
+      { "kind": "Agent", "name": "Invoice support" },
+      { "kind": "Workflow", "name": "Credit note with approval above €500" },
+      { "kind": "Knowledge", "name": "Terms (PDF) and invoices table" },
+      { "kind": "Interface", "name": "Web chat and WhatsApp" }
+    ],
+    "approve": "Approve plan",
+    "buildersTitle": "Builders",
+    "builders": ["Agent", "Workflow", "Knowledge base", "Interface", "Evals 12/12"],
+    "deployedTitle": "In production",
+    "deployedMeta": "production · v1 · evals passed"
+  },
+  "pillars": {
+    "eyebrow": "Product",
+    "title": "Everything you need to put AI into production, in one tool",
+    "subtitle": "Each piece works on its own and fits with the rest. No stitching together five vendors or maintaining glue code.",
+    "items": [
+      {
+        "key": "composer",
+        "title": "Composer",
+        "body": "Describe the problem in writing or by voice. The Composer asks the right questions, proposes the architecture and, once you approve it, builds every piece while you watch the progress.",
+        "points": ["Reviewable plan before building", "Parallel builders in real time", "Fast, standard and powerful modes"]
+      },
+      {
+        "key": "agents",
+        "title": "Agents",
+        "body": "Set each agent's model, instructions, tools and context files, and test it in a chat while you edit it.",
+        "points": ["Tools with human approval", "Memory and guardrails", "Evals as a quality gate"]
+      },
+      {
+        "key": "workflows",
+        "title": "Workflows",
+        "body": "A node canvas for processes with explicit steps, triggers by schedule, webhook, email or events from your tools, and monitoring of every run.",
+        "points": ["Pause and resume across restarts", "Built-in and code nodes", "Retries and per-step traces"]
+      },
+      {
+        "key": "knowledge",
+        "title": "Knowledge",
+        "body": "Knowledge bases with documents and tables. Files are chunked, indexed and ready for semantic, keyword or hybrid search, combinable with SQL.",
+        "points": ["PDF, Word, Excel, CSV and more", "Connectors with sync", "Read-only SQL for agents"]
+      },
+      {
+        "key": "interfaces",
+        "title": "Interfaces",
+        "body": "Publish what you build as an API, an embeddable chat, a WhatsApp, Slack, Teams, email or phone channel, or a web app connected to your agents and data.",
+        "points": ["One-click deployment", "Environments and versions", "Custom domain"]
+      },
+      {
+        "key": "governance",
+        "title": "Governance",
+        "body": "Organizations, roles and SSO; budgets with automatic hard stops; cost and usage analytics; full audit and EU data residency.",
+        "points": ["Trace of every call and tool", "Budgets and alerts", "Immutable audit log"]
+      }
+    ]
+  },
+  "code": {
+    "eyebrow": "Code, not black boxes",
+    "title": "Everything you build is code you can take with you",
+    "body": "Every agent, workflow and interface is stored as versioned code and configuration, in one git repository per project. The interface edits that code. Export a runnable .zip or sync with GitHub whenever you want.",
+    "points": [
+      "One git repository per project, with history and diffs between versions",
+      "Run locally with the CLI: messer start",
+      "No vendor lock-in: your agents run outside Messer"
+    ],
+    "fileName": "workforce/invoice_support/tools.py",
+    "snippet": "from messer import Tool\n\n\ndef issue_credit_note(invoice_id: str, amount: float) -> dict:\n    \"\"\"Issue a credit note on a customer's invoice.\"\"\"\n    return billing.create_credit_note(invoice_id, amount)\n\n\n# Credit notes over €500 wait for a human approval:\n# the run pauses and resumes after the decision.\ncredit_note = Tool(\n    handler=issue_credit_note,\n    requires_approval=lambda amount, **_: amount > 500,\n    approval_prompt=lambda invoice_id, amount, **_: (\n        f\"Issue a €{amount} credit note on {invoice_id}?\"\n    ),\n)"
+  },
+  "security": {
+    "eyebrow": "Security and the EU",
+    "title": "Built for company data from day one",
+    "subtitle": "The controls your security team and your DPO will ask for, switched on by default.",
+    "items": [
+      {
+        "key": "residency",
+        "title": "EU residency",
+        "body": "All infrastructure runs in EU regions. In strict mode, models are used only through Claude on AWS Bedrock EU and embeddings are computed locally."
+      },
+      {
+        "key": "isolation",
+        "title": "Per-organization isolation",
+        "body": "Every query goes through Row Level Security in the database: one organization cannot read another's data, and tests check it on every change."
+      },
+      {
+        "key": "secrets",
+        "title": "Encrypted secrets",
+        "body": "Credentials and secrets are encrypted at rest with a master key. API keys are shown only once and stored as hashes."
+      },
+      {
+        "key": "approvals",
+        "title": "Human approval",
+        "body": "Tools with external effects require approval by default. The run pauses, persists and resumes after the decision, even after a restart."
+      },
+      {
+        "key": "access",
+        "title": "SSO, SCIM and roles",
+        "body": "SAML and OIDC with group-to-role mapping, SCIM provisioning and four roles: owner, admin, builder and viewer."
+      },
+      {
+        "key": "audit",
+        "title": "Audit and traces",
+        "body": "Every relevant action lands in an insert-only audit log, and every run keeps its full trace with tokens, cost and latency."
+      }
+    ],
+    "cta": "Visit the trust center"
+  },
+  "templates": {
+    "eyebrow": "Industry templates",
+    "title": "Start from a complete solution",
+    "subtitle": "Eight templates with agents, workflows, a sample knowledge base, an interface and passing evals. Clone one and you have a project ready to run.",
+    "cta": "See all templates",
+    "includes": "Includes",
+    "items": [
+      {
+        "id": "invoice-support",
+        "sector": "Finance and customer service",
+        "title": "Customer support for invoices",
+        "body": "Answers questions about invoices using your terms and your invoices table, and asks for approval before issuing credit notes over €500.",
+        "includes": ["Voice-enabled agent", "Credit-note workflow with approval", "Terms PDF and invoices table", "Web chat and WhatsApp"]
+      },
+      {
+        "id": "lead-qualification",
+        "sector": "Sales",
+        "title": "Lead qualification and response",
+        "body": "Scores every inbound lead against your criteria, records it in the CRM and replies by email or WhatsApp within minutes.",
+        "includes": ["Qualifying agent", "CRM and email workflow", "Qualification criteria", "Form and WhatsApp"]
+      },
+      {
+        "id": "document-extraction",
+        "sector": "Back office",
+        "title": "Invoice and delivery-note extraction",
+        "body": "Extracts supplier, amounts, dates and line items from invoices and delivery notes into a table, with human validation of unclear cases.",
+        "includes": ["Extraction agent", "Workflow with human validation", "Documents table", "Review inbox"]
+      },
+      {
+        "id": "hr-assistant",
+        "sector": "Human resources",
+        "title": "Internal HR assistant",
+        "body": "Answers employees about internal policies, holidays and the collective agreement, citing the document and the article.",
+        "includes": ["Agent with citations", "Policies and agreement", "Slack or Teams", "Escalation to HR"]
+      },
+      {
+        "id": "contract-analysis",
+        "sector": "Legal",
+        "title": "Contract analysis",
+        "body": "Identifies clauses, risks and key dates in every contract and produces a summary with expiry reminders.",
+        "includes": ["Review agent", "Reminder workflow", "Contract library", "Expiry dashboard"]
+      },
+      {
+        "id": "orders-stock",
+        "sector": "Operations",
+        "title": "Orders and stock with alerts",
+        "body": "Looks up orders and stock levels, alerts when a product drops below its minimum and drafts the restocking proposal.",
+        "includes": ["Operations agent", "Stock alert workflow", "Orders and stock tables", "Operations dashboard"]
+      },
+      {
+        "id": "phone-receptionist",
+        "sector": "Phone support",
+        "title": "Phone receptionist with scheduling",
+        "body": "Answers calls, handles frequent questions and books, moves or cancels appointments in your calendar.",
+        "includes": ["Voice agent", "Booking workflow", "Frequent questions", "Phone and web"]
+      },
+      {
+        "id": "weekly-sales-report",
+        "sector": "Sales leadership",
+        "title": "Weekly sales report",
+        "body": "Every Monday it queries your database, computes the key metrics and emails a report with the trends and the points to watch.",
+        "includes": ["Scheduled workflow", "SQL queries", "Writing agent", "Email to the team"]
+      }
+    ]
+  },
+  "useCases": {
+    "eyebrow": "Use cases",
+    "title": "What teams solve with Messer",
+    "items": [
+      {
+        "team": "Customer service",
+        "examples": ["Answers grounded in your documents and customer data", "Hand-off to a person with full context", "WhatsApp, web chat and phone"]
+      },
+      {
+        "team": "Finance and back office",
+        "examples": ["Invoice extraction into tables", "Reconciliations with human validation", "Credit notes and payments with approval"]
+      },
+      {
+        "team": "Sales",
+        "examples": ["Inbound lead qualification", "Meeting prep with CRM data", "Reports that arrive on their own"]
+      },
+      {
+        "team": "People and HR",
+        "examples": ["Policy and agreement assistant", "Onboarding for new hires", "Payroll FAQs"]
+      },
+      {
+        "team": "Legal and compliance",
+        "examples": ["Contract review", "Expiry reminders", "Search across internal rules"]
+      },
+      {
+        "team": "Operations",
+        "examples": ["Orders and stock with alerts", "Processes with triggers and retries", "Dashboards with live data"]
+      }
+    ]
+  },
+  "pricingTeaser": {
+    "eyebrow": "Pricing",
+    "title": "Prices in plain view",
+    "subtitle": "You know what you pay before you start. Every plan includes AI credits every month.",
+    "perMonth": "/month",
+    "from": "From",
+    "cta": "Compare plans",
+    "unavailable": "See the current prices on the pricing page."
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "What people usually ask",
+    "items": [
+      {
+        "q": "What exactly is Messer?",
+        "a": "A platform to build, deploy and govern AI solutions: agents, workflows, knowledge bases and interfaces. You describe the problem and the Composer builds the solution; then you publish it with environments, versions, traces and cost control."
+      },
+      {
+        "q": "Do I need to know how to code?",
+        "a": "Not to get started: the Composer and the Studio cover day-to-day work from the interface. If you code, everything is versioned Python you can edit, run locally with the CLI or sync with GitHub."
+      },
+      {
+        "q": "Where is my data stored?",
+        "a": "In European Union regions. In strict residency mode, models are used only through AWS Bedrock in the EU and embeddings are computed without leaving our infrastructure. The list of sub-processors is public."
+      },
+      {
+        "q": "Which AI models does it use?",
+        "a": "Anthropic's Claude by default, in three tiers: Fast, Standard and Powerful. The router accepts other providers and you can restrict which models are allowed in your organization."
+      },
+      {
+        "q": "Is my data used to train models?",
+        "a": "No. Your data is used only to provide the service. Anthropic and AWS Bedrock do not train their models on data received through their API."
+      },
+      {
+        "q": "Can I take what I build with me?",
+        "a": "Yes. Every project exports as a runnable .zip or syncs with a GitHub repository. Your agents and workflows run outside Messer."
+      },
+      {
+        "q": "How do the trial and billing work?",
+        "a": "You start with 14 days of the Pro plan, no card required. Then you choose a monthly or annual plan; AI usage is deducted from the included credits and you can buy extra packs."
+      },
+      {
+        "q": "What about sensitive actions?",
+        "a": "Any tool or step can require human approval. The run pauses, notifies whoever has to decide in the app or by email, and continues once it is approved or denied."
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "Start with a real problem",
+    "subtitle": "Create your account, describe what you want to solve and have your first agent working in minutes.",
+    "primary": "Start free",
+    "secondary": "Talk to sales"
+  },
+  "features": {
+    "public_chat": "Public chat and widget",
+    "api": "Public API and API keys",
+    "connectors": "Connectors",
+    "channels": "Channels (WhatsApp, Slack, Teams, email, Telegram)",
+    "deployments": "One-click deployment and environments",
+    "voice": "Voice (browser and phone)",
+    "sso": "SAML/OIDC SSO",
+    "audit": "Audit log",
+    "guard": "Guard: behavior control",
+    "priority_support": "Priority support",
+    "eu_strict": "Strict EU residency (Bedrock EU)",
+    "byoc": "Deployment in your cloud",
+    "scim": "SCIM",
+    "sla": "SLA",
+    "dedicated_engineer": "Dedicated engineer"
+  },
+  "pricing": {
+    "metaTitle": "Pricing",
+    "metaDescription": "Messer plans with prices in plain view: Starter, Pro, Business and Enterprise. AI credits included and a 14-day trial with no card.",
+    "eyebrow": "Pricing",
+    "title": "Clear pricing to put AI into production",
+    "subtitle": "Every plan includes AI credits every month. Start with 14 days of the Pro plan, no card required.",
+    "billingLabel": "Billing period",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "annualSave": "Save up to {pct}%",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "from": "From",
+    "equivalent": "Works out at {price}/month",
+    "save": "You save {amount} a year",
+    "billedMonthly": "Billed monthly",
+    "vat": "Prices exclude VAT. Billing is handled by Stripe.",
+    "trialBadge": "14 days free",
+    "ctaTrial": "Try free for 14 days",
+    "ctaStart": "Start with {plan}",
+    "ctaContact": "Talk to sales",
+    "includesPrevious": "Everything in {plan}, plus:",
+    "includes": "Includes:",
+    "seats": "{count, plural, one {# user} other {# users}}",
+    "seatsUnlimited": "Unlimited users",
+    "projects": "{count, plural, one {# project} other {# projects}}",
+    "projectsUnlimited": "Unlimited projects",
+    "runs": "{count, number} runs per month",
+    "runsUnlimited": "Unlimited runs",
+    "credits": "{count, number} AI credits per month",
+    "storage": "{count, number} GB of storage",
+    "unavailableTitle": "We couldn't load the prices",
+    "unavailableBody": "Prices are read live from our configuration and are not available right now. Try again in a few minutes or write to us and we will send them to you.",
+    "reload": "Reload",
+    "contact": "Contact us",
+    "compareTitle": "Plan comparison",
+    "compareFeature": "Feature",
+    "limitsGroup": "Limits",
+    "featuresGroup": "Features",
+    "included": "Included",
+    "notIncluded": "Not included",
+    "unlimited": "Unlimited",
+    "rows": {
+      "price": "Price",
+      "seats": "Users",
+      "projects": "Projects",
+      "runs_month": "Runs per month",
+      "credits_month": "AI credits per month",
+      "storage_gb": "Storage (GB)"
+    },
+    "creditsTitle": "AI credits",
+    "creditsSubtitle": "Model usage is deducted from the credits included in your plan. If you need more, buy a pack or turn on automatic top-up.",
+    "creditValue": "1 credit = {usd} USD of usage",
+    "creditMargin": "Model cost + {pct}% margin",
+    "packsTitle": "Credit packs",
+    "packCredits": "{count, number} credits",
+    "packPer1000": "{price} per 1,000 credits",
+    "packsUnavailable": "Credit packs are not available right now.",
+    "ratesTitle": "What each model tier costs",
+    "ratesNote": "Credits per million tokens. Rates follow each provider's public price.",
+    "rateTier": "Tier",
+    "rateModel": "Model",
+    "rateInput": "Input",
+    "rateOutput": "Output",
+    "ratesUnavailable": "Per-model rates are not available right now.",
+    "tiers": {
+      "fast": "Fast",
+      "standard": "Standard",
+      "powerful": "Powerful"
+    },
+    "faqTitle": "Questions about pricing and credits",
+    "faq": {
+      "creditQ": "What is a credit?",
+      "creditA": "It is the unit we use to measure AI usage. One credit equals {usd} USD of model usage, and every plan includes an amount of credits each month.",
+      "creditAGeneric": "It is the unit we use to measure AI usage. Every plan includes an amount of credits each month.",
+      "usageQ": "How is usage calculated?",
+      "usageA": "Every model call records its input and output tokens. We multiply them by the model's public rate, add a {pct}% margin and convert the result into credits. The cost of every run appears in its traces.",
+      "usageAGeneric": "Every model call records its input and output tokens. We multiply them by the model's public rate, add a margin and convert the result into credits. The cost of every run appears in its traces.",
+      "outQ": "What happens if I run out of credits?",
+      "outA": "You can buy a pack at any time or turn on automatic top-up when the balance drops below a threshold. You can also set budgets per organization or per project, with alerts and an automatic hard stop.",
+      "changeQ": "Can I change plans?",
+      "changeA": "Yes, whenever you want from Plan and billing or from the Stripe customer portal, where you can also download your invoices.",
+      "trialQ": "What does the trial include?",
+      "trialA": "14 days of the Pro plan with its features and credits, no card required. When it ends you choose a plan; if you don't, the organization becomes read-only and you keep your projects.",
+      "vatQ": "Do you issue VAT invoices?",
+      "vatA": "Yes. Billing is handled by Stripe, which applies the VAT that corresponds to your country and your EU VAT number.",
+      "enterpriseQ": "What does Enterprise include?",
+      "enterpriseA": "Strict EU residency, deployment in your cloud or on your servers, SCIM, SLA and a dedicated engineer. Pricing starts at {price} per month and depends on volume.",
+      "enterpriseAGeneric": "Strict EU residency, deployment in your cloud or on your servers, SCIM, SLA and a dedicated engineer. Pricing depends on volume."
+    },
+    "enterpriseTitle": "Need Enterprise?",
+    "enterpriseBody": "Strict EU residency, deployment in your cloud, SCIM, SLA and a dedicated engineer.",
+    "enterpriseCta": "Talk to sales"
+  },
+  "securityPage": {
+    "metaTitle": "Security and compliance",
+    "metaDescription": "Messer trust center: EU data residency, per-organization isolation, encryption, SSO and SCIM, audit, sub-processors and DPA.",
+    "eyebrow": "Trust center",
+    "title": "Security, privacy and compliance",
+    "subtitle": "How we protect your company's data and which controls you have over it.",
+    "quickLinks": {
+      "dpa": "Data processing agreement (DPA)",
+      "subprocessors": "Sub-processors",
+      "privacy": "Privacy policy",
+      "status": "Service status"
+    },
+    "sections": [
+      {
+        "key": "residency",
+        "title": "EU data residency",
+        "body": "The database, file storage, job queue, execution services and the website run in European Union regions.",
+        "points": [
+          "Standard mode: Anthropic models through their API, with the rest of the service and your data in the EU.",
+          "Strict mode (Enterprise): models are used only through Claude on AWS Bedrock in an EU region and embeddings are computed locally.",
+          "In strict mode, voice and email providers must have an EU region or are disabled."
+        ]
+      },
+      {
+        "key": "isolation",
+        "title": "Isolation between organizations",
+        "body": "Every request runs with a database role that cannot bypass security, with Row Level Security on every business table.",
+        "points": [
+          "Policies filter by organization and role in the database itself.",
+          "Automated tests check that one organization cannot read anything from another.",
+          "Agent and console SQL is read-only, with time and row limits, and restricted to each knowledge base's schema."
+        ]
+      },
+      {
+        "key": "encryption",
+        "title": "Encryption",
+        "body": "Data travels encrypted with TLS and our infrastructure providers store it encrypted at rest.",
+        "points": [
+          "Connector credentials and project secrets are additionally encrypted with a master key (Fernet: AES-128 and HMAC-SHA256).",
+          "Passwords with Argon2id; API keys and tokens stored only as hashes.",
+          "httpOnly, secure session cookies and a strict content security policy."
+        ]
+      },
+      {
+        "key": "access",
+        "title": "Identity and access",
+        "body": "Control who gets in and what each person can do.",
+        "points": [
+          "SSO with SAML 2.0 or OIDC and group-to-role mapping.",
+          "User provisioning with SCIM 2.0.",
+          "Four roles: owner, admin, builder and viewer.",
+          "Two-factor authentication with TOTP and recovery codes."
+        ]
+      },
+      {
+        "key": "audit",
+        "title": "Audit and traceability",
+        "body": "You know what happened, who did it and what it cost.",
+        "points": [
+          "Insert-only audit log, exportable to CSV.",
+          "Full trace of every run: model and tool calls with input, output, tokens, cost and latency.",
+          "Configurable retention of traces and conversations per organization."
+        ]
+      },
+      {
+        "key": "ai",
+        "title": "AI controls",
+        "body": "Agents act within the limits you set.",
+        "points": [
+          "Human approval by default for tools with external effects.",
+          "Prompt-injection protection on by default in the Composer, public chats and channels. Documents are treated as data, never as instructions.",
+          "Per-organization model policies and budgets with automatic hard stops.",
+          "Transparency: public chats tell users they are talking to an AI and the answering model is recorded."
+        ]
+      },
+      {
+        "key": "operations",
+        "title": "Development and operations",
+        "body": "Security is also about how we build and run the service.",
+        "points": [
+          "Continuous integration with tests, dependency audits (pip-audit and npm audit) and secret scanning.",
+          "Automatic backups of the database and storage, with a tested restore.",
+          "Error monitoring in the EU and a public status page."
+        ]
+      },
+      {
+        "key": "gdpr",
+        "title": "Privacy and GDPR",
+        "body": "We act as the processor of the data you upload to Messer.",
+        "points": [
+          "Data processing agreement (DPA) under Article 28 of the GDPR.",
+          "Export and verifiable deletion of the data of a person or a whole organization.",
+          "Public list of sub-processors, with advance notice of changes."
+        ]
+      }
+    ],
+    "subprocessorsTitle": "Sub-processors",
+    "subprocessorsBody": "We work with few providers, all with an EU region except the model providers you choose to use outside strict mode.",
+    "subprocessorsCta": "See the full list",
+    "reportTitle": "Found a vulnerability?",
+    "reportBody": "Write to us through the contact form with the topic “Security and compliance”. We will review it with priority and keep you informed until it is fixed.",
+    "reportCta": "Report an issue",
+    "dpaCta": "Read the DPA"
+  },
+  "templatesPage": {
+    "metaTitle": "Industry templates",
+    "metaDescription": "Eight complete templates to start in minutes: customer service, sales, back office, HR, legal, operations, voice and reporting.",
+    "eyebrow": "Templates",
+    "title": "Production-ready templates",
+    "subtitle": "Every template includes agents, workflows, a sample knowledge base, an interface and passing evals. Cloning one creates a project you can run right away and adapt to your data.",
+    "stepsTitle": "How it works",
+    "steps": [
+      "Pick a template and clone it into your organization.",
+      "Replace the sample data with your documents and tables.",
+      "Test the agent, review the evals and deploy in one click."
+    ],
+    "ctaTitle": "Try any template for free",
+    "ctaBody": "Create your account and clone the template you need from the in-app gallery.",
+    "cta": "Start free",
+    "ctaSecondary": "Don't see your case? Tell us"
+  }
 }

@@ -369,17 +369,9 @@ async def put_code(
     if member.kind == "agent":
         await svc.update_agent_code(db, principal, project, member, body.code)
     else:
-        author = await svc.author_for(db, principal)
-        try:
-            compile(body.code, f"{member.path}/workflow.py", "exec")
-        except SyntaxError as exc:
-            raise ApiError(f"Error de sintaxis en la línea {exc.lineno}: {exc.msg}", code="syntax_error") from exc
-        await svc.repo_for(project).write(
-            {f"{member.path}/workflow.py": body.code},
-            message=f"Edit {member.name} code",
-            author=author.name,
-            email=author.email,
-        )
+        from ..services import workflows as workflows_svc
+
+        await workflows_svc.update_code(db, principal, project, member, body.code)
     return await _detail(project, member)
 
 
@@ -406,6 +398,25 @@ async def delete_member(
         diff={"name": name},
     )
     return Response(status_code=204)
+
+
+@router.get("/{project_id}/versions", response_model=list[VersionOut])
+async def list_project_versions(
+    project_id: uuid.UUID,
+    principal: Principal = Depends(require_role("viewer")),
+    db: AsyncSession = Depends(get_db),
+) -> list[VersionOut]:
+    """Project-level versions (snapshots used by deployments), newest first."""
+    project = await _project(db, principal, project_id)
+    rows = (
+        await db.execute(
+            select(Version)
+            .where(Version.entity_type == "project", Version.entity_id == project.id)
+            .order_by(Version.version.desc())
+            .limit(200)
+        )
+    ).scalars()
+    return [VersionOut.model_validate(v, from_attributes=True) for v in rows]
 
 
 @router.get("/{project_id}/workforce/{name}/versions", response_model=list[VersionOut])

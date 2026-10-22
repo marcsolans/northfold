@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "messer-connector-agent"
+version = "1.0.0"
+description = "Messer on-prem connector agent: outbound WebSocket to the control plane, read-only SQL and file access."
+requires-python = ">=3.12"
+dependencies = [
+  # Only messer_connectors.sql (stdlib + database drivers) is imported at runtime.
+  "messer-connectors",
+  "websockets>=13",
+  "pyyaml>=6.0.2",
+]
+
+[project.scripts]
+messer-connector-agent = "messer_connector_agent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/messer_connector_agent"]

@@ -1,0 +1,33 @@
+{
+  "portal": {"hub_id": 9990001, "domain": "albor.example"},
+  "contacts": [
+    {"id": "501", "offset_min": -200000, "properties": {"firstname": "Iker", "lastname": "Mendaro", "email": "compras@talleres-mendaro.example", "phone": "+34 943 000 101", "company": "Talleres Mendaro S.A.", "jobtitle": "Responsable de compras", "lifecyclestage": "customer", "city": "Eibar"}},
+    {"id": "502", "offset_min": -180000, "properties": {"firstname": "Nerea", "lastname": "Arrieta", "email": "administracion@clinica-arrieta.example", "phone": "+34 944 000 202", "company": "Clínica Dental Arrieta", "jobtitle": "Administración", "lifecyclestage": "customer", "city": "Getxo"}},
+    {"id": "503", "offset_min": -150000, "properties": {"firstname": "Jon", "lastname": "Ribera", "email": "jon@hosteleria-ribera.example", "phone": "+34 945 000 303", "company": "Hostelería Ribera S.L.", "jobtitle": "Gerente", "lifecyclestage": "customer", "city": "Vitoria-Gasteiz"}},
+    {"id": "504", "offset_min": -120000, "properties": {"firstname": "Ane", "lastname": "Ugalde", "email": "ane.ugalde@construcciones-ugalde.example", "phone": "+34 946 000 404", "company": "Construcciones Ugalde S.L.", "jobtitle": "Directora financiera", "lifecyclestage": "customer", "city": "Bilbao"}},
+    {"id": "505", "offset_min": -90000, "properties": {"firstname": "Miren", "lastname": "Lurra", "email": "miren@papeleria-lurra.example", "phone": "+34 948 000 505", "company": "Papelería Lurra", "jobtitle": "Propietaria", "lifecyclestage": "customer", "city": "Pamplona"}},
+    {"id": "506", "offset_min": -40000, "properties": {"firstname": "Unai", "lastname": "Iturbe", "email": "contabilidad@asesoria-iturbe.example", "phone": "+34 943 000 606", "company": "Asesoría Iturbe", "jobtitle": "Contable", "lifecyclestage": "customer", "city": "Donostia"}},
+    {"id": "507", "offset_min": -20000, "properties": {"firstname": "Leire", "lastname": "Garmendia", "email": "leire@coworking-arriaga.example", "phone": "+34 944 000 707", "company": "Coworking Arriaga", "jobtitle": "Office manager", "lifecyclestage": "opportunity", "city": "Bilbao"}},
+    {"id": "508", "offset_min": -6000, "properties": {"firstname": "Asier", "lastname": "Etxeberria", "email": "asier@ingenieria-txindoki.example", "phone": "+34 943 000 808", "company": "Ingeniería Txindoki", "jobtitle": "CEO", "lifecyclestage": "lead", "city": "Tolosa"}}
+  ],
+  "companies": [
+    {"id": "901", "offset_min": -200000, "properties": {"name": "Talleres Mendaro S.A.", "domain": "talleres-mendaro.example", "industry": "Industria", "city": "Eibar", "country": "España", "numberofemployees": "85", "annualrevenue": "6200000"}},
+    {"id": "902", "offset_min": -180000, "properties": {"name": "Clínica Dental Arrieta", "domain": "clinica-arrieta.example", "industry": "Salud", "city": "Getxo", "country": "España", "numberofemployees": "14", "annualrevenue": "1100000"}},
+    {"id": "903", "offset_min": -150000, "properties": {"name": "Hostelería Ribera S.L.", "domain": "hosteleria-ribera.example", "industry": "Hostelería", "city": "Vitoria-Gasteiz", "country": "España", "numberofemployees": "60", "annualrevenue": "3400000"}},
+    {"id": "904", "offset_min": -120000, "properties": {"name": "Construcciones Ugalde S.L.", "domain": "construcciones-ugalde.example", "industry": "Construcción", "city": "Bilbao", "country": "España", "numberofemployees": "120", "annualrevenue": "15800000"}},
+    {"id": "905", "offset_min": -90000, "properties": {"name": "Papelería Lurra", "domain": "papeleria-lurra.example", "industry": "Comercio minorista", "city": "Pamplona", "country": "España", "numberofemployees": "6", "annualrevenue": "420000"}},
+    {"id": "906", "offset_min": -20000, "properties": {"name": "Coworking Arriaga", "domain": "coworking-arriaga.example", "industry": "Servicios", "city": "Bilbao", "country": "España", "numberofemployees": "9", "annualrevenue": "650000"}}
+  ],
+  "deals": [
+    {"id": "7001", "offset_min": -30000, "properties": {"dealname": "Renovación mobiliario Coworking Arriaga", "amount": "18400", "dealstage": "presentationscheduled", "pipeline": "default", "closedate": "2026-11-28T00:00:00Z"}},
+    {"id": "7002", "offset_min": -25000, "properties": {"dealname": "Contrato anual consumibles Talleres Mendaro", "amount": "21600", "dealstage": "contractsent", "pipeline": "default", "closedate": "2026-11-15T00:00:00Z"}},
+    {"id": "7003", "offset_min": -15000, "properties": {"dealname": "Mesas elevables Ingeniería Txindoki", "amount": "8580", "dealstage": "qualifiedtobuy", "pipeline": "default", "closedate": "2026-12-12T00:00:00Z"}},
+    {"id": "7004", "offset_min": -8000, "properties": {"dealname": "Ampliación office Hostelería Ribera", "amount": "4900", "dealstage": "closedwon", "pipeline": "default", "closedate": "2026-10-10T00:00:00Z"}},
+    {"id": "7005", "offset_min": -3000, "properties": {"dealname": "Archivo documental Construcciones Ugalde", "amount": "6250", "dealstage": "appointmentscheduled", "pipeline": "default", "closedate": "2026-12-20T00:00:00Z"}}
+  ],
+  "incoming_contacts": [
+    {"properties": {"firstname": "Maite", "lastname": "Zubiri", "email": "maite@estudio-zubiri.example", "phone": "+34 944 000 909", "company": "Estudio Zubiri Arquitectos", "jobtitle": "Socia", "lifecyclestage": "lead", "city": "Bilbao"}},
+    {"properties": {"firstname": "Gorka", "lastname": "Olano", "email": "gorka@olano-logistica.example", "phone": "+34 945 000 919", "company": "Olano Logística", "jobtitle": "Jefe de compras", "lifecyclestage": "lead", "city": "Vitoria-Gasteiz"}},
+    {"properties": {"firstname": "Itziar", "lastname": "Basterra", "email": "itziar@academia-basterra.example", "phone": "+34 943 000 929", "company": "Academia Basterra", "jobtitle": "Directora", "lifecyclestage": "lead", "city": "Irun"}}
+  ]
+}

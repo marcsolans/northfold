@@ -1,0 +1,288 @@
+{
+  "title": "Guard",
+  "subtitle": "Behaviour control on every model call: routes simple turns to the small model, blocks actions that break the playbook and validates answers. Everything shows up in the trace.",
+  "toggle": {
+    "label": "Guard enabled",
+    "on": "On",
+    "off": "Off",
+    "needsPlaybook": "Generate or write the playbook to enable Guard.",
+    "unsaved": "Save the playbook changes before enabling it.",
+    "hasErrors": "Fix the playbook errors before enabling it.",
+    "enabled": "Guard enabled for {member}",
+    "disabled": "Guard disabled for {member}",
+    "disableTitle": "Disable Guard?",
+    "disableDescription": "Calls from {member} will no longer go through the playbook: no model routing, no blocked actions and no answer validation.",
+    "disableConfirm": "Disable Guard",
+    "viewer": "Read only: you need the builder role to change Guard.",
+    "planTitle": "Guard is not included in your plan",
+    "planDescription": "You can prepare the playbook now and enable it once you upgrade.",
+    "seePlans": "See plans"
+  },
+  "generate": {
+    "button": "Generate playbook",
+    "regenerate": "Regenerate",
+    "running": "Generating…",
+    "confirmTitle": "Regenerate the playbook?",
+    "confirmDescription": "The current policies will be replaced by a new proposal based on the agent's code, configuration and tools. Guard stays enabled or disabled as it is.",
+    "confirm": "Regenerate",
+    "done": "Playbook generated",
+    "byLlm": "Proposed by {model}",
+    "byRules": "Proposed by rules from the configuration",
+    "byManual": "Edited by hand",
+    "updated": "Updated {when}",
+    "notes": "Generation notes"
+  },
+  "empty": {
+    "title": "This agent has no playbook yet",
+    "description": "Generate a proposal from the agent and adjust it, or start from an empty playbook.",
+    "blank": "Start empty",
+    "viewerDescription": "A project builder can generate the playbook."
+  },
+  "tabs": {
+    "playbook": "Playbook",
+    "decisions": "Decisions"
+  },
+  "editor": {
+    "form": "Form",
+    "json": "JSON",
+    "save": "Save playbook",
+    "saved": "Playbook saved",
+    "discard": "Discard",
+    "unsaved": "Unsaved changes",
+    "invalid": "The playbook has errors: check the highlighted fields.",
+    "jsonInvalid": "Invalid JSON: {error}",
+    "jsonLabel": "Playbook as JSON",
+    "readOnly": "Read only",
+    "models": {
+      "title": "Models",
+      "small": "Small model",
+      "smallHint": "Simple turns and the votes of semantic policies.",
+      "large": "Large model",
+      "largeHint": "Complex turns."
+    },
+    "policies": {
+      "title": "Policies",
+      "description": "Turn policies are evaluated in order and the first match decides the model or the answer. Tool policies apply to every call and any block wins.",
+      "addTurn": "Turn policy",
+      "addTool": "Tool policy",
+      "empty": "No policies: every call uses the agent's model and no action is blocked.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove policy",
+      "removeTitle": "Remove the policy “{id}”?",
+      "removeDescription": "It is removed from the draft. Nothing changes until you save the playbook.",
+      "enabled": "Enabled",
+      "turn": "Turn",
+      "tool": "Tool",
+      "semantic": "Semantic · 3 votes",
+      "deterministic": "Deterministic",
+      "expand": "Edit “{id}”",
+      "summaryRoute": "→ {model} model",
+      "summaryAnswer": "→ fixed answer",
+      "summaryTool": "{action} {tool}"
+    },
+    "policy": {
+      "id": "Id",
+      "idHint": "Lowercase letters, digits, dashes and underscores.",
+      "description": "Description",
+      "condition": "Natural-language condition",
+      "conditionHint": "Optional. When set, the small model votes three times. Without a condition the policy is resolved without any model.",
+      "confirmation": "Confirmation",
+      "confirmations": {
+        "none": "One vote is enough",
+        "majority": "Majority (2 of 3)",
+        "unanimous": "Unanimous (3 of 3)"
+      },
+      "match": "Deterministic match",
+      "matchHint": "Every check you fill in must hold.",
+      "lastMessage": "Last message",
+      "lastMessages": {
+        "any": "Any",
+        "user_text": "User text",
+        "tool_result": "Tool result"
+      },
+      "toolResults": "Tool results",
+      "toolResultsHint": "Comma-separated names; wildcards (*) allowed.",
+      "textPatterns": "Text matches",
+      "textExcludes": "Text does not match",
+      "patternsHint": "One regular expression per line, case-insensitive.",
+      "minChars": "Minimum characters",
+      "maxChars": "Maximum characters",
+      "firstTurn": "First turn",
+      "firstTurnOptions": {
+        "any": "Either",
+        "yes": "Only the first",
+        "no": "All but the first"
+      },
+      "requires": "Requires facts",
+      "provides": "Provides facts",
+      "factsHint": "Comma-separated. Built-in: tool:<tool> (it already returned a result) and approval:<tool> (a human approved it).",
+      "route": "Model",
+      "routes": {
+        "keep": "The agent's",
+        "small": "Small",
+        "large": "Large"
+      },
+      "response": "Fixed answer",
+      "responseHint": "Optional. Answers without calling any model.",
+      "tool": "Tool",
+      "otherTool": "Other (name or pattern)",
+      "toolPattern": "Name or pattern",
+      "action": "Action",
+      "actions": {
+        "allow": "Allow",
+        "deny": "Block",
+        "require_approval": "Require approval"
+      },
+      "constraints": {
+        "allow": "Allow only when",
+        "deny": "Block when",
+        "require_approval": "Require approval when"
+      },
+      "constraintsAlways": "No conditions: applies to every call of the tool.",
+      "addConstraint": "Add condition",
+      "removeConstraint": "Remove condition",
+      "arg": "Argument",
+      "op": "Operator",
+      "value": "Value",
+      "valueList": "Comma-separated values",
+      "ops": {
+        "<": "less than",
+        "<=": "at most",
+        ">": "greater than",
+        ">=": "at least",
+        "==": "equal to",
+        "!=": "different from",
+        "in": "is one of",
+        "not_in": "is none of",
+        "contains": "contains",
+        "matches": "matches (regex)",
+        "exists": "is present",
+        "missing": "is missing"
+      },
+      "message": "Message when blocked",
+      "messageHint": "Optional. Replaces the blocked call in the agent's answer.",
+      "ungated": "“{tool}” has no approval gate in the agent: Guard will block these calls unless a human already approved them in the conversation.",
+      "gated": "“{tool}” requires approval in the agent: the run pauses so a human can decide."
+    },
+    "schema": {
+      "title": "Output schema",
+      "description": "JSON Schema the agent's final answers must follow. When an answer does not, Guard asks the model to fix it once.",
+      "enable": "Validate final answers",
+      "label": "JSON Schema",
+      "invalid": "Invalid JSON: {error}"
+    },
+    "issues": {
+      "errors": "{count, plural, one {# error} other {# errors}}",
+      "warnings": "{count, plural, one {# warning} other {# warnings}}",
+      "playbook": "Playbook",
+      "codes": {
+        "unknown_model": "{model} is not in the model catalog.",
+        "fact_never_provided": "No policy provides “{fact}”: the requirement can never hold.",
+        "noop_policy": "The policy neither routes, answers nor provides facts.",
+        "matches_every_turn": "No match and no condition: it applies to every turn and hides the policies below.",
+        "unknown_tool": "The agent has no tool “{tool}”.",
+        "approval_not_gated": "“{tool}” does not require approval in the agent: Guard will block these calls unless already approved. Mark the tool as “requires approval”.",
+        "unknown_arg": "“{tool}” has no argument “{arg}”.",
+        "non_numeric_arg": "“{arg}” is not numeric in “{tool}”.",
+        "client": {
+          "invalid_id": "Invalid id: use lowercase letters, digits, dashes and underscores, starting with a letter.",
+          "duplicate_id": "Duplicate id.",
+          "invalid_fact": "Invalid fact (e.g. identity_verified or approval:create_credit_note).",
+          "invalid_regex": "Invalid regular expression.",
+          "response_with_tool": "A policy with a fixed answer cannot act on tools.",
+          "required": "Required.",
+          "number": "Must be a number."
+        }
+      }
+    }
+  },
+  "metrics": {
+    "title": "Metrics",
+    "range": "Last {days} days",
+    "ranges": {
+      "7": "7 days",
+      "30": "30 days",
+      "90": "90 days"
+    },
+    "onPath": "Turns on the declared path",
+    "onPathHint": "{onPath} of {turns} turns matched a policy",
+    "costPerRun": "Cost per run",
+    "costPerRunHint": "Without Guard: {baseline}",
+    "savings": "Estimated savings",
+    "savingsHint": "Versus the same tokens on the agent's model",
+    "blocked": "Blocked actions",
+    "blockedHint": "{runs, plural, one {in # run} other {in # runs}}",
+    "overhead": "Guard's own cost (votes and repairs): {value}",
+    "routes": "Turn routing",
+    "routeLabels": {
+      "small": "Small model",
+      "large": "Large model",
+      "default": "Agent's model",
+      "answer": "Fixed answer"
+    },
+    "noData": "No guarded turns in this period yet.",
+    "demo": "Demo mode: costs estimated at list prices with the demo model's tokens.",
+    "chartTitle": "Turns per day",
+    "chartOnPath": "On path",
+    "chartOffPath": "Off path",
+    "chartBlocked": "Blocks",
+    "issues": "{errors, plural, =0 {} one {# evaluation error} other {# evaluation errors}}"
+  },
+  "decisions": {
+    "title": "Recent decisions",
+    "description": "Every guarded model call leaves a “guard” span in the trace.",
+    "empty": {
+      "title": "No decisions yet",
+      "description": "Once the agent runs with Guard enabled you will see every turn here: the policy applied, the model chosen and the blocked actions."
+    },
+    "columns": {
+      "at": "When",
+      "turn": "Turn",
+      "policy": "Policy",
+      "model": "Model",
+      "result": "Result"
+    },
+    "status": {
+      "success": "OK",
+      "blocked": "Blocked",
+      "invalid_output": "Invalid output",
+      "error": "Error"
+    },
+    "fallthrough": "No policy",
+    "offPath": "Off path",
+    "toolResult": "Tool result",
+    "answer": "Fixed answer",
+    "trace": "View trace",
+    "toggle": "Decision details",
+    "toolCalls": "Tool calls",
+    "verdicts": {
+      "allow": "Allowed",
+      "deny": "Blocked",
+      "approval": "Sent for approval",
+      "pass": "No applicable rule"
+    },
+    "reasons": {
+      "constraints": "conditions",
+      "requires": "missing facts",
+      "approval_required": "needs approval",
+      "gated": "approval gate",
+      "approved": "already approved",
+      "allowed": "within limits",
+      "not_applicable": "not applicable"
+    },
+    "votes": "Votes",
+    "votesSkipped": {
+      "demo": "skipped in demo mode",
+      "model_policy": "model not allowed by the organization's policy",
+      "residency": "model unavailable under strict EU residency"
+    },
+    "matched": "holds",
+    "notMatched": "does not hold",
+    "facts": "Facts",
+    "noFacts": "None",
+    "costs": "Call cost {priced} · without Guard {baseline} · Guard {overhead}",
+    "demo": "Demo",
+    "errors": "Errors"
+  }
+}
