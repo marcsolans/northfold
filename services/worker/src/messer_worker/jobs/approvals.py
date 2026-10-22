@@ -66,8 +66,29 @@ async def notify_approval(_ctx: dict[str, Any], approval_id: str) -> int:
     for email, locale, context in recipients:
         await send_template(email, "approval_request", context, locale)
         sent += 1
-    log.info("approval.notified", approval_id=approval_id, recipients=sent)
+    slack = await _notify_slack(uuid.UUID(approval_id), web)
+    log.info("approval.notified", approval_id=approval_id, recipients=sent, slack=slack)
     return sent
+
+
+async def _notify_slack(approval_id: uuid.UUID, web: str) -> str:
+    """Post to the channel configured on the org's Slack connection (``config.approvals_channel``)."""
+    from messer_api.services import slack_notify
+
+    async with system_session() as s:
+        approval = await s.get(Approval, approval_id)
+        if approval is None:
+            return "skipped:gone"
+        conn = await slack_notify.slack_connection(s, approval.org_id)
+        channel = str(((conn.config if conn else None) or {}).get("approvals_channel") or "").strip()
+        if conn is None or not channel:
+            return "skipped:not_configured"
+        project = await s.get(Project, approval.project_id)
+        blocks = slack_notify.approval_blocks(
+            title=approval.title, workforce=approval.workforce_name, project=project.name if project else "",
+            tool=approval.tool_name, summary=approval.context_summary, payload=approval.payload or {},
+            url=f"{web}/app/approvals?id={approval.id}")
+        return await slack_notify.post(s, conn, channel, f"Aprobación pendiente: {approval.title}", blocks)
 
 
 async def resume_run(_ctx: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:

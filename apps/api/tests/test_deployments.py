@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -10,7 +11,7 @@ import pytest
 from sqlalchemy import select
 
 from messer_common.db import system_session
-from messer_common.db.models import Deployment, Environment, EvalRun, Membership, Notification, User
+from messer_common.db.models import Deployment, Environment, EvalRun, Interface, Membership, Notification, Project, User
 from messer_common.projects_repo import ProjectRepo
 from messer_runtime.testing import Harness
 
@@ -167,3 +168,24 @@ async def test_custom_domain_verification(client: httpx.AsyncClient) -> None:
     assert (await client.get("/api/internal/domains/allowed", params={"domain": "otro.es"})).status_code == 404
     resolved = (await client.get("/api/public/v1/domains/resolve", params={"host": "ayuda.acme.es"})).json()
     assert resolved["environment"] == "production" and resolved["project"] == "soporte"
+    assert resolved["home"] is None
+
+    # Once an interface is published, the domain root opens it.
+    async with system_session() as s:
+        project = await s.get(Project, uuid.UUID(pid))
+        assert project is not None
+        s.add(
+            Interface(
+                org_id=project.org_id,
+                project_id=project.id,
+                name="Portal",
+                kind="app",
+                slug="portal",
+                published_definition={"screens": []},
+                published_at=datetime.now(UTC),
+                public=True,
+            )
+        )
+    resolved = (await client.get("/api/public/v1/domains/resolve", params={"host": "ayuda.acme.es"})).json()
+    assert resolved["home"] == "/app/portal"
+    assert (await client.get("/api/public/v1/domains/resolve", params={"host": "otro.es"})).status_code == 404

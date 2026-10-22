@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from messer_common import audit
 from messer_common.db import Principal, system_session
-from messer_common.db.models import Deployment, Environment, Org, Project, Version
+from messer_common.db.models import Deployment, Environment, Interface, Org, Project, Version
 from messer_common.settings import get_settings
 
 from ..deps import ensure_project_access, get_db, require_role
@@ -312,4 +312,16 @@ async def resolve_domain(host: str) -> dict[str, Any]:
         org = await s.get(Org, env.org_id)
         if project is None or org is None:
             raise NotFound("Dominio desconocido")
-        return {"org": org.slug, "project": project.slug, "environment": env.name}
+        # The domain root opens the project's first published interface (app before chat).
+        home = (
+            await s.execute(
+                select(Interface.kind, Interface.slug, Interface.workforce_name)
+                .where(Interface.project_id == project.id, Interface.published_at.is_not(None))
+                .order_by(Interface.kind, Interface.published_at)
+                .limit(1)
+            )
+        ).first()
+        home_path = None
+        if home is not None:
+            home_path = f"/app/{home.slug}" if home.kind == "app" else f"/chat/{home.workforce_name or home.slug}"
+        return {"org": org.slug, "project": project.slug, "environment": env.name, "home": home_path}

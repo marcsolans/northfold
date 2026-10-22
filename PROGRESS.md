@@ -7,7 +7,7 @@
 | 1. Foundations | ✅ Closed |
 | 2. Business | ✅ Closed |
 | 3. Runtime and Agent builder | ✅ Closed |
-| 4. Knowledge and connectors | 🔧 In progress (knowledge done, connectors finishing) |
+| 4. Knowledge and connectors | ✅ Closed |
 | 5. Workflows, triggers and approvals | 🔧 In progress (triggers, approvals inbox and email done; workflow builder in progress) |
 | 6. Composer | ⏳ |
 | 7. Interfaces, deployment and governance | 🔧 In progress (deployments, domains, GitHub sync, export done; interfaces and analytics in progress) |
@@ -77,6 +77,23 @@ Done:
   Real-provider cost and credit deduction are verified with a mocked Anthropic transport (no key in this
   environment); in demo mode runs cost 0.
 
+## Phase 4 — Knowledge and connectors (closed)
+
+Done:
+- Knowledge bases with their own schema, reader role and policies; ingestion of PDF, DOCX, PPTX, XLSX/CSV, HTML,
+  Markdown/TXT and EML with structure-aware chunking; embeddings (local multilingual model, Voyage, Bedrock, offline
+  hash); vector, keyword and hybrid (RRF) search; tables from CSV/Excel or syncs with column types; read-only SQL
+  console with `embed()` and policies; entities; KB backups; live ingestion status (D-028).
+- 17 connectors: Google Drive, Gmail, Google Calendar, OneDrive, SharePoint, Outlook, Slack, Notion, HubSpot,
+  Salesforce (OAuth 2), PostgreSQL, MySQL, SQL Server (read-only, schema introspection, incremental table syncs),
+  webhooks (HMAC), generic HTTP, MCP servers, on-prem files; demo mode runs each adapter against an in-process fake
+  of the provider API; syncs into knowledge bases; connector events for workflow triggers; on-prem connector agent
+  (outbound WebSocket, enrollment, PyInstaller spec) (D-033).
+- Verified by: knowledge suite (74), connectors suite (118) and the acceptance test
+  `apps/api/tests/knowledge/test_phase4_acceptance.py` — 3 PDFs + a CSV uploaded, a Drive folder synced in demo
+  mode, an agent answers through the runtime citing `condiciones-generales.pdf`, and a SQL query joins the invoices
+  table with the documents view.
+
 ## Phase 11 — Enterprise (closed)
 
 Done:
@@ -104,7 +121,8 @@ provider's secret manager (Railway/Vercel) and restart the services.
 | `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN` | Error monitoring (EU) | Create a Sentry project in the EU region (`*.ingest.de.sentry.io`). |
 | `NEXT_PUBLIC_POSTHOG_KEY` | Product analytics (EU) | PostHog EU project key. |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | Claude on Bedrock EU for `eu_strict` orgs | IAM user with `bedrock:InvokeModel*` in an EU region; enable Anthropic models in the Bedrock console. |
-| `GOOGLE_CLIENT_ID/SECRET`, `MICROSOFT_CLIENT_ID/SECRET` | Social login and connectors | OAuth apps with redirect `https://<web>/api/v1/auth/oauth/<provider>/callback`. |
+| `GOOGLE_CLIENT_ID/SECRET`, `MICROSOFT_CLIENT_ID/SECRET` | Social login and connectors | OAuth apps with redirects `https://<web>/api/v1/auth/oauth/<provider>/callback` (login) and `https://<web>/api/v1/connections/oauth/<connector>/callback` (connectors). |
+| `SLACK_CLIENT_ID/SECRET`, `NOTION_CLIENT_ID/SECRET`, `HUBSPOT_CLIENT_ID/SECRET`, `SALESFORCE_CLIENT_ID/SECRET` | Real connections to those providers (demo fakes otherwise) | Create an OAuth app per provider with redirect `https://<web>/api/v1/connections/oauth/<connector>/callback`. |
 | `RAILWAY_TOKEN`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (GitHub secrets) | Auto-deploy staging/production | Connect the repo in Railway (EU) and Vercel (functions in `fra1`), add tokens as repository secrets. |
 | `GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET` | Project sync via GitHub App (personal-token mode works without them) | Create a GitHub App (contents read/write, push webhook to `/api/github/webhook`). |
 | `MESSER_INBOUND_EMAIL_SECRET` (+ inbound provider) | Email triggers and email channel from real mailboxes (simulate endpoint works without it) | Configure Postmark inbound (or similar) for `MESSER_INBOUND_EMAIL_DOMAIN` with webhook `/api/inbound/email?token=…`. |
