@@ -7,6 +7,7 @@ import { SystemsStrip } from "@/components/sections/SystemsStrip";
 import { Manifesto } from "@/components/sections/Manifesto";
 import { Platform } from "@/components/sections/platform/Platform";
 import { Phases } from "@/components/sections/phases/Phases";
+import { Depth } from "@/components/sections/depth/Depth";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale: raw } = await params;
@@ -22,6 +23,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <Manifesto locale={locale} />
         <Platform locale={locale} />
         <Phases locale={locale} />
+        <Depth locale={locale} />
         <div className="h-[100vh]" />
       </main>
     </>
