@@ -1,0 +1,3916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kofen · Deployed AI</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&amp;family=Geist+Mono:wght@400&amp;family=Noto+Sans+SC:wght@300;400&amp;family=Noto+Sans+Arabic:wght@300;400;500&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff;color:#070707}
+a{color:#070707}a:hover{color:#b06a38}
+:focus-visible{outline:2px solid #d59566;outline-offset:2px}
+@keyframes kofenUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes kRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes kPop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes kMenu{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes kMenuUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes kMarq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes kBlink{50%{opacity:0}}
+@keyframes kBlinkSq{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes kDot{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-3px);opacity:1}}
+@keyframes kSpin{to{transform:rotate(360deg)}}
+@keyframes kRot{to{transform:rotate(360deg)}}
+@keyframes hgA{0%{opacity:1;stroke-dashoffset:var(--L)}8.889%,27.778%{opacity:1;stroke-dashoffset:0}33.278%{opacity:0;stroke-dashoffset:0}33.333%,99.944%{opacity:0;stroke-dashoffset:var(--L)}100%{opacity:1;stroke-dashoffset:var(--L)}}
+@keyframes hgB{0%,33.278%{opacity:0;stroke-dashoffset:var(--L)}33.333%{opacity:1;stroke-dashoffset:var(--L)}42.222%,61.111%{opacity:1;stroke-dashoffset:0}66.611%{opacity:0;stroke-dashoffset:0}66.667%,100%{opacity:0;stroke-dashoffset:var(--L)}}
+@keyframes hgC{0%,66.611%{opacity:0;stroke-dashoffset:var(--L)}66.667%{opacity:1;stroke-dashoffset:var(--L)}75.556%,94.444%{opacity:1;stroke-dashoffset:0}99.944%{opacity:0;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:var(--L)}}
+@keyframes hgAB{0%{opacity:1;stroke-dashoffset:var(--L)}8.889%,61.111%{opacity:1;stroke-dashoffset:0}66.611%{opacity:0;stroke-dashoffset:0}66.667%,99.944%{opacity:0;stroke-dashoffset:var(--L)}100%{opacity:1;stroke-dashoffset:var(--L)}}
+@keyframes hgBC{0%,33.278%{opacity:0;stroke-dashoffset:var(--L)}33.333%{opacity:1;stroke-dashoffset:var(--L)}42.222%,94.444%{opacity:1;stroke-dashoffset:0}99.944%{opacity:0;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:var(--L)}}
+@keyframes hgI{from{stroke-dashoffset:var(--L)}to{stroke-dashoffset:0}}
+@keyframes hpA{0%,2.778%{opacity:0}9.444%,27.778%{opacity:1}33.278%,100%{opacity:0}}
+@keyframes hpB{0%,36.111%{opacity:0}42.778%,61.111%{opacity:1}66.611%,100%{opacity:0}}
+@keyframes hpC{0%,69.444%{opacity:0}76.111%,94.444%{opacity:1}99.944%,100%{opacity:0}}
+.khg{stroke-dashoffset:var(--L);animation-duration:18s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.65,0,.35,1);animation-fill-mode:both;animation-delay:var(--d,0s)}
+.khg-a{animation-name:hgA}.khg-b{animation-name:hgB}.khg-c{animation-name:hgC}.khg-ab{animation-name:hgAB}.khg-bc{animation-name:hgBC}
+.khg-abc{animation-name:hgI;animation-duration:1.6s;animation-iteration-count:1}
+.khp{opacity:0;animation-duration:18s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.65,0,.35,1);animation-fill-mode:both;animation-delay:var(--d,0s)}
+.khp-a{animation-name:hpA}.khp-b{animation-name:hpB}.khp-c{animation-name:hpC}
+.khgroot{position:absolute;top:0;bottom:-14%;left:-20%;right:0;opacity:.55;pointer-events:none;-webkit-mask-image:linear-gradient(transparent 8%,#000 30%);mask-image:linear-gradient(transparent 8%,#000 30%)}
+.khtiles{opacity:.25}
+@media (min-width:1024px){.khgroot{left:46%;opacity:1;-webkit-mask-image:linear-gradient(to right,transparent,#000 240px),linear-gradient(transparent 8%,#000 30%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 240px),linear-gradient(transparent 8%,#000 30%);mask-composite:intersect}.khtiles{opacity:1}}
+.kar{position:relative;flex:none;width:18px;height:18px;border:1px solid currentColor;overflow:hidden;opacity:.85;display:inline-block}
+.karl{width:27px;height:27px}
+.karw{position:absolute;inset:0;transform:rotate(-45deg)}
+[dir=rtl] .karw{transform:rotate(-135deg)}
+.kar svg{position:absolute;left:50%;top:50%;margin:-4.5px 0 0 -4.5px;transition:transform .35s cubic-bezier(.33,0,.15,1)}
+.kar .ka2{transform:translateX(-24px)}
+a:hover .kar .ka1,button:hover .kar .ka1,a:focus-visible .kar .ka1{transform:translateX(24px)}
+a:hover .kar .ka2,button:hover .kar .ka2,a:focus-visible .kar .ka2{transform:none}
+.kcta{transition:transform .35s cubic-bezier(.33,0,.15,1),opacity .35s cubic-bezier(.33,0,.15,1)}
+.kcta:active{transform:scale(.98)}
+.kcta:hover{color:#ffffff}
+.kghost:hover{color:#070707}
+.kul{position:relative}
+.kul::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .3s cubic-bezier(.33,0,.15,1)}
+a:hover>.kul::after,.kul:hover::after{transform:scaleX(1);transform-origin:left}
+.kdim a,.kdim button{transition:opacity .35s cubic-bezier(.33,0,.15,1),color .35s cubic-bezier(.33,0,.15,1)}
+.kdim:has(a:hover) a:not(:hover){opacity:.4}
+.kchip{position:relative}
+.kchip::before,.kchip::after{content:"";position:absolute;width:0;height:0;opacity:0;pointer-events:none;box-sizing:border-box;transition:width .12s linear,height .12s linear,opacity .12s linear}
+.kchip::before{top:0;left:0;border-top:1px solid #d59566;border-right:1px solid #d59566}
+.kchip::after{bottom:0;right:0;border-bottom:1px solid #d59566;border-left:1px solid #d59566}
+.kchip:hover::before{opacity:1;width:100%;height:100%;transition:opacity 10ms linear,width .14s linear,height .14s linear .14s}
+.kchip:hover::after{opacity:1;width:100%;height:100%;transition:opacity 10ms linear .28s,width .14s linear .28s,height .14s linear .42s}
+.kann{transition:opacity .15s}.kann:hover{opacity:.7;color:#f2f2f2}
+.kblink{animation:kBlinkSq 2.4s ease-in-out infinite}
+.kmarq{display:flex;width:max-content;animation:kMarq 48s linear infinite}
+.kfade{-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.krail{display:none}
+@media (min-width:1280px){.krail{display:block}}
+.kart-big{display:none}
+@media (min-width:1024px){.kart-big{display:block}}
+@media (max-width:1023px){.knavlinks{display:none!important}}
+@media (max-width:767px){.khide-sm{display:none!important}}
+.kform{display:flex;flex-direction:column;gap:8px}
+@media (min-width:640px){.kform{flex-direction:row;gap:0}.kform input{border-right:0!important}}
+#kofen-email::placeholder,#kofen-email2::placeholder{color:#736f6a}
+#kofen-q::placeholder{color:#736f6a}
+.ksticky{position:relative}
+@media (min-width:1024px){.ksticky{position:sticky;top:140px}.krun{min-height:1240px}}
+.kspin{position:absolute;left:50%;top:50%;width:300%;aspect-ratio:1;translate:-50% -50%;background:conic-gradient(rgba(0,0,0,0) 0deg,rgba(213,149,102,0.95) 40deg,rgba(0,0,0,0) 90deg);animation:kRot 6s linear infinite;animation-delay:var(--kd,0s)}
+.kglow{overflow:hidden}
+.kside:hover{background:#f2f2f2!important}
+.klang:hover{background:#f2f2f2!important}
+.kcard{flex:0 0 78%}
+@media (min-width:768px){.kcard{flex-basis:calc((100% - 48px) / 3)}}
+@media (min-width:1024px){.kcard{flex-basis:calc((100% - 72px) / 4)}}
+.krail2{scrollbar-width:none}.krail2::-webkit-scrollbar{display:none}
+.kartz{transition:transform .6s cubic-bezier(.33,0,.15,1)}
+.kcard:hover .kartz{transform:scale(1.04)}
+.kcap{display:grid;grid-template-rows:1fr;opacity:1}
+.kcap>span{overflow:hidden;min-height:0}
+@media (hover:hover) and (min-width:1024px){.kcap{grid-template-rows:0fr;opacity:0;transition:grid-template-rows .3s cubic-bezier(.33,0,.15,1),opacity .3s cubic-bezier(.33,0,.15,1)}.kcard:hover .kcap,.kcard:focus-visible .kcap{grid-template-rows:1fr;opacity:1}}
+.kfaq summary{list-style:none;cursor:pointer}
+.kfaq summary::-webkit-details-marker{display:none}
+.kfaq .kbul{transition:background .3s}
+.kfaq[open] .kbul,.kfaq summary:hover .kbul{background:#070707}
+.kplus{position:relative;width:12px;height:12px;flex:none}
+.kplus::before,.kplus::after{content:"";position:absolute;background:#070707}
+.kplus::before{left:0;right:0;top:50%;height:1px;margin-top:-.5px}
+.kplus::after{top:0;bottom:0;left:50%;width:1px;margin-left:-.5px;transition:transform .5s cubic-bezier(.22,1,.36,1)}
+.kfaq[open] .kplus::after{transform:rotate(90deg) scaleY(0)}
+.kfaq{interpolate-size:allow-keywords}
+.kfaq::details-content{block-size:0;overflow-y:clip;transition:block-size .5s cubic-bezier(.22,1,.36,1),content-visibility .5s allow-discrete}
+.kfaq[open]::details-content{block-size:auto}
+.ksr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}.khg{stroke-dashoffset:0}.khp-a{opacity:1}}
+</style>
+</helmet>
+<div dir="{{dir}}" lang="{{lang}}" style="width: 100%; box-sizing: border-box; background: #ffffff; color: #070707; font-family: Geist, 'Noto Sans SC', 'Noto Sans Arabic', system-ui, sans-serif; letter-spacing: -0.01em">
+
+  <!-- Fixed wrapper: announcement + nav -->
+  <div style="position: sticky; top: 0; z-index: 60">
+    <a href="#pricing" class="kann" style="height: 36px; box-sizing: border-box; padding: 0 max(20px, 3.4vw); display: flex; align-items: center; justify-content: center; gap: 14px; background: #2e2e2e; color: #f2f2f2; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden">
+      <span style="display: inline-flex; align-items: center; gap: 8px; flex: none"><span class="kblink" aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{tick.badge}}</span>
+      <span style="overflow: hidden; text-overflow: ellipsis">{{tick.text}}</span>
+      <span class="khide-sm" style="flex: none; color: #b8aea4">{{t.ticker.link}}</span>
+    </a>
+    <nav aria-label="Main" style="background: linear-gradient(rgba(255,255,255,0.96), rgba(255,255,255,0.75)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(184,174,164,0.5)">
+      <div style="max-width: 1440px; height: 68px; margin: 0 auto; box-sizing: border-box; padding: 0 max(20px, 3.4vw); display: flex; align-items: center; justify-content: space-between; gap: 24px">
+        <div style="display: flex; align-items: center; gap: 48px; min-width: 0">
+          <a href="#top" style="display: inline-flex; align-items: center; gap: 8px; font-size: 22px; letter-spacing: -0.05em; color: #070707; text-decoration: none"><span aria-hidden="true" style="width: 9px; height: 9px; background: #070707"></span>Kofen</a>
+          <div class="knavlinks kdim" style="display: flex; gap: 32px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase">
+            <a href="#deployment" style="color: #2e2e2e; text-decoration: none"><span class="kul">{{t.nav.deploy}}</span></a>
+            <a href="#industries" style="color: #2e2e2e; text-decoration: none"><span class="kul">{{t.nav.industries}}</span></a>
+            <a href="#pricing" style="color: #2e2e2e; text-decoration: none"><span class="kul">{{t.nav.pricing}}</span></a>
+            <a href="#company" style="color: #2e2e2e; text-decoration: none"><span class="kul">{{t.nav.company}}</span></a>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <div style="position: relative">
+            <button type="button" onClick="{{toggleLang}}" aria-expanded="{{langOpen}}" aria-haspopup="listbox" aria-label="Language" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #2e2e2e; background: transparent; border: 1px solid #b8aea4; height: 40px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">
+              <span>{{langLabel}}</span>
+              <svg aria-hidden="true" width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2" style="transform: rotate({{langChev}}deg); transition: transform .3s cubic-bezier(.33,0,.15,1)"><path d="M1.5 3.5 5 7l3.5-3.5"></path></svg>
+            </button>
+            <sc-if value="{{langOpen}}" hint-placeholder-val="{{false}}">
+              <button type="button" aria-label="Close" tabindex="-1" onClick="{{closeLang}}" style="position: fixed; inset: 0; z-index: 9; background: transparent; border: 0; padding: 0; cursor: default"></button>
+              <div role="listbox" style="position: absolute; top: 46px; inset-inline-end: 0; z-index: 10; width: 190px; box-sizing: border-box; padding: 4px; background: #fcfcfc; border: 1px solid rgba(184,174,164,0.6); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); display: flex; flex-direction: column; animation: kMenu .2s cubic-bezier(.33,0,.15,1) both">
+                <sc-for list="{{langs}}" as="l" hint-placeholder-count="8">
+                  <button type="button" role="option" aria-selected="{{l.active}}" class="klang" onClick="{{l.pick}}" style="font: inherit; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: start; background: {{l.bg}}; color: #070707; border: 0; min-height: 36px; padding: 0 10px; cursor: pointer; transition: background .2s">
+                    <span>{{l.name}}</span>
+                    <span style="display: inline-flex; align-items: center; gap: 8px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.08em; color: #736f6a">{{l.label}}<span style="width: 10px; height: 10px; display: inline-flex"><sc-if value="{{l.active}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#b06a38" stroke-width="1.4"><path d="M1.5 5.2 4 7.5l4.5-5"></path></svg></sc-if></span></span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <a href="{{demoHref}}" class="kcta" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0">{{t.nav.cta}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Hero -->
+  <section id="top" onMouseMove="{{heroMove}}" onMouseLeave="{{heroLeave}}" style="position: relative; overflow: hidden; min-height: 680px; background: linear-gradient(98deg, #dedad5 0%, #f2f0ee 48%, #ffffff 100%); color: #070707">
+    <div class="khgroot" aria-hidden="true"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMinYMin slice" style="width: 100%; height: 100%; display: block"><g fill="none" stroke="#070707" stroke-width="0.6" stroke-opacity="0.16"><path d="M300,100h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.24s"></path><path d="M300,200h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.30s"></path><path d="M300,300h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.36s"></path><path d="M300,400h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.42s"></path><path d="M200,400h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.36s"></path><path d="M0,400h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.24s"></path><path d="M100,400h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.30s"></path><path d="M400,300h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.42s"></path><path d="M500,300h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.48s"></path><path d="M200,500h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.42s"></path><path d="M300,500h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.48s"></path><path d="M200,600h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.48s"></path><path d="M300,600h100v100h-100Z" class="khg khg-abc" style="--L: 400; stroke-dasharray: 400; --d: 0.54s"></path><path d="M100,0V300" class="khg khg-abc" style="--L: 300; stroke-dasharray: 300; --d: 0.06s"></path><path d="M400,0V100" class="khg khg-abc" style="--L: 100; stroke-dasharray: 100; --d: 0.24s"></path><path d="M500,0V100" class="khg khg-abc" style="--L: 100; stroke-dasharray: 100; --d: 0.30s"></path><path d="M600,0V200" class="khg khg-abc" style="--L: 200; stroke-dasharray: 200; --d: 0.36s"></path><path d="M200,600 L200,606 C200,616 202,622 215,630 C229,638 274,664 287,672 C300,679 300,686 300,694 L300,700" class="khg khg-abc" style="--L: 160; stroke-dasharray: 160; --d: 0.48s"></path><path d="M300,0h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.18s"></path><path d="M500,100h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.36s"></path><path d="M0,200h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.12s"></path><path d="M500,200h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.42s"></path><path d="M100,300h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.24s"></path><path d="M700,400h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.66s"></path><path d="M500,500h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.60s"></path><path d="M600,500h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.66s"></path><path d="M800,500h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.78s"></path><path d="M700,600h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.78s"></path><path d="M300,700h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.60s"></path><path d="M800,300h100v100h-100Z" class="khg khg-a" style="--L: 400; stroke-dasharray: 400; --d: 0.66s"></path><path d="M600,100h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.42s"></path><path d="M700,100h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.48s"></path><path d="M900,200h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.66s"></path><path d="M600,300h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.54s"></path><path d="M400,500h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.54s"></path><path d="M900,500h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.84s"></path><path d="M1000,400h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.84s"></path><path d="M100,600h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.42s"></path><path d="M600,700h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.78s"></path><path d="M1000,200h100v100h-100Z" class="khg khg-b" style="--L: 400; stroke-dasharray: 400; --d: 0.72s"></path><path d="M400,100h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.30s"></path><path d="M800,100h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.54s"></path><path d="M200,200h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.24s"></path><path d="M800,200h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.60s"></path><path d="M0,300h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.18s"></path><path d="M600,400h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.60s"></path><path d="M1000,600h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.96s"></path><path d="M900,700h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.96s"></path><path d="M100,700h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.48s"></path><path d="M1100,300h100v100h-100Z" class="khg khg-c" style="--L: 400; stroke-dasharray: 400; --d: 0.84s"></path><path d="M400,0h100v100h-100Z" class="khg khg-ab" style="--L: 400; stroke-dasharray: 400; --d: 0.24s"></path><path d="M700,300h100v100h-100Z" class="khg khg-ab" style="--L: 400; stroke-dasharray: 400; --d: 0.60s"></path><path d="M900,400h100v100h-100Z" class="khg khg-bc" style="--L: 400; stroke-dasharray: 400; --d: 0.78s"></path><path d="M200,700h100v100h-100Z" class="khg khg-bc" style="--L: 400; stroke-dasharray: 400; --d: 0.54s"></path></g><g class="khtiles"><rect x="500" y="200" width="100" height="100" fill="#b8aea4" class="khp khp-a" style="--d: 0.42s"></rect><rect x="800" y="300" width="100" height="100" fill="#2e2e2e" class="khp khp-a" style="--d: 0.66s"></rect><rect x="100" y="500" width="100" height="100" fill="#d59566" class="khp khp-a" style="--d: 0.36s"></rect><rect x="700" y="100" width="100" height="100" fill="#736f6a" class="khp khp-b" style="--d: 0.48s"></rect><rect x="400" y="500" width="100" height="100" fill="#d59566" class="khp khp-b" style="--d: 0.54s"></rect><rect x="1000" y="400" width="100" height="100" fill="#b8aea4" class="khp khp-b" style="--d: 0.84s"></rect><rect x="800" y="200" width="100" height="100" fill="#d59566" class="khp khp-c" style="--d: 0.60s"></rect><rect x="0" y="300" width="100" height="100" fill="#2e2e2e" class="khp khp-c" style="--d: 0.18s"></rect><rect x="1100" y="300" width="100" height="100" fill="#b8aea4" class="khp khp-c" style="--d: 0.84s"></rect></g></svg></div>
+    <div style="position: relative; z-index: 1; max-width: 1440px; min-height: 680px; margin: 0 auto; box-sizing: border-box; padding: 96px max(20px, 3.4vw) 72px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start">
+      <div style="max-width: 11.5em; font-size: clamp(44px, 5.4vw, 100px); line-height: 1.04; letter-spacing: -0.055em; font-weight: 400">
+        <h1 style="margin: -0.1em 0 -0.14em; padding: 0.1em 0 0.14em; font: inherit; letter-spacing: inherit; color: transparent; -webkit-background-clip: text; background-clip: text; background-image: repeating-linear-gradient(105deg, #070707 {{gx}}px, #736f6a calc({{gx}}px + 60%), #070707 calc({{gx}}px + 120%)); text-wrap: balance">{{t.h1a}} <span class="ksr">{{rot0}}</span></h1>
+        <div aria-hidden="true" style="display: grid; overflow: hidden; padding-bottom: 0.12em">
+          <sc-for list="{{rot}}" as="r" hint-placeholder-count="5">
+            <span style="grid-area: 1 / 1; color: #736f6a; text-wrap: balance; opacity: {{r.o}}; transform: translateY({{r.y}}); filter: blur({{r.b}}px); transition: opacity .4s cubic-bezier(.22,1,.36,1), transform .4s cubic-bezier(.22,1,.36,1), filter .4s cubic-bezier(.22,1,.36,1)">{{r.text}}</span>
+          </sc-for>
+        </div>
+      </div>
+      <form class="kform" onSubmit="{{bookDemo}}" style="width: min(480px, 100%); margin-top: 40px">
+        <label for="kofen-email" class="ksr">{{t.hero.email}}</label>
+        <input id="kofen-email" type="email" autocomplete="email" placeholder="{{t.hero.email}}" value="{{email}}" onChange="{{onEmail}}" style="flex: 1; min-width: 0; height: 46px; box-sizing: border-box; padding: 0 16px; font: inherit; font-size: 14px; border: 1px solid #b8aea4; border-radius: 0; background: rgba(255,255,255,0.4); color: #070707; outline: none">
+        <a id="kofen-demo" href="{{demoHref}}" class="kcta" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0; justify-content: space-between">{{t.hero.b1}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+      </form>
+      <p style="margin: 24px 0 0; max-width: 28em; font-size: 20px; line-height: 1.4; color: #2e2e2e">{{t.hero.sub}}</p>
+    </div>
+  </section>
+
+  <!-- Live console (simulated product interface) -->
+  <section style="padding: 96px max(20px, 3.4vw) 40px">
+    <div style="max-width: 1440px; margin: 0 auto; opacity: {{rv.con.o}}; transform: translateY({{rv.con.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <div style="position: relative; border: 1px solid rgba(184,174,164,0.5); background-color: #fcfcfc; background-image: radial-gradient(rgba(115,111,106,0.35) 1px, transparent 1.2px); background-size: 16px 16px; padding: clamp(16px, 5vw, 72px) clamp(12px, 7vw, 160px)">
+        <div class="krail" aria-hidden="true" style="position: absolute; inset: clamp(16px, 5vw, 72px) clamp(12px, 7vw, 160px); pointer-events: none">
+          <sc-for list="{{rail}}" as="c" hint-placeholder-count="6">
+            <span class="kglow" style="position: absolute; top: {{c.top}}; left: {{c.l}}; right: {{c.r}}; padding: 1px; background: rgba(184,174,164,0.6); --kd: {{c.delay}}">
+              <span class="kspin"></span>
+              <span style="position: relative; height: 40px; padding: 0 14px; background: #ffffff; display: flex; align-items: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #2e2e2e">{{c.name}}</span>
+            </span>
+          </sc-for>
+        </div>
+
+        <div id="try" style="position: relative; background: #ffffff; border: 1px solid #b8aea4; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.06); text-align: start; scroll-margin-top: 140px">
+          <!-- title bar -->
+          <div style="height: 44px; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: #f2f2f2; border-bottom: 1px solid rgba(184,174,164,0.6)">
+            <span style="display: inline-flex; align-items: center; gap: 8px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a; min-width: 0; overflow: hidden; white-space: nowrap">{{t.con.group}} <span aria-hidden="true">/</span> <span style="color: #070707">{{scene.label}}</span></span>
+            <div style="flex: 1"></div>
+            <span style="flex: none; display: inline-flex; align-items: center; gap: 8px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #2e2e2e; border: 1px solid #b8aea4; padding: 4px 8px; white-space: nowrap"><span class="kblink" aria-hidden="true" style="width: 6px; height: 6px; background: #5fa46b"></span>{{t.con.agentsOn}}</span>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap">
+            <!-- sidebar -->
+            <div style="flex: 1 1 190px; min-width: 0; box-sizing: border-box; padding: 14px 10px; border-inline-end: 1px solid rgba(184,174,164,0.6); display: flex; flex-direction: column; gap: 4px">
+              <sc-for list="{{scenes}}" as="s" hint-placeholder-count="3">
+                <button type="button" class="kside" onClick="{{s.pick}}" aria-pressed="{{s.active}}" style="font: inherit; font-size: 14px; display: flex; align-items: center; gap: 10px; text-align: start; background: {{s.bg}}; color: {{s.fg}}; border: 0; min-height: 44px; padding: 0 12px; cursor: pointer; transition: background .2s, color .2s">
+                  <span aria-hidden="true" style="width: 6px; height: 6px; flex: none; background: {{s.dot}}; transition: background .2s"></span>
+                  <span>{{s.label}}</span>
+                </button>
+              </sc-for>
+              <sc-if value="{{showHint}}" hint-placeholder-val="{{false}}">
+                <span style="align-self: flex-start; margin: 8px 12px 0; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; background: #070707; padding: 5px 9px; animation: kPop .35s cubic-bezier(.22,1,.36,1) both">{{t.con.hint}}</span>
+              </sc-if>
+            </div>
+
+            <!-- main -->
+            <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column">
+              <div aria-live="off" style="flex: 1; min-height: 500px; box-sizing: border-box; padding: 24px clamp(16px, 2.4vw, 32px); display: flex; flex-direction: column; gap: 16px">
+                <sc-if value="{{scene.showSrc}}" hint-placeholder-val="{{true}}">
+                  <div style="align-self: flex-end; max-width: min(560px, 100%); box-sizing: border-box; background: #f2f2f2; border: 1px solid rgba(184,174,164,0.6); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; animation: kRise .4s cubic-bezier(.22,1,.36,1) both">
+                    <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span dir="ltr">{{scene.from}}</span><span>{{scene.subj}}</span></div>
+                    <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #2e2e2e">{{scene.body}}</p>
+                  </div>
+                </sc-if>
+                <sc-if value="{{scene.showAgent}}" hint-placeholder-val="{{true}}">
+                  <div style="display: flex; gap: 12px; align-items: flex-start; animation: kRise .4s cubic-bezier(.22,1,.36,1) both">
+                    <span aria-hidden="true" style="width: 28px; height: 28px; flex: none; background: #070707; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; letter-spacing: -0.05em">K</span>
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+                      <div style="display: flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #736f6a">
+                        <span style="color: #070707">{{t.con.agent}}</span>
+                        <sc-if value="{{scene.working}}" hint-placeholder-val="{{true}}">
+                          <span style="display: inline-flex; align-items: center; gap: 8px">{{t.con.working}}<span aria-hidden="true" style="display: inline-flex; gap: 3px"><span style="width: 3px; height: 3px; background: #070707; animation: kDot 1s infinite"></span><span style="width: 3px; height: 3px; background: #070707; animation: kDot 1s .15s infinite"></span><span style="width: 3px; height: 3px; background: #070707; animation: kDot 1s .3s infinite"></span></span></span>
+                        </sc-if>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 6px">
+                        <sc-for list="{{scene.steps}}" as="st" hint-placeholder-count="3">
+                          <sc-if value="{{st.show}}" hint-placeholder-val="{{true}}">
+                            <div style="display: flex; align-items: center; gap: 10px; animation: kRise .35s cubic-bezier(.22,1,.36,1) both">
+                              <sc-if value="{{st.done}}" hint-placeholder-val="{{true}}">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#027a48" stroke-width="2" stroke-linecap="square" style="flex: none"><path d="M20 6 9 17l-5-5"></path></svg>
+                              </sc-if>
+                              <sc-if value="{{st.busy}}" hint-placeholder-val="{{false}}">
+                                <span aria-hidden="true" style="width: 10px; height: 10px; margin: 2px; flex: none; border: 1.5px solid #dad5cc; border-top-color: #b06a38; border-radius: 50%; animation: kSpin .8s linear infinite"></span>
+                              </sc-if>
+                              <span style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 12px; line-height: 1.4; letter-spacing: 0; color: #2e2e2e">{{st.text}}</span>
+                            </div>
+                          </sc-if>
+                        </sc-for>
+                      </div>
+                      <sc-if value="{{scene.showReply}}" hint-placeholder-val="{{true}}">
+                        <p style="margin: 0; font-size: 15.5px; line-height: 1.6; color: #070707; max-width: 40em">{{scene.typed}}<sc-if value="{{scene.typing}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="display: inline-block; width: 7px; height: 1em; margin-inline-start: 2px; vertical-align: -2px; background: #d59566; animation: kBlink 1s steps(1) infinite"></span></sc-if></p>
+                      </sc-if>
+                      <sc-if value="{{scene.showCard}}" hint-placeholder-val="{{true}}">
+                        <div style="border: 1px solid #b8aea4; background: #ffffff; display: flex; flex-direction: column; animation: kPop .42s cubic-bezier(.22,1,.36,1) both">
+                          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 1px; background: rgba(184,174,164,0.6)">
+                            <sc-for list="{{scene.fields}}" as="f" hint-placeholder-count="4">
+                              <div style="background: #ffffff; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0">
+                                <span style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #736f6a">{{f.k}}</span>
+                                <span style="font-size: 18px; letter-spacing: -0.02em; color: #070707; overflow-wrap: anywhere">{{f.v}}</span>
+                              </div>
+                            </sc-for>
+                          </div>
+                          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid rgba(184,174,164,0.6); padding: 10px 12px 10px 16px">
+                            <span style="display: inline-flex; align-items: center; gap: 8px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: {{scene.statusFg}}"><span aria-hidden="true" style="width: 6px; height: 6px; background: {{scene.statusSq}}"></span>{{scene.status}}</span>
+                            <button type="button" onClick="{{approve}}" disabled="{{scene.isDone}}" class="kcta" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0; border: 0; cursor: pointer; background: {{scene.btnBg}}; color: {{scene.btnFg}}">{{scene.btn}}</button>
+                          </div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <!-- composer -->
+              <div style="border-top: 1px solid rgba(184,174,164,0.6); padding: 14px clamp(16px, 2.4vw, 24px) 12px; display: flex; flex-direction: column; gap: 10px">
+                <label for="kofen-q" class="ksr">{{t.comp.label}}</label>
+                <div class="kform">
+                  <div style="position: relative; flex: 1; min-width: 0">
+                    <input id="kofen-q" type="text" autocomplete="off" value="{{q}}" onChange="{{onQ}}" onFocus="{{onFocus}}" onBlur="{{onBlur}}" onKeyDown="{{onKey}}" style="width: 100%; box-sizing: border-box; height: 46px; border: 1px solid #b8aea4; border-radius: 0; background: #ffffff; color: #070707; padding: 0 14px; font: inherit; font-size: 14px; outline: none">
+                    <sc-if value="{{showPh}}" hint-placeholder-val="{{true}}">
+                      <span aria-hidden="true" style="position: absolute; inset-inline-start: 15px; top: 50%; transform: translateY(-50%); max-width: calc(100% - 30px); pointer-events: none; color: #736f6a; font-size: 14px; white-space: nowrap; overflow: hidden">{{phText}}<span style="color: #d59566; animation: kBlink 1s steps(1) infinite">|</span></span>
+                    </sc-if>
+                  </div>
+                  <a id="kofen-send" class="kcta" href="{{mailHref}}" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0; justify-content: space-between">{{t.comp.send}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                  <sc-for list="{{chips}}" as="c" hint-placeholder-count="4">
+                    <button type="button" class="kchip" onClick="{{c.add}}" aria-pressed="{{c.used}}" style="font: inherit; font-size: 12px; min-height: 36px; padding: 0 12px; cursor: pointer; border: 1px solid {{c.bd}}; border-radius: 0; background: {{c.bg}}; color: {{c.fg}}; transition: color .2s, background .2s">{{c.sign}} {{c.label}}</button>
+                  </sc-for>
+                </div>
+                <span style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #736f6a">{{t.comp.note}}</span>
+              </div>
+
+              <!-- player -->
+              <div style="border-top: 1px solid rgba(184,174,164,0.6); padding: 4px clamp(12px, 2vw, 20px); display: flex; align-items: center; gap: 14px">
+                <button type="button" onClick="{{togglePlay}}" aria-label="{{playLabel}}" style="flex: none; width: 36px; height: 36px; border: 1px solid #b8aea4; border-radius: 0; background: #ffffff; color: #070707; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0">
+                  <sc-if value="{{playing}}" hint-placeholder-val="{{true}}">
+                    <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16"></rect><rect x="14" y="4" width="5" height="16"></rect></svg>
+                  </sc-if>
+                  <sc-if value="{{paused}}" hint-placeholder-val="{{false}}">
+                    <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4v16l14-8z"></path></svg>
+                  </sc-if>
+                </button>
+                <div style="flex: 1; min-width: 0; display: flex; gap: 6px">
+                  <sc-for list="{{chapters}}" as="ch" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ch.pick}}" style="flex: 1; min-width: 0; min-height: 44px; background: transparent; border: 0; padding: 6px 0; cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 7px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; text-align: start; color: {{ch.fg}}">
+                      <span style="display: block; height: 2px; background: #dad5cc; overflow: hidden"><span style="display: block; height: 2px; width: {{ch.pct}}%; background: #d59566"></span></span>
+                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ch.label}}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <span dir="ltr" style="flex: none; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #736f6a; font-variant-numeric: tabular-nums">{{clock}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Systems strip -->
+  <section style="padding: 64px 0 0; display: flex; flex-direction: column; align-items: center; gap: 28px">
+    <h2 style="margin: 0; padding: 0 24px; display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-weight: 400; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a; text-align: center"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566; flex: none"></span>{{t.systemsTitle}}</h2>
+    <div class="kfade" dir="ltr" style="width: 100%; overflow: hidden; border-top: 1px solid rgba(184,174,164,0.5); border-bottom: 1px solid rgba(184,174,164,0.5)">
+      <div class="kmarq">
+        <sc-for list="{{marq}}" as="s" hint-placeholder-count="24">
+          <span style="flex: none; height: 84px; padding: 0 44px; display: flex; align-items: center; font-size: 20px; letter-spacing: -0.025em; color: #736f6a; white-space: nowrap; border-inline-end: 1px solid rgba(184,174,164,0.35)">{{s.name}}</span>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- Manifesto -->
+  <section id="kofen-man" style="padding: 160px max(20px, 3.4vw); display: flex; justify-content: center">
+    <p style="margin: 0; max-width: 980px; font-size: clamp(32px, 4.2vw, 62px); line-height: 1.08; letter-spacing: -0.045em; text-align: center; text-wrap: balance; opacity: {{rv.man.o}}; transform: translateY({{rv.man.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)"><span style="color: #070707">{{t.statement.pre}}</span> <span style="color: #736f6a">{{t.statement.emph}}</span></p>
+  </section>
+
+  <!-- Platform: scroll-assembled layer diagram -->
+  <section id="deployment" class="krun" style="background: #f2f2f2; border-top: 1px solid #dad5cc; padding: 150px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 64px 80px; align-items: flex-start">
+      <div style="flex: 1 1 420px; min-width: 0; max-width: 560px; display: flex; flex-direction: column; gap: 40px; opacity: {{rv.plat.o}}; transform: translateY({{rv.plat.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+        <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{t.nav.deploy}}</span>
+        <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance">{{h.dark.a}} <span style="color: #736f6a">{{h.dark.b}}</span></h2>
+        <a href="#phases" class="kcta" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0; align-self: flex-start">{{deployBtn}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+        <div style="display: flex; flex-direction: column">
+          <sc-for list="{{pillars}}" as="p" hint-placeholder-count="2">
+            <div style="border-top: 1px solid #b8aea4; padding: 26px 0; display: flex; gap: 20px">
+              <span style="flex: none; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #736f6a; padding-top: 3px">{{p.n}}</span>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <h3 style="margin: 0; font-weight: 400; font-size: 18px; letter-spacing: -0.015em">{{p.h}}</h3>
+                <p style="margin: 0; font-size: 14.5px; line-height: 1.65; color: #736f6a">{{p.b}}</p>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="ksticky" style="flex: 1 1 520px; min-width: 0; display: flex; justify-content: center">
+        <svg id="kofen-diagram" role="img" aria-label="Kofen layers: your systems, governance, agents and forward-deployed engineers" dir="ltr" viewBox="40 40 520 520" style="width: min(620px, 100%); height: auto; display: block; overflow: visible">
+          <rect x="70" y="70" width="460" height="460" fill="#ffffff" stroke="#070707" stroke-width="1" style="fill-opacity: {{dg.f1}}; stroke-dasharray: 1840; stroke-dashoffset: {{dg.o1}}; stroke-opacity: {{dg.solid}}"></rect>
+          <rect x="70" y="70" width="460" height="460" fill="none" stroke="#070707" stroke-width="1" stroke-dasharray="3 3" style="opacity: {{dg.dash}}"></rect>
+          <rect x="135" y="135" width="330" height="330" fill="#b8aea4" stroke="#070707" stroke-width="1" style="fill-opacity: {{dg.f2}}; stroke-dasharray: 1320; stroke-dashoffset: {{dg.o2}}"></rect>
+          <rect x="200" y="200" width="200" height="200" fill="#2e2e2e" stroke="#070707" stroke-width="1" style="fill-opacity: {{dg.f3}}; stroke-dasharray: 800; stroke-dashoffset: {{dg.o3}}"></rect>
+          <rect x="262" y="262" width="76" height="76" fill="#ffffff" stroke="#070707" stroke-width="1" style="fill-opacity: {{dg.f4}}; stroke-dasharray: 304; stroke-dashoffset: {{dg.o4}}"></rect>
+          <g stroke="#070707" stroke-width="1" fill="none">
+            <path d="M262 262 L70 70" style="stroke-dasharray: 272; stroke-dashoffset: {{dg.s}}"></path>
+            <path d="M338 262 L530 70" style="stroke-dasharray: 272; stroke-dashoffset: {{dg.s}}"></path>
+            <path d="M338 338 L530 530" style="stroke-dasharray: 272; stroke-dashoffset: {{dg.s}}"></path>
+            <path d="M262 338 L70 530" style="stroke-dasharray: 272; stroke-dashoffset: {{dg.s}}"></path>
+          </g>
+          <rect x="296" y="296" width="8" height="8" fill="#d59566" style="opacity: {{dg.lb}}"></rect>
+          <g font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.02em" style="opacity: {{dg.lb}}">
+            <text x="84" y="94" font-size="10.5" fill="#070707">YOUR SYSTEMS</text>
+            <text x="84" y="108" font-size="7.4" fill="#736f6a">ERP · CRM · DATA · CHANNELS</text>
+            <text x="149" y="158" font-size="10.5" fill="#070707">GOVERNANCE</text>
+            <text x="149" y="172" font-size="7.4" fill="#2e2e2e">EVALS · PERMISSIONS · AUDIT</text>
+            <text x="214" y="222" font-size="10.5" fill="#ffffff">AGENTS</text>
+            <text x="214" y="236" font-size="7.4" fill="#dad5cc">VOICE · DOCUMENTS · WORKFLOWS</text>
+            <text x="300" y="326" font-size="9" fill="#070707" text-anchor="middle">KOFEN</text>
+            <text x="516" y="512" font-size="10.5" fill="#070707" text-anchor="end">FORWARD-DEPLOYED ENGINEERS</text>
+            <text x="516" y="524" font-size="7.4" fill="#736f6a" text-anchor="end">ON SITE · IN PRODUCTION</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Phases: numbered stepper -->
+  <section id="phases" style="padding: 140px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; opacity: {{rv.ph.o}}; transform: translateY({{rv.ph.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; max-width: 15em">{{h.phases.a}} <span style="color: #736f6a">{{h.phases.b}}</span></h2>
+      <div role="tablist" style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{phases}}" as="ph" hint-placeholder-count="3">
+          <button type="button" role="tab" aria-selected="{{ph.active}}" onClick="{{ph.pick}}" style="position: relative; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; min-height: 44px; padding: 0 18px; cursor: pointer; background: transparent; color: {{ph.fg}}; border: 1px solid {{ph.bd}}; border-radius: 0; transition: border-color .3s, color .3s">{{ph.n}} · {{t.phases.tab}}<span aria-hidden="true" style="position: absolute; left: 50%; bottom: -12px; width: 6px; height: 6px; margin-left: -3px; background: {{ph.sq}}; transition: background .3s"></span></button>
+        </sc-for>
+      </div>
+      <div aria-hidden="true" style="height: 1px; background: #dad5cc; margin-top: 8px"><div style="height: 1px; width: {{phaseProg}}%; background: #d59566"></div></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 32px 80px">
+        <div style="flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+          <h3 style="margin: 0; font-weight: 400; font-size: clamp(24px, 2.2vw, 30px); line-height: 1.15; letter-spacing: -0.025em">{{phase.title}}</h3>
+          <p style="margin: 0; font-size: 15.5px; line-height: 1.65; color: #736f6a; max-width: 34em">{{phase.body}}</p>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{phase.chips}}" as="c" hint-placeholder-count="3">
+              <span class="kchip" style="border: 1px solid rgba(184,174,164,0.8); padding: 4px 10px; font-size: 11.5px; color: #2e2e2e">{{c.text}}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 14px; justify-content: center">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+            <span style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #736f6a">{{t.phases.led}}</span>
+            <span style="font-size: 64px; letter-spacing: -0.05em; color: #070707; font-variant-numeric: tabular-nums">{{phase.pct}}<span style="color: #b06a38">%</span></span>
+          </div>
+          <div style="height: 4px; background: #dad5cc; overflow: hidden"><div style="height: 4px; width: {{phase.pct}}%; background: #070707; transition: width .5s cubic-bezier(.33,0,.15,1)"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Depth panel + stats -->
+  <section id="platform" style="background: #b8aea4; padding: 120px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; opacity: {{rv.caps.o}}; transform: translateY({{rv.caps.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; max-width: 14em">{{h.caps.a}} <span style="color: #4a4642">{{h.caps.b}}</span></h2>
+      <div id="kofen-numbers" style="border: 1px solid rgba(46,46,46,0.35); background: rgba(46,46,46,0.35); display: flex; flex-direction: column; gap: 1px">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1px">
+          <sc-for list="{{caps}}" as="cp" hint-placeholder-count="3">
+            <div style="background: #f2f2f2; padding: 36px; display: flex; flex-direction: column; gap: 14px">
+              <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{cp.k}}</span>
+              <h3 style="margin: 12px 0 0; font-weight: 400; font-size: 21px; line-height: 1.15; letter-spacing: -0.01em">{{cp.h}}</h3>
+              <p style="margin: 0; font-size: 14.5px; line-height: 1.65; color: #736f6a">{{cp.p}}</p>
+            </div>
+          </sc-for>
+        </div>
+        <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 1px">
+          <sc-for list="{{nums}}" as="n" hint-placeholder-count="4">
+            <div style="background: #f2f2f2; padding: 28px 36px; display: flex; flex-direction: column-reverse; gap: 8px">
+              <dt style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; line-height: 1.5; letter-spacing: 0.1em; text-transform: uppercase; color: #736f6a; max-width: 24em">{{n.label}}</dt>
+              <dd style="margin: 0; font-size: 40px; line-height: 1.3; letter-spacing: 0.005em; font-variant-numeric: tabular-nums; color: #070707">
+                <span class="ksr">{{n.final}}{{n.suffix}}</span>
+                <span aria-hidden="true" style="display: inline-grid"><span style="grid-area: 1 / 1; visibility: hidden">{{n.final}}</span><span style="grid-area: 1 / 1">{{n.cur}}</span></span><span aria-hidden="true">{{n.suffix}}</span>
+              </dd>
+            </div>
+          </sc-for>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Industries rail -->
+  <section id="industries" style="padding: 140px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; opacity: {{rv.ind.o}}; transform: translateY({{rv.ind.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <div style="display: flex; flex-wrap: wrap; gap: 24px 80px; justify-content: space-between; align-items: flex-end">
+        <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+          <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{t.nav.industries}}</span>
+          <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; max-width: 13em">{{h.ind.a}} <span style="color: #736f6a">{{h.ind.b}}</span></h2>
+        </div>
+        <a href="{{demoHref}}" class="kcta kghost" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0; background: #f2f2f2; color: #070707">{{t.ind.btn}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+      </div>
+      <div id="kofen-rail" class="krail2" onPointerDown="{{railDown}}" onPointerMove="{{railMove}}" onPointerUp="{{railUp}}" onPointerLeave="{{railUp}}" style="display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; cursor: grab; user-select: none; -webkit-user-select: none">
+        <sc-for list="{{industries}}" as="i" hint-placeholder-count="7">
+          <a href="#contact" class="kcard" draggable="false" onClick="{{railClick}}" style="scroll-snap-align: start; position: relative; display: block; aspect-ratio: 1 / 1; overflow: hidden; color: #ffffff; text-decoration: none">
+            <div class="kartz" aria-hidden="true" style="position: absolute; inset: 0; background: {{i.art}}"></div>
+            <div aria-hidden="true" style="position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 56px), repeating-linear-gradient(0deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 56px)"></div>
+            <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(rgba(18,16,14,0.1) 40%, rgba(18,16,14,0.9))"></div>
+            <span style="position: absolute; top: 18px; inset-inline-start: 18px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; color: rgba(255,255,255,0.8)">{{i.n}}</span>
+            <div style="position: absolute; inset-inline: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 21px; line-height: 1.15; letter-spacing: -0.015em">{{i.name}}</span>
+              <span class="kcap"><span style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.8)">{{i.triad}}</span></span>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px">
+        <button type="button" onClick="{{railPrev}}" disabled="{{railAtStart}}" aria-label="Previous" style="width: 44px; height: 44px; border: 1px solid #b8aea4; border-radius: 0; background: #ffffff; color: #070707; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: {{railPrevO}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2" style="transform: scaleX({{flip}}) rotate(180deg)"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></button>
+        <div style="height: 44px; box-sizing: border-box; border: 1px solid #b8aea4; display: flex; align-items: center; gap: 2px; padding: 0 10px">
+          <sc-for list="{{dots}}" as="d" hint-placeholder-count="4">
+            <button type="button" onClick="{{d.pick}}" aria-label="{{d.label}}" aria-current="{{d.active}}" style="width: 22px; height: 30px; border: 0; background: transparent; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center"><span style="width: 6px; height: 6px; background: {{d.bg}}; transition: background .3s"></span></button>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{railNext}}" disabled="{{railAtEnd}}" aria-label="Next" style="width: 44px; height: 44px; border: 1px solid #b8aea4; border-radius: 0; background: #ffffff; color: #070707; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: {{railNextO}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2" style="transform: scaleX({{flip}})"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing & engagement -->
+  <section id="pricing" style="background: #f2f2f2; border-top: 1px solid #dad5cc; padding: 140px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; opacity: {{rv.pri.o}}; transform: translateY({{rv.pri.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <div style="display: flex; flex-wrap: wrap; gap: 24px 80px; justify-content: space-between; align-items: flex-end">
+        <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+          <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{t.nav.pricing}}</span>
+          <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; max-width: 14em">{{h.pri.a}} <span style="color: #736f6a">{{h.pri.b}}</span></h2>
+        </div>
+        <p style="flex: 0 1 420px; min-width: 0; margin: 0; font-size: 15.5px; line-height: 1.65; color: #736f6a">{{t.pricing.p}}</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 1px; background: rgba(46,46,46,0.3); border: 1px solid rgba(46,46,46,0.3)">
+        <sc-for list="{{plans}}" as="pl" hint-placeholder-count="2">
+          <article style="min-height: 300px; box-sizing: border-box; background: {{pl.bg}}; color: {{pl.fg}}; padding: 36px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px">
+            <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: {{pl.muted}}"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{pl.name}}</span>
+            <div style="display: flex; flex-direction: column; gap: 16px">
+              <span style="font-size: clamp(44px, 5vw, 76px); line-height: 1; letter-spacing: -0.05em; font-variant-numeric: tabular-nums">{{pl.price}}</span>
+              <p style="margin: 0; font-size: 14.5px; line-height: 1.65; color: {{pl.muted}}; max-width: 30em">{{pl.note}}</p>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" style="padding: 140px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 48px 80px; align-items: flex-start; opacity: {{rv.faq.o}}; transform: translateY({{rv.faq.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 28px; align-items: flex-start">
+        <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>FAQ</span>
+        <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; max-width: 10em">{{h.faq.a}} <span style="color: #736f6a">{{h.faq.b}}</span></h2>
+        <a href="#try" class="kcta" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0">{{t.comp.send}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+      </div>
+      <div style="flex: 2 1 560px; min-width: 0; border-top: 1px solid #b8aea4">
+        <sc-for list="{{faq}}" as="f" hint-placeholder-count="6">
+          <details class="kfaq" style="border-bottom: 1px solid #b8aea4">
+            <summary style="display: flex; align-items: center; gap: 16px; min-height: 44px; padding: 22px 0">
+              <span class="kbul" aria-hidden="true" style="width: 5px; height: 5px; flex: none; border: 1px solid #070707"></span>
+              <h3 style="flex: 1; margin: 0; font-weight: 400; font-size: 18px; line-height: 1.35; letter-spacing: -0.015em">{{f.q}}</h3>
+              <span class="kplus" aria-hidden="true"></span>
+            </summary>
+            <p style="margin: 0; padding: 0 0 26px 21px; font-size: 15.5px; line-height: 1.65; color: #736f6a; max-width: 40em">{{f.a}}</p>
+          </details>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- Company / careers -->
+  <section id="company" style="border-top: 1px solid #dad5cc; padding: 140px max(20px, 3.4vw)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; opacity: {{rv.co.o}}; transform: translateY({{rv.co.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+      <div style="display: flex; flex-wrap: wrap; gap: 24px 80px; justify-content: space-between; align-items: flex-end">
+        <div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+          <span style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a"><span aria-hidden="true" style="width: 6px; height: 6px; background: #d59566"></span>{{t.nav.company}}</span>
+          <h2 style="margin: 0; font-weight: 400; font-size: clamp(29px, 3.2vw, 46px); line-height: 1.04; letter-spacing: -0.025em; text-wrap: balance; max-width: 15em">{{h.closer.a}} <span style="color: #736f6a">{{h.closer.b}}</span></h2>
+        </div>
+        <p style="flex: 0 1 440px; min-width: 0; margin: 0; font-size: 15.5px; line-height: 1.65; color: #736f6a">{{t.closer.p}}</p>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 24px">
+        <a href="#company" style="min-height: 280px; box-sizing: border-box; background: #f2f2f2; color: #070707; text-decoration: none; padding: 32px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px">
+          <span style="font-size: clamp(28px, 2.6vw, 40px); letter-spacing: -0.035em; line-height: 1.05">{{t.closer.c1}}</span>
+          <span class="kar karl" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span>
+        </a>
+        <a href="#company" style="min-height: 280px; box-sizing: border-box; background: #2e2e2e; color: #ffffff; text-decoration: none; padding: 32px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px">
+          <span style="font-size: clamp(28px, 2.6vw, 40px); letter-spacing: -0.035em; line-height: 1.05">{{t.closer.c2}}</span>
+          <span class="kar karl" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section id="contact" onMouseMove="{{ctaMove}}" style="position: relative; overflow: hidden; background: linear-gradient(98deg, #dcd7d2 0%, #f0eeeb 48%, #ffffff 100%); padding: clamp(96px, 8.2vw, 140px) max(20px, 3.4vw) clamp(80px, 6.9vw, 120px)">
+    <div style="max-width: 1440px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 48px; align-items: center; justify-content: space-between">
+      <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 40px; opacity: {{rv.cta.o}}; transform: translateY({{rv.cta.y}}px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1)">
+        <h2 style="margin: -0.1em 0 -0.14em; padding: 0.1em 0 0.14em; max-width: 11em; font-weight: 400; font-size: clamp(40px, 5vw, 88px); line-height: 1.04; letter-spacing: -0.055em; color: transparent; -webkit-background-clip: text; background-clip: text; background-image: repeating-linear-gradient(105deg, #070707 {{gx2}}px, #736f6a calc({{gx2}}px + 60%), #070707 calc({{gx2}}px + 120%)); text-wrap: balance">{{t.cta.h2}}</h2>
+        <form class="kform" onSubmit="{{bookDemo}}" style="width: min(480px, 100%)">
+          <label for="kofen-email2" class="ksr">{{t.hero.email}}</label>
+          <input id="kofen-email2" type="email" autocomplete="email" placeholder="{{t.hero.email}}" value="{{email}}" onChange="{{onEmail}}" style="flex: 1; min-width: 0; height: 44px; box-sizing: border-box; padding: 0 16px; font: inherit; font-size: 14px; border: 1px solid rgba(46,46,46,0.3); border-radius: 0; background: transparent; color: #070707; outline: none">
+          <a href="{{demoHref}}" class="kcta" style="display: inline-flex; align-items: center; gap: 12px; padding: 13px 12px 13px 20px; background: #070707; color: #ffffff; text-decoration: none; font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; border-radius: 0; justify-content: space-between">{{t.cta.btn}}<span class="kar" aria-hidden="true"><span class="karw"><svg class="ka1" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg><svg class="ka2" width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.1"><path d="M1 5h8M5.5 1.5 9 5 5.5 8.5"></path></svg></span></span></a>
+        </form>
+        <a href="mailto:hello@kofen.ai?subject=Proposal" style="align-self: flex-start; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #736f6a; text-decoration: none"><span class="kul">hello@kofen.ai</span></a>
+      </div>
+      <div class="kart-big" aria-hidden="true" style="flex: 0 1 560px; min-width: 0"><svg viewBox="0 0 560 400" style="width: 100%; height: auto; display: block"><g><rect x="0" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="0" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="0" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="0" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="0" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="80" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="80" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="80" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="80" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="80" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="160" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="160" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="160" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="160" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="160" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="240" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="240" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="240" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="240" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="240" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="320" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="320" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="320" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="320" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="320" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="400" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="400" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="400" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="400" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="400" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="480" y="0" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="480" y="80" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="480" y="160" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="480" y="240" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="480" y="320" width="80" height="80" fill="none" stroke="#b8aea4" stroke-width="1"></rect><rect x="80" y="80" width="80" height="80" fill="#d59566"></rect><rect x="320" y="240" width="80" height="80" fill="#2e2e2e"></rect><rect x="400" y="0" width="80" height="80" fill="#b8aea4"></rect><rect x="160" y="320" width="80" height="80" fill="#736f6a"></rect><path d="M0,80 A80,80 0 0 1 80,0" fill="none" stroke="#070707" stroke-width="1"></path><path d="M240,160 A80,80 0 0 0 320,80" fill="none" stroke="#070707" stroke-width="1"></path><path d="M480,160 A80,80 0 0 1 560,240" fill="none" stroke="#070707" stroke-width="1"></path><path d="M160,160 A80,80 0 0 0 240,240" fill="none" stroke="#070707" stroke-width="1"></path><path d="M400,400 A80,80 0 0 1 480,320" fill="none" stroke="#070707" stroke-width="1"></path></g></svg></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="background: #f2f2f2; border-top: 1px solid #dad5cc">
+    <div style="max-width: 1440px; margin: 0 auto; box-sizing: border-box; padding: 72px max(20px, 3.4vw) 56px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 48px 40px">
+      <div style="display: flex; align-items: center"><span aria-hidden="true" style="font-size: 76px; line-height: 1; letter-spacing: -0.06em">K</span><span class="ksr">Kofen</span></div>
+      <sc-for list="{{footerCols}}" as="col" hint-placeholder-count="3">
+        <div class="kdim" style="display: flex; flex-direction: column; gap: 12px">
+          <span style="font-family: 'Geist Mono', ui-monospace, 'Noto Sans SC', 'Noto Sans Arabic', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #736f6a">{{col.head}}</span>
+          <sc-for list="{{col.links}}" as="lk" hint-placeholder-count="3">
+            <a href="{{lk.href}}" style="font-size: 13px; color: #2e2e2e; text-decoration: none; align-self: flex-start"><span class="kul">{{lk.text}}</span></a>
+          </sc-for>
+        </div>
+      </sc-for>
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span aria-hidden="true" style="width: 8px; height: 8px; background: #d59566"></span>
+        <span style="font-size: 18px; line-height: 1.25; letter-spacing: -0.02em; max-width: 12em">{{t.footer.tagline}}</span>
+        <span style="font-size: 13px; color: #736f6a">Barcelona / San Francisco</span>
+      </div>
+    </div>
+    <div style="border-top: 1px solid #dad5cc">
+      <div style="max-width: 1440px; margin: 0 auto; box-sizing: border-box; padding: 18px max(20px, 3.4vw); display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between">
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #736f6a">© 2026 Kofen · Barcelona / San Francisco</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px">
+          <div class="kdim" style="display: flex; flex-wrap: wrap; gap: 18px">
+            <sc-for list="{{legalLinks}}" as="lg" hint-placeholder-count="3">
+              <a href="#top" style="font-size: 12px; color: #736f6a; text-decoration: none"><span class="kul">{{lg.text}}</span></a>
+            </sc-for>
+          </div>
+          <div style="position: relative">
+            <button type="button" onClick="{{toggleLang2}}" aria-expanded="{{langOpen2}}" aria-haspopup="listbox" aria-label="Language" style="font: inherit; font-size: 12px; color: #2e2e2e; background: transparent; border: 1px solid #b8aea4; height: 36px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px">{{langName}}<svg aria-hidden="true" width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2" style="transform: rotate({{langChev2}}deg); transition: transform .3s cubic-bezier(.33,0,.15,1)"><path d="M1.5 3.5 5 7l3.5-3.5"></path></svg></button>
+            <sc-if value="{{langOpen2}}" hint-placeholder-val="{{false}}">
+              <button type="button" aria-label="Close" tabindex="-1" onClick="{{closeLang}}" style="position: fixed; inset: 0; z-index: 9; background: transparent; border: 0; padding: 0; cursor: default"></button>
+              <div role="listbox" style="position: absolute; bottom: 44px; inset-inline-end: 0; z-index: 10; width: 180px; box-sizing: border-box; padding: 4px; background: #fcfcfc; border: 1px solid rgba(184,174,164,0.6); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); display: flex; flex-direction: column; animation: kMenuUp .2s cubic-bezier(.33,0,.15,1) both">
+                <sc-for list="{{langs}}" as="l" hint-placeholder-count="8">
+                  <button type="button" role="option" aria-selected="{{l.active}}" class="klang" onClick="{{l.pick}}" style="font: inherit; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: start; background: {{l.bg}}; color: #070707; border: 0; min-height: 34px; padding: 0 10px; cursor: pointer">
+                    <span>{{l.name}}</span>
+                    <span style="width: 10px; height: 10px; display: inline-flex"><sc-if value="{{l.active}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#b06a38" stroke-width="1.4"><path d="M1.5 5.2 4 7.5l4.5-5"></path></svg></sc-if></span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"defaultLang":{"editor":"enum","options":["en","es","de","fr","it","pt","zh","ar"],"default":"en"},"$preview":{"width":1440,"height":10400}}'>
+const T = {
+ "en": {
+  "ticker": {
+   "text": "New · One-week operations diagnostic for enterprise teams",
+   "link": "See how it works →"
+  },
+  "nav": {
+   "deploy": "Deployment",
+   "industries": "Industries",
+   "pricing": "Engagement",
+   "company": "Company",
+   "cta": "Book a demo"
+  },
+  "hero": {
+   "h1": "Enough AI pilots. Put one into production.",
+   "sub": "Kofen embeds engineers and AI agents in your most complex operations, and turns every task they complete into knowledge your company keeps.",
+   "b1": "Book a demo",
+   "b2": "See the price",
+   "email": "Work email"
+  },
+  "systemsTitle": "Deployed on the systems you already run.",
+  "statement": {
+   "pre": "Pilots prove that AI can work.",
+   "emph": "Kofen proves that it pays."
+  },
+  "dark": {
+   "h2": "Agents need engineers on the ground.",
+   "pillars": [
+    [
+     "Forward-deployed engineers.",
+     "A small team works inside your operation, maps how decisions are really made and ships agents into production on your own systems.",
+     "How we deploy"
+    ],
+    [
+     "A roadmap your board can audit.",
+     "Every workflow is ranked by return, owner and risk before a single line of code is written.",
+     "See the phases"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "From the first workflow to an AI-native operation.",
+   "led": "Work led by Kofen",
+   "tab": "Phase",
+   "items": [
+    [
+     "Deploy the first workflow.",
+     75,
+     "Start where the money is. The first agent goes live on your real data in weeks, and its value is measured before anyone talks about scale.",
+     [
+      "Diagnostic",
+      "Pilot",
+      "Production"
+     ]
+    ],
+    [
+     "Scale across functions.",
+     50,
+     "Your team co-builds the next workflows with our engineers. What one agent learns, the next one starts with.",
+     [
+      "Co-building",
+      "Enablement",
+      "Handover"
+     ]
+    ],
+    [
+     "Run it as your own.",
+     25,
+     "Your team operates the system. Kofen stays on for evaluation, governance and the hardest edge cases.",
+     [
+      "Governance",
+      "Evaluation",
+      "Support"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "One team. Every critical sector.",
+   "btn": "Book a demo",
+   "items": [
+    [
+     "Manufacturing",
+     "Precision · Traceability · Uptime"
+    ],
+    [
+     "Logistics",
+     "Speed · Visibility · Reliability"
+    ],
+    [
+     "Distribution",
+     "Availability · Margin · Service"
+    ],
+    [
+     "Financial services",
+     "Rigor · Auditability · Trust"
+    ],
+    [
+     "Healthcare",
+     "Privacy · Discretion · Care"
+    ],
+    [
+     "Construction",
+     "Control · Deadlines · Safety"
+    ],
+    [
+     "Public sector & Government",
+     "Transparency · Compliance · Service"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "Start with one week. Scale with evidence.",
+   "p": "A fixed-price diagnostic shows where agents pay back, and by how much, before you commit to a deployment.",
+   "plans": [
+    [
+     "Diagnostic",
+     "€7,500",
+     "One week on site. Your workflows ranked by return, with a go or no-go for each one. Paid upfront."
+    ],
+    [
+     "Deployment",
+     "From €60,000",
+     "One workflow in production. Fixed scope and price, agreed before the build starts, paid by milestone."
+    ]
+   ],
+   "condHead": "How we engage.",
+   "conds": [
+    "A named executive sponsor and a process owner on your side.",
+    "Access to production systems and real data from week one.",
+    "Only workflows with a projected return of at least 5×.",
+    "Fixed scope, fixed price. No discounts, no open-ended hours.",
+    "A limited number of engagements at a time, because our engineers work on site."
+   ]
+  },
+  "closer": {
+   "h2": "We are building the team that puts AI to work in the real economy.",
+   "p": "Engineers who would rather ship in a warehouse, a hospital or a ministry than in a slide deck. Real systems, real clients, real consequences.",
+   "c1": "Our story",
+   "c2": "Open positions"
+  },
+  "cta": {
+   "h2": "Put agents to work on your most complex workflows.",
+   "btn": "Book a demo"
+  },
+  "footer": {
+   "tagline": "AI agents that move the P&L.",
+   "heads": [
+    "Services",
+    "Industries",
+    "Company",
+    "Legal"
+   ],
+   "services": [
+    "Diagnostic",
+    "Deployment",
+    "Embedded team"
+   ],
+   "company": [
+    "Why Kofen",
+    "Careers",
+    "Contact"
+   ],
+   "legal": [
+    "Legal notice",
+    "Privacy",
+    "Cookies"
+   ]
+  },
+  "caps": {
+   "h2": "Built for the hardest work in the company.",
+   "items": [
+    [
+     "Complexity",
+     "Designed for exceptions",
+     "Agents built for approvals, edge cases and imperfect data, not for the demo path."
+    ],
+    [
+     "Control",
+     "Yours, end to end",
+     "Code, prompts, evaluations and data live in your infrastructure. No lock-in, full audit trail."
+    ],
+    [
+     "Compounding",
+     "Every agent improves the next",
+     "Context captured in one function carries into the next, so each deployment starts further ahead."
+    ]
+   ]
+  }
+ },
+ "es": {
+  "ticker": {
+   "text": "Nuevo · Diagnóstico de operaciones en una semana para grandes empresas",
+   "link": "Descubre cómo funciona →"
+  },
+  "nav": {
+   "deploy": "Despliegue",
+   "industries": "Industrias",
+   "pricing": "Cómo trabajamos",
+   "company": "Empresa",
+   "cta": "Reserva una demo"
+  },
+  "hero": {
+   "h1": "Basta de pilotos de IA. Pon uno en producción.",
+   "sub": "Kofen integra ingenieros y agentes de IA en tus operaciones más complejas, y convierte cada tarea que completan en conocimiento que se queda en tu empresa.",
+   "b1": "Reserva una demo",
+   "b2": "Mira el precio",
+   "email": "Correo de empresa"
+  },
+  "systemsTitle": "Desplegados sobre los sistemas que ya usas.",
+  "statement": {
+   "pre": "Los pilotos demuestran que la IA puede funcionar.",
+   "emph": "Kofen demuestra que es rentable."
+  },
+  "dark": {
+   "h2": "Los agentes necesitan ingenieros sobre el terreno.",
+   "pillars": [
+    [
+     "Ingenieros desplegados en tu empresa.",
+     "Un equipo reducido trabaja dentro de tu operación, entiende cómo se toman de verdad las decisiones y pone agentes en producción sobre tus propios sistemas.",
+     "Cómo desplegamos"
+    ],
+    [
+     "Una hoja de ruta que tu consejo puede auditar.",
+     "Cada flujo se prioriza por retorno, responsable y riesgo antes de escribir una sola línea de código.",
+     "Ver las fases"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "Del primer flujo a una operación nativa en IA.",
+   "led": "Trabajo liderado por Kofen",
+   "tab": "Fase",
+   "items": [
+    [
+     "Despliega el primer flujo.",
+     75,
+     "Empieza donde está el dinero. El primer agente entra en producción con tus datos reales en semanas, y su valor se mide antes de hablar de escalar.",
+     [
+      "Diagnóstico",
+      "Piloto",
+      "Producción"
+     ]
+    ],
+    [
+     "Escala entre funciones.",
+     50,
+     "Tu equipo co-construye los siguientes flujos con nuestros ingenieros. Lo que aprende un agente es el punto de partida del siguiente.",
+     [
+      "Co-desarrollo",
+      "Capacitación",
+      "Traspaso"
+     ]
+    ],
+    [
+     "Opéralo como algo tuyo.",
+     25,
+     "Tu equipo opera el sistema. Kofen se queda para la evaluación, la gobernanza y los casos más difíciles.",
+     [
+      "Gobernanza",
+      "Evaluación",
+      "Soporte"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "Un equipo. Cada sector crítico.",
+   "btn": "Reserva una demo",
+   "items": [
+    [
+     "Industria",
+     "Precisión · Trazabilidad · Continuidad"
+    ],
+    [
+     "Logística",
+     "Rapidez · Visibilidad · Fiabilidad"
+    ],
+    [
+     "Distribución",
+     "Disponibilidad · Margen · Servicio"
+    ],
+    [
+     "Servicios financieros",
+     "Rigor · Auditoría · Confianza"
+    ],
+    [
+     "Salud",
+     "Privacidad · Discreción · Cuidado"
+    ],
+    [
+     "Construcción",
+     "Control · Plazos · Seguridad"
+    ],
+    [
+     "Sector público y Administración",
+     "Transparencia · Cumplimiento · Servicio"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "Empieza con una semana. Escala con evidencia.",
+   "p": "Un diagnóstico a precio cerrado muestra dónde se pagan los agentes, y cuánto, antes de comprometerte con un despliegue.",
+   "plans": [
+    [
+     "Diagnóstico",
+     "7.500 €",
+     "Una semana en tus instalaciones. Tus flujos priorizados por retorno, con un sí o un no para cada uno. Pago por adelantado."
+    ],
+    [
+     "Despliegue",
+     "Desde 60.000 €",
+     "Un flujo en producción. Alcance y precio cerrados antes de construir, pagados por hitos."
+    ]
+   ],
+   "condHead": "Cómo trabajamos.",
+   "conds": [
+    "Un sponsor de dirección y un responsable del proceso en tu lado.",
+    "Acceso a sistemas de producción y datos reales desde la primera semana.",
+    "Solo flujos con un retorno previsto de al menos 5×.",
+    "Alcance cerrado, precio cerrado. Sin descuentos ni horas abiertas.",
+    "Un número limitado de proyectos a la vez, porque nuestros ingenieros trabajan en tus instalaciones."
+   ]
+  },
+  "closer": {
+   "h2": "Estamos formando el equipo que pone la IA a trabajar en la economía real.",
+   "p": "Ingenieros que prefieren entregar en un almacén, un hospital o un ministerio antes que en una presentación. Sistemas reales, clientes reales, consecuencias reales.",
+   "c1": "Nuestra historia",
+   "c2": "Posiciones abiertas"
+  },
+  "cta": {
+   "h2": "Pon agentes a trabajar en tus flujos más complejos.",
+   "btn": "Reserva una demo"
+  },
+  "footer": {
+   "tagline": "Agentes de IA que mueven la cuenta de resultados.",
+   "heads": [
+    "Servicios",
+    "Industrias",
+    "Empresa",
+    "Legal"
+   ],
+   "services": [
+    "Diagnóstico",
+    "Despliegue",
+    "Equipo integrado"
+   ],
+   "company": [
+    "Por qué Kofen",
+    "Empleo",
+    "Contacto"
+   ],
+   "legal": [
+    "Aviso legal",
+    "Privacidad",
+    "Cookies"
+   ]
+  },
+  "caps": {
+   "h2": "Hecho para el trabajo más difícil de la empresa.",
+   "items": [
+    [
+     "Complejidad",
+     "Diseñado para las excepciones",
+     "Agentes pensados para aprobaciones, casos límite y datos imperfectos, no para el camino de la demo."
+    ],
+    [
+     "Control",
+     "Tuyo de principio a fin",
+     "Código, prompts, evaluaciones y datos viven en tu infraestructura. Sin dependencia y con trazabilidad completa."
+    ],
+    [
+     "Efecto acumulado",
+     "Cada agente mejora el siguiente",
+     "El contexto que se captura en una función pasa a la siguiente, así que cada despliegue empieza más adelante."
+    ]
+   ]
+  }
+ },
+ "de": {
+  "ticker": {
+   "text": "Neu · Einwöchige Betriebsdiagnose für Großunternehmen",
+   "link": "So funktioniert es →"
+  },
+  "nav": {
+   "deploy": "Deployment",
+   "industries": "Branchen",
+   "pricing": "Zusammenarbeit",
+   "company": "Unternehmen",
+   "cta": "Demo buchen"
+  },
+  "hero": {
+   "h1": "Genug KI-Piloten. Bringen Sie einen in Produktion.",
+   "sub": "Kofen bringt Ingenieure und KI-Agenten in Ihre komplexesten Abläufe und macht aus jeder erledigten Aufgabe Wissen, das in Ihrem Unternehmen bleibt.",
+   "b1": "Demo buchen",
+   "b2": "Preis ansehen",
+   "email": "Geschäftliche E-Mail"
+  },
+  "systemsTitle": "Im Einsatz auf den Systemen, die Sie bereits nutzen.",
+  "statement": {
+   "pre": "Piloten beweisen, dass KI funktionieren kann.",
+   "emph": "Kofen beweist, dass sie sich rechnet."
+  },
+  "dark": {
+   "h2": "Agenten brauchen Ingenieure vor Ort.",
+   "pillars": [
+    [
+     "Forward-deployed Engineers.",
+     "Ein kleines Team arbeitet in Ihrem Betrieb, versteht, wie Entscheidungen wirklich fallen, und bringt Agenten auf Ihren eigenen Systemen in Produktion.",
+     "Wie wir arbeiten"
+    ],
+    [
+     "Eine Roadmap, die Ihr Vorstand prüfen kann.",
+     "Jeder Workflow wird nach Rendite, Verantwortung und Risiko priorisiert, bevor eine Zeile Code entsteht.",
+     "Die Phasen"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "Vom ersten Workflow zum KI-nativen Betrieb.",
+   "led": "Von Kofen geführte Arbeit",
+   "tab": "Phase",
+   "items": [
+    [
+     "Den ersten Workflow live bringen.",
+     75,
+     "Beginnen Sie dort, wo das Geld liegt. Der erste Agent läuft in wenigen Wochen auf Ihren echten Daten, und sein Nutzen ist gemessen, bevor über Skalierung gesprochen wird.",
+     [
+      "Diagnose",
+      "Pilot",
+      "Produktion"
+     ]
+    ],
+    [
+     "Über Funktionen skalieren.",
+     50,
+     "Ihr Team baut die nächsten Workflows mit unseren Ingenieuren. Was ein Agent lernt, ist der Ausgangspunkt des nächsten.",
+     [
+      "Co-Entwicklung",
+      "Befähigung",
+      "Übergabe"
+     ]
+    ],
+    [
+     "Als Ihr eigenes System betreiben.",
+     25,
+     "Ihr Team betreibt das System. Kofen bleibt für Evaluierung, Governance und die schwierigsten Sonderfälle.",
+     [
+      "Governance",
+      "Evaluierung",
+      "Support"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "Ein Team. Jede kritische Branche.",
+   "btn": "Demo buchen",
+   "items": [
+    [
+     "Industrie",
+     "Präzision · Rückverfolgbarkeit · Verfügbarkeit"
+    ],
+    [
+     "Logistik",
+     "Tempo · Transparenz · Zuverlässigkeit"
+    ],
+    [
+     "Großhandel",
+     "Verfügbarkeit · Marge · Service"
+    ],
+    [
+     "Finanzdienstleistungen",
+     "Sorgfalt · Prüfbarkeit · Vertrauen"
+    ],
+    [
+     "Gesundheitswesen",
+     "Datenschutz · Diskretion · Fürsorge"
+    ],
+    [
+     "Bauwesen",
+     "Kontrolle · Termine · Sicherheit"
+    ],
+    [
+     "Öffentlicher Sektor & Verwaltung",
+     "Transparenz · Rechtskonformität · Bürgernähe"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "Mit einer Woche beginnen. Mit Belegen skalieren.",
+   "p": "Eine Festpreis-Diagnose zeigt, wo sich Agenten rechnen und wie sehr, bevor Sie sich für ein Deployment entscheiden.",
+   "plans": [
+    [
+     "Diagnose",
+     "7.500 €",
+     "Eine Woche vor Ort. Ihre Workflows nach Rendite priorisiert, mit Go oder No-Go für jeden. Vorkasse."
+    ],
+    [
+     "Deployment",
+     "Ab 60.000 €",
+     "Ein Workflow in Produktion. Umfang und Preis fest vereinbart vor Baubeginn, bezahlt nach Meilensteinen."
+    ]
+   ],
+   "condHead": "So arbeiten wir zusammen.",
+   "conds": [
+    "Ein benannter Executive Sponsor und ein Prozessverantwortlicher auf Ihrer Seite.",
+    "Zugang zu Produktivsystemen und echten Daten ab der ersten Woche.",
+    "Nur Workflows mit einer erwarteten Rendite von mindestens 5×.",
+    "Fester Umfang, fester Preis. Keine Rabatte, keine offenen Stunden.",
+    "Eine begrenzte Zahl paralleler Projekte, weil unsere Ingenieure vor Ort arbeiten."
+   ]
+  },
+  "closer": {
+   "h2": "Wir bauen das Team, das KI in der Realwirtschaft zum Arbeiten bringt.",
+   "p": "Ingenieure, die lieber in einem Lager, einem Krankenhaus oder einem Ministerium liefern als in einer Präsentation. Echte Systeme, echte Kunden, echte Konsequenzen.",
+   "c1": "Unsere Geschichte",
+   "c2": "Offene Stellen"
+  },
+  "cta": {
+   "h2": "Setzen Sie Agenten auf Ihre komplexesten Workflows an.",
+   "btn": "Demo buchen"
+  },
+  "footer": {
+   "tagline": "KI-Agenten, die die GuV bewegen.",
+   "heads": [
+    "Leistungen",
+    "Branchen",
+    "Unternehmen",
+    "Rechtliches"
+   ],
+   "services": [
+    "Diagnose",
+    "Deployment",
+    "Eingebettetes Team"
+   ],
+   "company": [
+    "Warum Kofen",
+    "Karriere",
+    "Kontakt"
+   ],
+   "legal": [
+    "Impressum",
+    "Datenschutz",
+    "Cookies"
+   ]
+  },
+  "caps": {
+   "h2": "Gebaut für die schwierigste Arbeit im Unternehmen.",
+   "items": [
+    [
+     "Komplexität",
+     "Für Ausnahmen konzipiert",
+     "Agenten für Freigaben, Sonderfälle und unvollständige Daten, nicht für den Demo-Pfad."
+    ],
+    [
+     "Kontrolle",
+     "Ihres, von Anfang bis Ende",
+     "Code, Prompts, Evaluierungen und Daten liegen in Ihrer Infrastruktur. Kein Lock-in, lückenloser Audit-Trail."
+    ],
+    [
+     "Zinseszins-Effekt",
+     "Jeder Agent verbessert den nächsten",
+     "Kontext aus einer Funktion fließt in die nächste, sodass jedes Deployment weiter vorne beginnt."
+    ]
+   ]
+  }
+ },
+ "fr": {
+  "ticker": {
+   "text": "Nouveau · Diagnostic opérationnel en une semaine pour les grandes entreprises",
+   "link": "Découvrir le fonctionnement →"
+  },
+  "nav": {
+   "deploy": "Déploiement",
+   "industries": "Secteurs",
+   "pricing": "Collaboration",
+   "company": "Entreprise",
+   "cta": "Réserver une démo"
+  },
+  "hero": {
+   "h1": "Assez de pilotes IA. Mettez-en un en production.",
+   "sub": "Kofen intègre des ingénieurs et des agents IA au cœur de vos opérations les plus complexes, et transforme chaque tâche accomplie en connaissance qui reste dans votre entreprise.",
+   "b1": "Réserver une démo",
+   "b2": "Voir le prix",
+   "email": "E-mail professionnel"
+  },
+  "systemsTitle": "Déployés sur les systèmes que vous utilisez déjà.",
+  "statement": {
+   "pre": "Les pilotes prouvent que l'IA peut fonctionner.",
+   "emph": "Kofen prouve qu'elle est rentable."
+  },
+  "dark": {
+   "h2": "Les agents ont besoin d'ingénieurs sur le terrain.",
+   "pillars": [
+    [
+     "Des ingénieurs déployés chez vous.",
+     "Une petite équipe travaille au sein de vos opérations, comprend comment les décisions se prennent vraiment et met des agents en production sur vos propres systèmes.",
+     "Notre déploiement"
+    ],
+    [
+     "Une feuille de route auditable par votre direction.",
+     "Chaque workflow est priorisé selon son retour, son responsable et son risque avant d'écrire la moindre ligne de code.",
+     "Voir les phases"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "Du premier workflow à une organisation native IA.",
+   "led": "Travail piloté par Kofen",
+   "tab": "Phase",
+   "items": [
+    [
+     "Déployer le premier workflow.",
+     75,
+     "Commencez là où se trouve l'argent. Le premier agent passe en production sur vos données réelles en quelques semaines, et sa valeur est mesurée avant de parler de passage à l'échelle.",
+     [
+      "Diagnostic",
+      "Pilote",
+      "Production"
+     ]
+    ],
+    [
+     "Étendre à d'autres fonctions.",
+     50,
+     "Votre équipe co-construit les workflows suivants avec nos ingénieurs. Ce qu'un agent apprend devient le point de départ du suivant.",
+     [
+      "Co-construction",
+      "Montée en compétences",
+      "Transmission"
+     ]
+    ],
+    [
+     "L'exploiter comme le vôtre.",
+     25,
+     "Votre équipe exploite le système. Kofen reste pour l'évaluation, la gouvernance et les cas les plus difficiles.",
+     [
+      "Gouvernance",
+      "Évaluation",
+      "Support"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "Une équipe. Chaque secteur critique.",
+   "btn": "Réserver une démo",
+   "items": [
+    [
+     "Industrie",
+     "Précision · Traçabilité · Continuité"
+    ],
+    [
+     "Logistique",
+     "Rapidité · Visibilité · Fiabilité"
+    ],
+    [
+     "Distribution",
+     "Disponibilité · Marge · Service"
+    ],
+    [
+     "Services financiers",
+     "Rigueur · Auditabilité · Confiance"
+    ],
+    [
+     "Santé",
+     "Confidentialité · Discrétion · Soin"
+    ],
+    [
+     "Construction",
+     "Maîtrise · Délais · Sécurité"
+    ],
+    [
+     "Secteur public & Gouvernement",
+     "Transparence · Conformité · Service"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "Commencez par une semaine. Passez à l'échelle sur preuves.",
+   "p": "Un diagnostic à prix fixe montre où les agents sont rentables, et à quel point, avant tout engagement sur un déploiement.",
+   "plans": [
+    [
+     "Diagnostic",
+     "7 500 €",
+     "Une semaine sur site. Vos workflows classés par retour, avec un go ou no-go pour chacun. Payé d'avance."
+    ],
+    [
+     "Déploiement",
+     "À partir de 60 000 €",
+     "Un workflow en production. Périmètre et prix fixés avant le développement, payés par jalons."
+    ]
+   ],
+   "condHead": "Notre façon de collaborer.",
+   "conds": [
+    "Un sponsor de direction et un responsable du processus identifiés chez vous.",
+    "Un accès aux systèmes de production et aux données réelles dès la première semaine.",
+    "Uniquement des workflows avec un retour attendu d'au moins 5×.",
+    "Périmètre fixe, prix fixe. Ni remise, ni heures ouvertes.",
+    "Un nombre limité de missions en parallèle, car nos ingénieurs travaillent sur site."
+   ]
+  },
+  "closer": {
+   "h2": "Nous constituons l'équipe qui met l'IA au travail dans l'économie réelle.",
+   "p": "Des ingénieurs qui préfèrent livrer dans un entrepôt, un hôpital ou un ministère plutôt que dans une présentation. De vrais systèmes, de vrais clients, de vraies conséquences.",
+   "c1": "Notre histoire",
+   "c2": "Postes ouverts"
+  },
+  "cta": {
+   "h2": "Mettez des agents au travail sur vos workflows les plus complexes.",
+   "btn": "Réserver une démo"
+  },
+  "footer": {
+   "tagline": "Des agents IA qui font bouger le compte de résultat.",
+   "heads": [
+    "Services",
+    "Secteurs",
+    "Entreprise",
+    "Légal"
+   ],
+   "services": [
+    "Diagnostic",
+    "Déploiement",
+    "Équipe intégrée"
+   ],
+   "company": [
+    "Pourquoi Kofen",
+    "Carrières",
+    "Contact"
+   ],
+   "legal": [
+    "Mentions légales",
+    "Confidentialité",
+    "Cookies"
+   ]
+  },
+  "caps": {
+   "h2": "Conçu pour le travail le plus exigeant de l'entreprise.",
+   "items": [
+    [
+     "Complexité",
+     "Pensé pour les exceptions",
+     "Des agents conçus pour les validations, les cas limites et les données imparfaites, pas pour le scénario de démo."
+    ],
+    [
+     "Maîtrise",
+     "À vous, de bout en bout",
+     "Code, prompts, évaluations et données restent dans votre infrastructure. Aucune dépendance, une traçabilité complète."
+    ],
+    [
+     "Effet cumulatif",
+     "Chaque agent améliore le suivant",
+     "Le contexte capté dans une fonction profite à la suivante : chaque déploiement démarre plus loin."
+    ]
+   ]
+  }
+ },
+ "it": {
+  "ticker": {
+   "text": "Novità · Diagnosi operativa in una settimana per le grandi aziende",
+   "link": "Scopri come funziona →"
+  },
+  "nav": {
+   "deploy": "Deployment",
+   "industries": "Settori",
+   "pricing": "Come lavoriamo",
+   "company": "Azienda",
+   "cta": "Prenota una demo"
+  },
+  "hero": {
+   "h1": "Basta progetti pilota di IA. Mettine uno in produzione.",
+   "sub": "Kofen inserisce ingegneri e agenti di IA nelle tue operazioni più complesse, e trasforma ogni attività completata in conoscenza che resta nella tua azienda.",
+   "b1": "Prenota una demo",
+   "b2": "Guarda il prezzo",
+   "email": "Email aziendale"
+  },
+  "systemsTitle": "Operativi sui sistemi che usi già.",
+  "statement": {
+   "pre": "I progetti pilota dimostrano che l'IA può funzionare.",
+   "emph": "Kofen dimostra che rende."
+  },
+  "dark": {
+   "h2": "Gli agenti hanno bisogno di ingegneri sul campo.",
+   "pillars": [
+    [
+     "Ingegneri inseriti in azienda.",
+     "Un piccolo team lavora dentro la tua operatività, capisce come si prendono davvero le decisioni e porta gli agenti in produzione sui tuoi sistemi.",
+     "Come lavoriamo"
+    ],
+    [
+     "Una roadmap che il tuo consiglio può verificare.",
+     "Ogni flusso viene prioritizzato per ritorno, responsabile e rischio prima di scrivere una riga di codice.",
+     "Vedi le fasi"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "Dal primo flusso a un'azienda nativa nell'IA.",
+   "led": "Lavoro guidato da Kofen",
+   "tab": "Fase",
+   "items": [
+    [
+     "Metti in produzione il primo flusso.",
+     75,
+     "Parti da dove ci sono i soldi. Il primo agente va in produzione sui tuoi dati reali in poche settimane, e il suo valore si misura prima di parlare di scala.",
+     [
+      "Diagnosi",
+      "Pilota",
+      "Produzione"
+     ]
+    ],
+    [
+     "Scala tra le funzioni.",
+     50,
+     "Il tuo team costruisce i flussi successivi con i nostri ingegneri. Ciò che impara un agente diventa il punto di partenza del successivo.",
+     [
+      "Co-sviluppo",
+      "Abilitazione",
+      "Passaggio"
+     ]
+    ],
+    [
+     "Gestiscilo come tuo.",
+     25,
+     "Il tuo team gestisce il sistema. Kofen resta per valutazione, governance e i casi più difficili.",
+     [
+      "Governance",
+      "Valutazione",
+      "Supporto"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "Un solo team. Ogni settore critico.",
+   "btn": "Prenota una demo",
+   "items": [
+    [
+     "Manifattura",
+     "Precisione · Tracciabilità · Continuità"
+    ],
+    [
+     "Logistica",
+     "Rapidità · Visibilità · Affidabilità"
+    ],
+    [
+     "Distribuzione",
+     "Disponibilità · Margine · Servizio"
+    ],
+    [
+     "Servizi finanziari",
+     "Rigore · Verificabilità · Fiducia"
+    ],
+    [
+     "Sanità",
+     "Riservatezza · Discrezione · Cura"
+    ],
+    [
+     "Costruzioni",
+     "Controllo · Scadenze · Sicurezza"
+    ],
+    [
+     "Settore pubblico e PA",
+     "Trasparenza · Conformità · Servizio"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "Inizia con una settimana. Scala con le prove.",
+   "p": "Una diagnosi a prezzo fisso mostra dove gli agenti si ripagano, e di quanto, prima di impegnarti in un deployment.",
+   "plans": [
+    [
+     "Diagnosi",
+     "7.500 €",
+     "Una settimana in sede. I tuoi flussi ordinati per ritorno, con un sì o un no per ciascuno. Pagamento anticipato."
+    ],
+    [
+     "Deployment",
+     "Da 60.000 €",
+     "Un flusso in produzione. Perimetro e prezzo fissati prima dello sviluppo, pagati per milestone."
+    ]
+   ],
+   "condHead": "Come lavoriamo.",
+   "conds": [
+    "Uno sponsor di direzione e un responsabile del processo dalla tua parte.",
+    "Accesso ai sistemi di produzione e ai dati reali dalla prima settimana.",
+    "Solo flussi con un ritorno previsto di almeno 5×.",
+    "Perimetro fisso, prezzo fisso. Niente sconti, niente ore aperte.",
+    "Un numero limitato di progetti alla volta, perché i nostri ingegneri lavorano in sede."
+   ]
+  },
+  "closer": {
+   "h2": "Stiamo formando il team che mette l'IA al lavoro nell'economia reale.",
+   "p": "Ingegneri che preferiscono consegnare in un magazzino, in un ospedale o in un ministero piuttosto che in una presentazione. Sistemi reali, clienti reali, conseguenze reali.",
+   "c1": "La nostra storia",
+   "c2": "Posizioni aperte"
+  },
+  "cta": {
+   "h2": "Metti gli agenti al lavoro sui tuoi flussi più complessi.",
+   "btn": "Prenota una demo"
+  },
+  "footer": {
+   "tagline": "Agenti di IA che muovono il conto economico.",
+   "heads": [
+    "Servizi",
+    "Settori",
+    "Azienda",
+    "Legale"
+   ],
+   "services": [
+    "Diagnosi",
+    "Deployment",
+    "Team integrato"
+   ],
+   "company": [
+    "Perché Kofen",
+    "Lavora con noi",
+    "Contatti"
+   ],
+   "legal": [
+    "Note legali",
+    "Privacy",
+    "Cookie"
+   ]
+  },
+  "caps": {
+   "h2": "Pensato per il lavoro più difficile dell'azienda.",
+   "items": [
+    [
+     "Complessità",
+     "Progettato per le eccezioni",
+     "Agenti pensati per approvazioni, casi limite e dati imperfetti, non per il percorso della demo."
+    ],
+    [
+     "Controllo",
+     "Tuo, dall'inizio alla fine",
+     "Codice, prompt, valutazioni e dati restano nella tua infrastruttura. Nessun lock-in, tracciabilità completa."
+    ],
+    [
+     "Effetto cumulativo",
+     "Ogni agente migliora il successivo",
+     "Il contesto raccolto in una funzione passa alla successiva, così ogni deployment parte più avanti."
+    ]
+   ]
+  }
+ },
+ "pt": {
+  "ticker": {
+   "text": "Novo · Diagnóstico operacional numa semana para grandes empresas",
+   "link": "Veja como funciona →"
+  },
+  "nav": {
+   "deploy": "Implementação",
+   "industries": "Setores",
+   "pricing": "Como trabalhamos",
+   "company": "Empresa",
+   "cta": "Agendar demo"
+  },
+  "hero": {
+   "h1": "Chega de pilotos de IA. Ponha um em produção.",
+   "sub": "A Kofen integra engenheiros e agentes de IA nas suas operações mais complexas e transforma cada tarefa concluída em conhecimento que fica na sua empresa.",
+   "b1": "Agendar demo",
+   "b2": "Ver o preço",
+   "email": "Email profissional"
+  },
+  "systemsTitle": "Implementados nos sistemas que já utiliza.",
+  "statement": {
+   "pre": "Os pilotos provam que a IA pode funcionar.",
+   "emph": "A Kofen prova que compensa."
+  },
+  "dark": {
+   "h2": "Os agentes precisam de engenheiros no terreno.",
+   "pillars": [
+    [
+     "Engenheiros integrados na sua empresa.",
+     "Uma pequena equipa trabalha dentro da sua operação, percebe como as decisões são realmente tomadas e põe agentes em produção nos seus próprios sistemas.",
+     "Como implementamos"
+    ],
+    [
+     "Um roteiro que a sua administração pode auditar.",
+     "Cada fluxo é priorizado por retorno, responsável e risco antes de se escrever uma linha de código.",
+     "Ver as fases"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "Do primeiro fluxo a uma operação nativa em IA.",
+   "led": "Trabalho liderado pela Kofen",
+   "tab": "Fase",
+   "items": [
+    [
+     "Implemente o primeiro fluxo.",
+     75,
+     "Comece onde está o dinheiro. O primeiro agente entra em produção com os seus dados reais em semanas, e o seu valor é medido antes de se falar em escalar.",
+     [
+      "Diagnóstico",
+      "Piloto",
+      "Produção"
+     ]
+    ],
+    [
+     "Escale entre funções.",
+     50,
+     "A sua equipa constrói os fluxos seguintes com os nossos engenheiros. O que um agente aprende é o ponto de partida do seguinte.",
+     [
+      "Codesenvolvimento",
+      "Capacitação",
+      "Passagem"
+     ]
+    ],
+    [
+     "Opere-o como seu.",
+     25,
+     "A sua equipa opera o sistema. A Kofen fica para a avaliação, a governação e os casos mais difíceis.",
+     [
+      "Governação",
+      "Avaliação",
+      "Suporte"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "Uma equipa. Todos os setores críticos.",
+   "btn": "Agendar demo",
+   "items": [
+    [
+     "Indústria",
+     "Precisão · Rastreabilidade · Continuidade"
+    ],
+    [
+     "Logística",
+     "Rapidez · Visibilidade · Fiabilidade"
+    ],
+    [
+     "Distribuição",
+     "Disponibilidade · Margem · Serviço"
+    ],
+    [
+     "Serviços financeiros",
+     "Rigor · Auditabilidade · Confiança"
+    ],
+    [
+     "Saúde",
+     "Privacidade · Discrição · Cuidado"
+    ],
+    [
+     "Construção",
+     "Controlo · Prazos · Segurança"
+    ],
+    [
+     "Setor público e Administração",
+     "Transparência · Conformidade · Serviço"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "Comece com uma semana. Escale com evidência.",
+   "p": "Um diagnóstico a preço fechado mostra onde os agentes se pagam, e quanto, antes de se comprometer com uma implementação.",
+   "plans": [
+    [
+     "Diagnóstico",
+     "7.500 €",
+     "Uma semana nas suas instalações. Os seus fluxos ordenados por retorno, com um sim ou não para cada um. Pago adiantado."
+    ],
+    [
+     "Implementação",
+     "A partir de 60.000 €",
+     "Um fluxo em produção. Âmbito e preço fechados antes de construir, pagos por marcos."
+    ]
+   ],
+   "condHead": "Como trabalhamos.",
+   "conds": [
+    "Um patrocinador da administração e um responsável do processo do seu lado.",
+    "Acesso a sistemas de produção e dados reais desde a primeira semana.",
+    "Apenas fluxos com um retorno previsto de pelo menos 5×.",
+    "Âmbito fechado, preço fechado. Sem descontos nem horas em aberto.",
+    "Um número limitado de projetos de cada vez, porque os nossos engenheiros trabalham nas suas instalações."
+   ]
+  },
+  "closer": {
+   "h2": "Estamos a formar a equipa que põe a IA a trabalhar na economia real.",
+   "p": "Engenheiros que preferem entregar num armazém, num hospital ou num ministério do que numa apresentação. Sistemas reais, clientes reais, consequências reais.",
+   "c1": "A nossa história",
+   "c2": "Vagas abertas"
+  },
+  "cta": {
+   "h2": "Ponha agentes a trabalhar nos seus fluxos mais complexos.",
+   "btn": "Agendar demo"
+  },
+  "footer": {
+   "tagline": "Agentes de IA que movem os resultados.",
+   "heads": [
+    "Serviços",
+    "Setores",
+    "Empresa",
+    "Legal"
+   ],
+   "services": [
+    "Diagnóstico",
+    "Implementação",
+    "Equipa integrada"
+   ],
+   "company": [
+    "Porque a Kofen",
+    "Carreiras",
+    "Contacto"
+   ],
+   "legal": [
+    "Aviso legal",
+    "Privacidade",
+    "Cookies"
+   ]
+  },
+  "caps": {
+   "h2": "Feito para o trabalho mais difícil da empresa.",
+   "items": [
+    [
+     "Complexidade",
+     "Desenhado para as exceções",
+     "Agentes pensados para aprovações, casos-limite e dados imperfeitos, não para o caminho da demo."
+    ],
+    [
+     "Controlo",
+     "Seu, do início ao fim",
+     "Código, prompts, avaliações e dados ficam na sua infraestrutura. Sem dependência, com rastreabilidade total."
+    ],
+    [
+     "Efeito cumulativo",
+     "Cada agente melhora o seguinte",
+     "O contexto captado numa função passa para a seguinte, por isso cada implementação começa mais à frente."
+    ]
+   ]
+  }
+ },
+ "zh": {
+  "ticker": {
+   "text": "新 · 面向大型企业的一周运营诊断",
+   "link": "了解运作方式 →"
+  },
+  "nav": {
+   "deploy": "落地部署",
+   "industries": "行业",
+   "pricing": "合作方式",
+   "company": "公司",
+   "cta": "预约演示"
+  },
+  "hero": {
+   "h1": "AI 试点已经够多了。让一个真正投产。",
+   "sub": "Kofen 将工程师和 AI 智能体嵌入您最复杂的运营流程，并把它们完成的每项任务转化为留在企业内部的知识。",
+   "b1": "预约演示",
+   "b2": "查看价格",
+   "email": "企业邮箱"
+  },
+  "systemsTitle": "部署在您现有的系统之上。",
+  "statement": {
+   "pre": "试点证明 AI 能够奏效。",
+   "emph": "Kofen 证明它能带来回报。"
+  },
+  "dark": {
+   "h2": "智能体需要一线工程师。",
+   "pillars": [
+    [
+     "前线部署工程师。",
+     "一支精干团队进驻您的运营现场，弄清决策的真实过程，并在您自己的系统上将智能体投入生产。",
+     "我们如何部署"
+    ],
+    [
+     "一份董事会可以审计的路线图。",
+     "在写下第一行代码之前，每个流程都按回报、负责人和风险排定优先级。",
+     "查看阶段"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "从第一个流程到 AI 原生的运营。",
+   "led": "由 Kofen 主导的工作",
+   "tab": "阶段",
+   "items": [
+    [
+     "上线第一个流程。",
+     75,
+     "从最能创造价值的地方开始。第一个智能体在几周内基于您的真实数据投产，在谈论扩展之前先衡量其价值。",
+     [
+      "诊断",
+      "试点",
+      "投产"
+     ]
+    ],
+    [
+     "跨职能扩展。",
+     50,
+     "您的团队与我们的工程师共同构建后续流程。一个智能体学到的，就是下一个的起点。",
+     [
+      "共同开发",
+      "赋能",
+      "移交"
+     ]
+    ],
+    [
+     "作为自己的系统运行。",
+     25,
+     "由您的团队运营系统。Kofen 继续负责评估、治理和最棘手的特殊情况。",
+     [
+      "治理",
+      "评估",
+      "支持"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "一支团队，覆盖每个关键行业。",
+   "btn": "预约演示",
+   "items": [
+    [
+     "制造业",
+     "精准 · 可追溯 · 持续运行"
+    ],
+    [
+     "物流",
+     "速度 · 透明 · 可靠"
+    ],
+    [
+     "分销",
+     "供货 · 利润 · 服务"
+    ],
+    [
+     "金融服务",
+     "严谨 · 可审计 · 信任"
+    ],
+    [
+     "医疗健康",
+     "隐私 · 审慎 · 关怀"
+    ],
+    [
+     "建筑业",
+     "管控 · 工期 · 安全"
+    ],
+    [
+     "公共部门与政府",
+     "透明 · 合规 · 服务"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "从一周开始，用证据扩展。",
+   "p": "固定价格的诊断会在您决定部署之前，告诉您智能体在哪里能带来回报、回报多少。",
+   "plans": [
+    [
+     "诊断",
+     "7,500 欧元",
+     "现场一周。按回报对您的流程排序，并逐一给出做或不做的建议。预付。"
+    ],
+    [
+     "部署",
+     "60,000 欧元起",
+     "一个流程投入生产。在开发前确定范围和价格，按里程碑付款。"
+    ]
+   ],
+   "condHead": "我们的合作方式。",
+   "conds": [
+    "您方指定一位高管发起人和一位流程负责人。",
+    "从第一周起开放生产系统和真实数据的访问权限。",
+    "只做预期回报至少 5 倍的流程。",
+    "固定范围，固定价格。不打折，不按开放工时计费。",
+    "同时进行的项目数量有限，因为我们的工程师驻场工作。"
+   ]
+  },
+  "closer": {
+   "h2": "我们正在组建让 AI 在实体经济中真正发挥作用的团队。",
+   "p": "宁愿在仓库、医院或政府部门交付成果，而不是在幻灯片里交付的工程师。真实的系统，真实的客户，真实的后果。",
+   "c1": "我们的故事",
+   "c2": "开放职位"
+  },
+  "cta": {
+   "h2": "让智能体投入您最复杂的流程。",
+   "btn": "预约演示"
+  },
+  "footer": {
+   "tagline": "推动利润表的 AI 智能体。",
+   "heads": [
+    "服务",
+    "行业",
+    "公司",
+    "法律"
+   ],
+   "services": [
+    "诊断",
+    "落地部署",
+    "嵌入式团队"
+   ],
+   "company": [
+    "为何是 Kofen",
+    "加入我们",
+    "联系方式"
+   ],
+   "legal": [
+    "法律声明",
+    "隐私政策",
+    "Cookie 政策"
+   ]
+  },
+  "caps": {
+   "h2": "为企业中最艰难的工作而打造。",
+   "items": [
+    [
+     "复杂性",
+     "为例外情况而设计",
+     "智能体专为审批、边缘情况和不完美的数据而构建，而不是只为演示路径。"
+    ],
+    [
+     "掌控",
+     "从头到尾归您所有",
+     "代码、提示词、评估和数据都在您的基础设施中。没有锁定，完整审计追踪。"
+    ],
+    [
+     "复利效应",
+     "每个智能体都让下一个更好",
+     "在一个职能中获取的上下文会延续到下一个，因此每次部署都起步更高。"
+    ]
+   ]
+  }
+ },
+ "ar": {
+  "ticker": {
+   "text": "جديد · تشخيص للعمليات خلال أسبوع للشركات الكبرى",
+   "link": "اكتشف كيف يعمل ←"
+  },
+  "nav": {
+   "deploy": "النشر",
+   "industries": "القطاعات",
+   "pricing": "طريقة العمل",
+   "company": "الشركة",
+   "cta": "احجز عرضاً توضيحياً"
+  },
+  "hero": {
+   "h1": "كفى تجارب ذكاء اصطناعي. ضع واحدة في الإنتاج.",
+   "sub": "تُدمج Kofen مهندسين ووكلاء ذكاء اصطناعي في أعقد عملياتك، وتحوّل كل مهمة ينجزونها إلى معرفة تبقى في شركتك.",
+   "b1": "احجز عرضاً توضيحياً",
+   "b2": "اطّلع على السعر",
+   "email": "البريد الإلكتروني للعمل"
+  },
+  "systemsTitle": "يعملون على الأنظمة التي تستخدمها بالفعل.",
+  "statement": {
+   "pre": "التجارب تثبت أن الذكاء الاصطناعي قد ينجح.",
+   "emph": "Kofen تثبت أنه مربح."
+  },
+  "dark": {
+   "h2": "الوكلاء يحتاجون إلى مهندسين في الميدان.",
+   "pillars": [
+    [
+     "مهندسون منتشرون داخل شركتك.",
+     "يعمل فريق صغير داخل عملياتك، ويفهم كيف تُتخذ القرارات فعلاً، ويضع الوكلاء في الإنتاج على أنظمتك أنت.",
+     "كيف ننشر حلولنا"
+    ],
+    [
+     "خارطة طريق يستطيع مجلس إدارتك تدقيقها.",
+     "يُرتَّب كل مسار عمل حسب العائد والمسؤول والمخاطر قبل كتابة أي سطر من الشيفرة.",
+     "اطّلع على المراحل"
+    ]
+   ]
+  },
+  "phases": {
+   "h2": "من أول مسار عمل إلى عمليات قائمة على الذكاء الاصطناعي.",
+   "led": "العمل بقيادة Kofen",
+   "tab": "المرحلة",
+   "items": [
+    [
+     "انشر أول مسار عمل.",
+     75,
+     "ابدأ حيث يوجد المال. يدخل الوكيل الأول الإنتاج على بياناتك الحقيقية خلال أسابيع، وتُقاس قيمته قبل الحديث عن التوسّع.",
+     [
+      "التشخيص",
+      "التجربة",
+      "الإنتاج"
+     ]
+    ],
+    [
+     "توسّع عبر الوظائف.",
+     50,
+     "يبني فريقك مسارات العمل التالية مع مهندسينا. ما يتعلّمه وكيل يصبح نقطة انطلاق الوكيل التالي.",
+     [
+      "التطوير المشترك",
+      "التمكين",
+      "التسليم"
+     ]
+    ],
+    [
+     "شغّله كأنه نظامك.",
+     25,
+     "فريقك يشغّل النظام. وتبقى Kofen للتقييم والحوكمة وأصعب الحالات.",
+     [
+      "الحوكمة",
+      "التقييم",
+      "الدعم"
+     ]
+    ]
+   ]
+  },
+  "ind": {
+   "h2": "فريق واحد. كل قطاع حيوي.",
+   "btn": "احجز عرضاً توضيحياً",
+   "items": [
+    [
+     "الصناعة",
+     "الدقة · التتبّع · الاستمرارية"
+    ],
+    [
+     "الخدمات اللوجستية",
+     "السرعة · الشفافية · الموثوقية"
+    ],
+    [
+     "التوزيع",
+     "التوفّر · الهامش · الخدمة"
+    ],
+    [
+     "الخدمات المالية",
+     "الصرامة · قابلية التدقيق · الثقة"
+    ],
+    [
+     "الرعاية الصحية",
+     "الخصوصية · السرّية · الرعاية"
+    ],
+    [
+     "البناء",
+     "التحكّم · المواعيد · السلامة"
+    ],
+    [
+     "القطاع العام والحكومة",
+     "الشفافية · الامتثال · الخدمة"
+    ]
+   ]
+  },
+  "pricing": {
+   "h2": "ابدأ بأسبوع. وتوسّع بالأدلة.",
+   "p": "يُظهر تشخيص بسعر ثابت أين يحقق الوكلاء عائداً وبأي قدر، قبل أن تلتزم بأي نشر.",
+   "plans": [
+    [
+     "التشخيص",
+     "7,500 يورو",
+     "أسبوع في موقعك. مسارات عملك مرتّبة حسب العائد، مع قرار بالمضي أو عدمه لكل منها. يُدفع مقدماً."
+    ],
+    [
+     "النشر",
+     "ابتداءً من 60,000 يورو",
+     "مسار عمل واحد في الإنتاج. نطاق وسعر ثابتان قبل البدء بالبناء، ويُدفعان على مراحل."
+    ]
+   ],
+   "condHead": "طريقة عملنا.",
+   "conds": [
+    "راعٍ تنفيذي ومسؤول عن العملية من جهتك.",
+    "وصول إلى أنظمة الإنتاج والبيانات الحقيقية منذ الأسبوع الأول.",
+    "فقط مسارات العمل التي يُتوقع أن تعيد 5 أضعاف كلفتها على الأقل.",
+    "نطاق ثابت وسعر ثابت. لا خصومات ولا ساعات مفتوحة.",
+    "عدد محدود من المشاريع في وقت واحد، لأن مهندسينا يعملون في موقعك."
+   ]
+  },
+  "closer": {
+   "h2": "نبني الفريق الذي يضع الذكاء الاصطناعي في خدمة الاقتصاد الحقيقي.",
+   "p": "مهندسون يفضّلون التسليم في مستودع أو مستشفى أو وزارة على التسليم في عرض تقديمي. أنظمة حقيقية، عملاء حقيقيون، عواقب حقيقية.",
+   "c1": "قصتنا",
+   "c2": "الوظائف المتاحة"
+  },
+  "cta": {
+   "h2": "ضع الوكلاء في أعقد مسارات عملك.",
+   "btn": "احجز عرضاً توضيحياً"
+  },
+  "footer": {
+   "tagline": "وكلاء ذكاء اصطناعي يحرّكون الأرباح والخسائر.",
+   "heads": [
+    "الخدمات",
+    "القطاعات",
+    "الشركة",
+    "قانوني"
+   ],
+   "services": [
+    "التشخيص",
+    "النشر",
+    "فريق مدمج"
+   ],
+   "company": [
+    "لماذا Kofen",
+    "الوظائف",
+    "تواصل معنا"
+   ],
+   "legal": [
+    "إشعار قانوني",
+    "الخصوصية",
+    "ملفات تعريف الارتباط"
+   ]
+  },
+  "caps": {
+   "h2": "مصمَّم لأصعب الأعمال في الشركة.",
+   "items": [
+    [
+     "التعقيد",
+     "مصمَّم للاستثناءات",
+     "وكلاء مبنيون للموافقات والحالات الحدّية والبيانات غير المكتملة، لا لمسار العرض التوضيحي."
+    ],
+    [
+     "التحكّم",
+     "ملكك من البداية إلى النهاية",
+     "الشيفرة والتعليمات والتقييمات والبيانات تبقى في بنيتك التحتية. بلا ارتهان، ومع سجل تدقيق كامل."
+    ],
+    [
+     "الأثر التراكمي",
+     "كل وكيل يحسّن الذي يليه",
+     "السياق الذي يُلتقط في وظيفة ينتقل إلى التالية، فيبدأ كل نشر من نقطة أبعد."
+    ]
+   ]
+  }
+ }
+};
+
+const X = {
+ "en": {
+  "h1a": "Agents that move the P&L.",
+  "rot": [
+   "In production, not in pilots.",
+   "In your tenders.",
+   "In your supply chain.",
+   "In your margins.",
+   "In your finance team."
+  ],
+  "con": {
+   "badge": "Demo · fictional data",
+   "hint": "Click a view",
+   "group": "Operations",
+   "agentsOn": "3 agents running",
+   "agent": "Kofen agent",
+   "working": "Working",
+   "approve": "Approve",
+   "play": "Play demo",
+   "pause": "Pause demo",
+   "scen": [
+    {
+     "label": "Tenders",
+     "url": "tenders",
+     "from": "alerts@public-tenders.example",
+     "subj": "New tender · €4.2M · 3 years",
+     "body": "Hospital logistics services, lot 2. 184 pages of specifications. Deadline 21 Nov.",
+     "steps": [
+      "Read all 184 pages and both annexes",
+      "63 mandatory requirements · 61 already covered in past bids",
+      "Gaps: ISO 27001 and an on-site team in Madrid"
+     ],
+     "reply": "Go. Estimated score 82/100: you only lose points on the two gaps, and a partner can close both before the deadline. The compliance matrix and a first draft of the technical bid are ready for your bid team.",
+     "fields": [
+      [
+       "Contract value",
+       "€4.2M · 3 years"
+      ],
+      [
+       "Requirements met",
+       "61 of 63"
+      ],
+      [
+       "Estimated score",
+       "82 / 100"
+      ],
+      [
+       "Deadline",
+       "21 Nov"
+      ]
+     ],
+     "wait": "Waiting for bid director",
+     "done": "Go approved · draft sent to bid team"
+    },
+    {
+     "label": "Supply risk",
+     "url": "supply-risk",
+     "from": "logistics@components-example.com",
+     "subj": "Shipment delay · part 7741-B",
+     "body": "Due to a plant stoppage, deliveries of part 7741-B are delayed by three weeks.",
+     "steps": [
+      "Traced part 7741-B through the SAP production plan",
+      "14 production orders and €1.9M of Q4 revenue affected",
+      "Found a qualified alternate supplier with stock"
+     ],
+     "reply": "The delay hits 14 orders and €1.9M of Q4 revenue. Moving 60% of the volume to the alternate supplier keeps 12 orders on time for €38,000 extra. The new plan is ready for your COO.",
+     "fields": [
+      [
+       "Revenue at risk",
+       "€1.9M"
+      ],
+      [
+       "Orders affected",
+       "14"
+      ],
+      [
+       "Saved by the plan",
+       "12 of 14"
+      ],
+      [
+       "Extra cost",
+       "+€38,000"
+      ]
+     ],
+     "wait": "Waiting for COO",
+     "done": "Plan applied in SAP · suppliers notified"
+    },
+    {
+     "label": "Margin audit",
+     "url": "margin-audit",
+     "from": "CFO · internal request",
+     "subj": "Purchasing",
+     "body": "“Check whether our suppliers have billed what the contracts say since January 2025.”",
+     "steps": [
+      "Read 212 supplier contracts",
+      "Matched 48,300 invoice lines against contract terms",
+      "Found unclaimed rebates and prices above contract"
+     ],
+     "reply": "€640,000 is recoverable: €412,000 in volume rebates never claimed and €228,000 billed above contract price, across 37 suppliers. Claim letters with line-by-line evidence are drafted.",
+     "fields": [
+      [
+       "Contracts",
+       "212"
+      ],
+      [
+       "Invoice lines",
+       "48,300"
+      ],
+      [
+       "Recoverable",
+       "€640,000"
+      ],
+      [
+       "Suppliers",
+       "37"
+      ]
+     ],
+     "wait": "Waiting for CFO",
+     "done": "Claims sent to 37 suppliers"
+    }
+   ]
+  },
+  "comp": {
+   "label": "Describe the process that costs you most",
+   "phrases": [
+    "We bid on 40 public tenders a year and win 6",
+    "A late supplier stops our line twice a quarter",
+    "Nobody checks if suppliers bill what the contract says"
+   ],
+   "chips": [
+    [
+     "Tenders",
+     "We bid on public and private tenders."
+    ],
+    [
+     "Supply chain",
+     "Supplier delays hit our production plan."
+    ],
+    [
+     "Margin",
+     "We suspect we overpay our suppliers."
+    ],
+    [
+     "Size",
+     "Annual revenue above €50M."
+    ]
+   ],
+   "send": "Request a proposal",
+   "note": "Read by an engineer, not a bot. Fixed-price proposal within two working days.",
+   "subject": "Proposal request"
+  },
+  "num": [
+   "days to a full diagnostic of your operation",
+   "minimum projected return to start a workflow",
+   "working days to a fixed-price proposal",
+   "of the work runs on your own systems and data"
+  ],
+  "faq": {
+   "h2": "Questions from the boardroom.",
+   "items": [
+    [
+     "Our data isn't ready.",
+     "It rarely is. Agents are built to work with the data you have, and the diagnostic shows what needs fixing before you invest."
+    ],
+    [
+     "Our pilots never reached production.",
+     "Kofen starts on production systems, with an owner on your side and a measured business case. Without those, we don't start."
+    ],
+    [
+     "We don't have an AI team.",
+     "You don't need one to begin. Your people build alongside our engineers and take over operations as the system matures."
+    ],
+    [
+     "How do you handle GDPR and the EU AI Act?",
+     "Data stays in your infrastructure under a data processing agreement. Customer-facing agents disclose that they are AI, and every action is logged and auditable."
+    ],
+    [
+     "Why is the diagnostic paid upfront?",
+     "It keeps both sides committed. The report is yours whether or not you go ahead."
+    ],
+    [
+     "Can we start smaller?",
+     "The diagnostic is the smallest step. If no workflow clears a 5× return, we will tell you."
+    ]
+   ]
+  }
+ },
+ "es": {
+  "h1a": "Agentes que mueven la cuenta de resultados.",
+  "rot": [
+   "En producción, no en pilotos.",
+   "En tus licitaciones.",
+   "En tu cadena de suministro.",
+   "En tus márgenes.",
+   "En tu equipo financiero."
+  ],
+  "con": {
+   "badge": "Demo · datos ficticios",
+   "hint": "Haz clic en una vista",
+   "group": "Operaciones",
+   "agentsOn": "3 agentes en marcha",
+   "agent": "Agente Kofen",
+   "working": "Trabajando",
+   "approve": "Aprobar",
+   "play": "Reproducir demo",
+   "pause": "Pausar demo",
+   "scen": [
+    {
+     "label": "Licitaciones",
+     "url": "licitaciones",
+     "from": "alertas@licitaciones-publicas.example",
+     "subj": "Nueva licitación · 4,2 M€ · 3 años",
+     "body": "Servicios logísticos hospitalarios, lote 2. 184 páginas de pliegos. Plazo: 21 nov.",
+     "steps": [
+      "Leídas las 184 páginas y los dos anexos",
+      "63 requisitos obligatorios · 61 ya cubiertos en ofertas anteriores",
+      "Huecos: ISO 27001 y equipo presencial en Madrid"
+     ],
+     "reply": "Adelante. Puntuación estimada 82/100: solo pierdes puntos en los dos huecos, y un socio puede cubrir ambos antes del plazo. La matriz de cumplimiento y un primer borrador de la oferta técnica están listos para tu equipo.",
+     "fields": [
+      [
+       "Importe",
+       "4,2 M€ · 3 años"
+      ],
+      [
+       "Requisitos cumplidos",
+       "61 de 63"
+      ],
+      [
+       "Puntuación estimada",
+       "82 / 100"
+      ],
+      [
+       "Plazo",
+       "21 nov"
+      ]
+     ],
+     "wait": "Pendiente del director de ofertas",
+     "done": "Aprobado · borrador enviado al equipo"
+    },
+    {
+     "label": "Riesgo de suministro",
+     "url": "riesgo-suministro",
+     "from": "logistica@componentes-ejemplo.es",
+     "subj": "Retraso de envío · ref. 7741-B",
+     "body": "Por una parada de planta, las entregas de la referencia 7741-B se retrasan tres semanas.",
+     "steps": [
+      "Rastreada la 7741-B en el plan de producción de SAP",
+      "14 órdenes de producción y 1,9 M€ de facturación del T4 afectados",
+      "Encontrado un proveedor alternativo homologado con stock"
+     ],
+     "reply": "El retraso afecta a 14 órdenes y 1,9 M€ de facturación del T4. Pasando el 60 % del volumen al proveedor alternativo, 12 órdenes salen a tiempo por 38.000 € extra. El nuevo plan está listo para tu director de operaciones.",
+     "fields": [
+      [
+       "Facturación en riesgo",
+       "1,9 M€"
+      ],
+      [
+       "Órdenes afectadas",
+       "14"
+      ],
+      [
+       "Salvadas con el plan",
+       "12 de 14"
+      ],
+      [
+       "Coste extra",
+       "+38.000 €"
+      ]
+     ],
+     "wait": "Pendiente del director de operaciones",
+     "done": "Plan aplicado en SAP · proveedores avisados"
+    },
+    {
+     "label": "Auditoría de margen",
+     "url": "auditoria-margen",
+     "from": "Dirección financiera · petición interna",
+     "subj": "Compras",
+     "body": "«Comprueba si los proveedores nos han facturado lo que dicen los contratos desde enero de 2025.»",
+     "steps": [
+      "Leídos 212 contratos de proveedor",
+      "Cruzadas 48.300 líneas de factura con las condiciones",
+      "Encontrados rápeles sin reclamar y precios por encima de contrato"
+     ],
+     "reply": "Hay 640.000 € recuperables: 412.000 € en rápeles por volumen nunca reclamados y 228.000 € facturados por encima del precio de contrato, en 37 proveedores. Las reclamaciones con la evidencia línea a línea están redactadas.",
+     "fields": [
+      [
+       "Contratos",
+       "212"
+      ],
+      [
+       "Líneas de factura",
+       "48.300"
+      ],
+      [
+       "Recuperable",
+       "640.000 €"
+      ],
+      [
+       "Proveedores",
+       "37"
+      ]
+     ],
+     "wait": "Pendiente del director financiero",
+     "done": "Reclamaciones enviadas a 37 proveedores"
+    }
+   ]
+  },
+  "comp": {
+   "label": "Describe el proceso que más te cuesta",
+   "phrases": [
+    "Nos presentamos a 40 licitaciones al año y ganamos 6",
+    "Un proveedor que se retrasa nos para la línea dos veces por trimestre",
+    "Nadie comprueba si los proveedores facturan lo que dice el contrato"
+   ],
+   "chips": [
+    [
+     "Licitaciones",
+     "Nos presentamos a licitaciones públicas y privadas."
+    ],
+    [
+     "Suministro",
+     "Los retrasos de proveedores rompen el plan de producción."
+    ],
+    [
+     "Margen",
+     "Sospechamos que pagamos de más a proveedores."
+    ],
+    [
+     "Tamaño",
+     "Facturamos más de 50 M€ al año."
+    ]
+   ],
+   "send": "Pide una propuesta",
+   "note": "Lo lee un ingeniero, no un bot. Propuesta a precio cerrado en dos días laborables.",
+   "subject": "Solicitud de propuesta"
+  },
+  "num": [
+   "días hasta un diagnóstico completo de tu operación",
+   "de retorno mínimo previsto para empezar un flujo",
+   "días laborables hasta una propuesta a precio cerrado",
+   "del trabajo corre sobre tus propios sistemas y datos"
+  ],
+  "faq": {
+   "h2": "Preguntas del comité de dirección.",
+   "items": [
+    [
+     "Nuestros datos no están preparados.",
+     "Casi nunca lo están. Los agentes se construyen para trabajar con los datos que tienes, y el diagnóstico muestra qué hay que corregir antes de invertir."
+    ],
+    [
+     "Hemos hecho pilotos que nunca llegaron a producción.",
+     "Kofen empieza sobre sistemas de producción, con un responsable en tu lado y un caso de negocio medido. Si eso no existe, no empezamos."
+    ],
+    [
+     "No tenemos equipo de IA.",
+     "No lo necesitas para empezar. Tu gente construye junto a nuestros ingenieros y asume la operación a medida que el sistema madura."
+    ],
+    [
+     "¿Cómo gestionáis el RGPD y la Ley de IA europea?",
+     "Los datos se quedan en tu infraestructura con contrato de encargado de tratamiento. Los agentes que hablan con clientes dicen que son IA, y cada acción queda registrada y es auditable."
+    ],
+    [
+     "¿Por qué el diagnóstico se paga por adelantado?",
+     "Porque compromete a las dos partes. El informe es tuyo sigas adelante o no."
+    ],
+    [
+     "¿Podemos empezar con algo más pequeño?",
+     "El diagnóstico es el paso más pequeño. Si ningún flujo supera un retorno de 5×, te lo diremos."
+    ]
+   ]
+  }
+ },
+ "de": {
+  "h1a": "Agenten, die Ihre GuV bewegen.",
+  "rot": [
+   "In Produktion, nicht im Pilot.",
+   "In Ihren Ausschreibungen.",
+   "In Ihrer Lieferkette.",
+   "In Ihren Margen.",
+   "In Ihrem Finanzteam."
+  ],
+  "con": {
+   "badge": "Demo · fiktive Daten",
+   "hint": "Ansicht anklicken",
+   "group": "Betrieb",
+   "agentsOn": "3 Agenten aktiv",
+   "agent": "Kofen-Agent",
+   "working": "Arbeitet",
+   "approve": "Freigeben",
+   "play": "Demo abspielen",
+   "pause": "Demo pausieren",
+   "scen": [
+    {
+     "label": "Ausschreibungen",
+     "url": "ausschreibungen",
+     "from": "alerts@oeffentliche-vergabe.example",
+     "subj": "Neue Ausschreibung · 4,2 Mio. € · 3 Jahre",
+     "body": "Krankenhauslogistik, Los 2. 184 Seiten Vergabeunterlagen. Frist: 21. Nov.",
+     "steps": [
+      "Alle 184 Seiten und beide Anlagen gelesen",
+      "63 Mussanforderungen · 61 bereits in früheren Angeboten abgedeckt",
+      "Lücken: ISO 27001 und ein Team vor Ort in Madrid"
+     ],
+     "reply": "Go. Geschätzte Bewertung 82/100: Punkte verlieren Sie nur bei den zwei Lücken, und ein Partner schließt beide vor der Frist. Compliance-Matrix und erster Entwurf des technischen Angebots liegen für Ihr Bid-Team bereit.",
+     "fields": [
+      [
+       "Auftragswert",
+       "4,2 Mio. € · 3 Jahre"
+      ],
+      [
+       "Anforderungen erfüllt",
+       "61 von 63"
+      ],
+      [
+       "Geschätzte Bewertung",
+       "82 / 100"
+      ],
+      [
+       "Frist",
+       "21. Nov."
+      ]
+     ],
+     "wait": "Wartet auf Bid-Director",
+     "done": "Go freigegeben · Entwurf ans Bid-Team"
+    },
+    {
+     "label": "Lieferrisiko",
+     "url": "lieferrisiko",
+     "from": "logistik@komponenten-beispiel.de",
+     "subj": "Lieferverzug · Teil 7741-B",
+     "body": "Wegen eines Werksstillstands verzögern sich Lieferungen von Teil 7741-B um drei Wochen.",
+     "steps": [
+      "Teil 7741-B im SAP-Produktionsplan verfolgt",
+      "14 Fertigungsaufträge und 1,9 Mio. € Q4-Umsatz betroffen",
+      "Qualifizierten Zweitlieferanten mit Bestand gefunden"
+     ],
+     "reply": "Der Verzug trifft 14 Aufträge und 1,9 Mio. € Q4-Umsatz. Gehen 60 % des Volumens zum Zweitlieferanten, bleiben 12 Aufträge pünktlich, für 38.000 € Mehrkosten. Der neue Plan liegt für Ihren COO bereit.",
+     "fields": [
+      [
+       "Umsatz im Risiko",
+       "1,9 Mio. €"
+      ],
+      [
+       "Betroffene Aufträge",
+       "14"
+      ],
+      [
+       "Durch den Plan gerettet",
+       "12 von 14"
+      ],
+      [
+       "Mehrkosten",
+       "+38.000 €"
+      ]
+     ],
+     "wait": "Wartet auf COO",
+     "done": "Plan in SAP umgesetzt · Lieferanten informiert"
+    },
+    {
+     "label": "Margen-Audit",
+     "url": "margen-audit",
+     "from": "CFO · interne Anfrage",
+     "subj": "Einkauf",
+     "body": "„Prüfen Sie, ob unsere Lieferanten seit Januar 2025 das berechnet haben, was in den Verträgen steht.“",
+     "steps": [
+      "212 Lieferantenverträge gelesen",
+      "48.300 Rechnungspositionen mit den Vertragsbedingungen abgeglichen",
+      "Nicht eingeforderte Boni und Preise über Vertrag gefunden"
+     ],
+     "reply": "640.000 € sind rückforderbar: 412.000 € nie eingeforderte Mengenboni und 228.000 € über dem Vertragspreis berechnet, bei 37 Lieferanten. Forderungsschreiben mit Nachweis pro Position sind vorbereitet.",
+     "fields": [
+      [
+       "Verträge",
+       "212"
+      ],
+      [
+       "Rechnungspositionen",
+       "48.300"
+      ],
+      [
+       "Rückforderbar",
+       "640.000 €"
+      ],
+      [
+       "Lieferanten",
+       "37"
+      ]
+     ],
+     "wait": "Wartet auf CFO",
+     "done": "Forderungen an 37 Lieferanten gesendet"
+    }
+   ]
+  },
+  "comp": {
+   "label": "Beschreiben Sie den Prozess, der Sie am meisten kostet",
+   "phrases": [
+    "Wir bieten auf 40 Ausschreibungen im Jahr und gewinnen 6",
+    "Ein verspäteter Lieferant stoppt zweimal pro Quartal unsere Linie",
+    "Niemand prüft, ob Lieferanten nach Vertrag abrechnen"
+   ],
+   "chips": [
+    [
+     "Ausschreibungen",
+     "Wir bieten auf öffentliche und private Ausschreibungen."
+    ],
+    [
+     "Lieferkette",
+     "Lieferverzüge werfen unseren Produktionsplan um."
+    ],
+    [
+     "Marge",
+     "Wir vermuten, dass wir Lieferanten zu viel zahlen."
+    ],
+    [
+     "Größe",
+     "Jahresumsatz über 50 Mio. €."
+    ]
+   ],
+   "send": "Angebot anfordern",
+   "note": "Ein Ingenieur liest es, kein Bot. Festpreisangebot innerhalb von zwei Werktagen.",
+   "subject": "Angebotsanfrage"
+  },
+  "num": [
+   "Tage bis zur vollständigen Diagnose Ihres Betriebs",
+   "erwartete Mindestrendite, um einen Workflow zu starten",
+   "Werktage bis zum Festpreisangebot",
+   "der Arbeit läuft auf Ihren eigenen Systemen und Daten"
+  ],
+  "faq": {
+   "h2": "Fragen aus dem Vorstand.",
+   "items": [
+    [
+     "Unsere Daten sind nicht bereit.",
+     "Das sind sie selten. Die Agenten arbeiten mit den Daten, die Sie haben, und die Diagnose zeigt, was vor einer Investition zu beheben ist."
+    ],
+    [
+     "Unsere Piloten haben es nie in die Produktion geschafft.",
+     "Kofen startet auf Produktivsystemen, mit einem Verantwortlichen auf Ihrer Seite und einem gemessenen Business Case. Fehlt das, fangen wir nicht an."
+    ],
+    [
+     "Wir haben kein KI-Team.",
+     "Zum Start brauchen Sie keins. Ihre Leute bauen mit unseren Ingenieuren und übernehmen den Betrieb, während das System reift."
+    ],
+    [
+     "Wie gehen Sie mit DSGVO und KI-Verordnung um?",
+     "Die Daten bleiben in Ihrer Infrastruktur, mit Auftragsverarbeitungsvertrag. Agenten im Kundenkontakt geben sich als KI zu erkennen, und jede Aktion wird protokolliert und ist prüfbar."
+    ],
+    [
+     "Warum wird die Diagnose im Voraus bezahlt?",
+     "Weil sie beide Seiten verpflichtet. Der Bericht gehört Ihnen, ob Sie weitermachen oder nicht."
+    ],
+    [
+     "Können wir kleiner anfangen?",
+     "Die Diagnose ist der kleinste Schritt. Wenn kein Workflow eine Rendite von 5× erreicht, sagen wir es Ihnen."
+    ]
+   ]
+  }
+ },
+ "fr": {
+  "h1a": "Des agents qui font bouger votre compte de résultat.",
+  "rot": [
+   "En production, pas en pilote.",
+   "Dans vos appels d'offres.",
+   "Dans votre supply chain.",
+   "Dans vos marges.",
+   "Dans votre direction financière."
+  ],
+  "con": {
+   "badge": "Démo · données fictives",
+   "hint": "Cliquez sur une vue",
+   "group": "Opérations",
+   "agentsOn": "3 agents actifs",
+   "agent": "Agent Kofen",
+   "working": "En cours",
+   "approve": "Valider",
+   "play": "Lire la démo",
+   "pause": "Mettre la démo en pause",
+   "scen": [
+    {
+     "label": "Appels d'offres",
+     "url": "appels-offres",
+     "from": "alertes@marches-publics.example",
+     "subj": "Nouvel appel d'offres · 4,2 M€ · 3 ans",
+     "body": "Prestations logistiques hospitalières, lot 2. 184 pages de cahier des charges. Date limite : 21 nov.",
+     "steps": [
+      "Lu les 184 pages et les deux annexes",
+      "63 exigences obligatoires · 61 déjà couvertes dans des offres passées",
+      "Écarts : ISO 27001 et une équipe sur site à Madrid"
+     ],
+     "reply": "On y va. Note estimée 82/100 : vous ne perdez des points que sur les deux écarts, et un partenaire peut combler les deux avant la date limite. La matrice de conformité et un premier jet de l'offre technique sont prêts.",
+     "fields": [
+      [
+       "Montant",
+       "4,2 M€ · 3 ans"
+      ],
+      [
+       "Exigences couvertes",
+       "61 sur 63"
+      ],
+      [
+       "Note estimée",
+       "82 / 100"
+      ],
+      [
+       "Date limite",
+       "21 nov."
+      ]
+     ],
+     "wait": "En attente du directeur des offres",
+     "done": "Go validé · brouillon envoyé à l'équipe"
+    },
+    {
+     "label": "Risque fournisseur",
+     "url": "risque-fournisseur",
+     "from": "logistique@composants-exemple.fr",
+     "subj": "Retard de livraison · réf. 7741-B",
+     "body": "Suite à un arrêt d'usine, les livraisons de la référence 7741-B sont retardées de trois semaines.",
+     "steps": [
+      "Réf. 7741-B suivie dans le plan de production SAP",
+      "14 ordres de fabrication et 1,9 M€ de CA du T4 touchés",
+      "Fournisseur alternatif homologué avec du stock trouvé"
+     ],
+     "reply": "Le retard touche 14 ordres et 1,9 M€ de chiffre d'affaires du T4. En basculant 60 % du volume vers le fournisseur alternatif, 12 ordres restent à l'heure pour 38 000 € de surcoût. Le plan est prêt pour votre directeur des opérations.",
+     "fields": [
+      [
+       "CA à risque",
+       "1,9 M€"
+      ],
+      [
+       "Ordres touchés",
+       "14"
+      ],
+      [
+       "Sauvés par le plan",
+       "12 sur 14"
+      ],
+      [
+       "Surcoût",
+       "+38 000 €"
+      ]
+     ],
+     "wait": "En attente du directeur des opérations",
+     "done": "Plan appliqué dans SAP · fournisseurs prévenus"
+    },
+    {
+     "label": "Audit de marge",
+     "url": "audit-marge",
+     "from": "DAF · demande interne",
+     "subj": "Achats",
+     "body": "« Vérifiez si nos fournisseurs facturent ce que disent les contrats depuis janvier 2025. »",
+     "steps": [
+      "212 contrats fournisseurs lus",
+      "48 300 lignes de facture rapprochées des conditions contractuelles",
+      "Remises non réclamées et prix au-dessus du contrat détectés"
+     ],
+     "reply": "640 000 € sont récupérables : 412 000 € de remises de volume jamais réclamées et 228 000 € facturés au-dessus du prix contractuel, chez 37 fournisseurs. Les courriers de réclamation, preuves ligne à ligne, sont rédigés.",
+     "fields": [
+      [
+       "Contrats",
+       "212"
+      ],
+      [
+       "Lignes de facture",
+       "48 300"
+      ],
+      [
+       "Récupérable",
+       "640 000 €"
+      ],
+      [
+       "Fournisseurs",
+       "37"
+      ]
+     ],
+     "wait": "En attente du DAF",
+     "done": "Réclamations envoyées à 37 fournisseurs"
+    }
+   ]
+  },
+  "comp": {
+   "label": "Décrivez le processus qui vous coûte le plus",
+   "phrases": [
+    "Nous répondons à 40 appels d'offres par an et en gagnons 6",
+    "Un fournisseur en retard arrête notre ligne deux fois par trimestre",
+    "Personne ne vérifie si les fournisseurs facturent selon le contrat"
+   ],
+   "chips": [
+    [
+     "Appels d'offres",
+     "Nous répondons à des appels d'offres publics et privés."
+    ],
+    [
+     "Supply chain",
+     "Les retards fournisseurs cassent notre plan de production."
+    ],
+    [
+     "Marge",
+     "Nous pensons payer trop cher nos fournisseurs."
+    ],
+    [
+     "Taille",
+     "Chiffre d'affaires annuel supérieur à 50 M€."
+    ]
+   ],
+   "send": "Demander une proposition",
+   "note": "Lu par un ingénieur, pas par un bot. Proposition à prix fixe sous deux jours ouvrés.",
+   "subject": "Demande de proposition"
+  },
+  "num": [
+   "jours pour un diagnostic complet de vos opérations",
+   "de retour minimum attendu pour lancer un workflow",
+   "jours ouvrés pour une proposition à prix fixe",
+   "du travail tourne sur vos propres systèmes et données"
+  ],
+  "faq": {
+   "h2": "Les questions du comité de direction.",
+   "items": [
+    [
+     "Nos données ne sont pas prêtes.",
+     "Elles le sont rarement. Les agents sont conçus pour travailler avec vos données actuelles, et le diagnostic montre ce qu'il faut corriger avant d'investir."
+    ],
+    [
+     "Nos pilotes ne sont jamais arrivés en production.",
+     "Kofen démarre sur les systèmes de production, avec un responsable chez vous et un business case mesuré. Sans cela, nous ne commençons pas."
+    ],
+    [
+     "Nous n'avons pas d'équipe IA.",
+     "Inutile pour démarrer. Vos équipes construisent avec nos ingénieurs et reprennent l'exploitation à mesure que le système mûrit."
+    ],
+    [
+     "Comment gérez-vous le RGPD et l'AI Act ?",
+     "Les données restent dans votre infrastructure, sous contrat de sous-traitance. Les agents en contact avec les clients indiquent qu'ils sont des IA, et chaque action est journalisée et auditable."
+    ],
+    [
+     "Pourquoi le diagnostic est-il payé d'avance ?",
+     "Parce qu'il engage les deux parties. Le rapport vous appartient, que vous poursuiviez ou non."
+    ],
+    [
+     "Peut-on commencer plus petit ?",
+     "Le diagnostic est la plus petite étape. Si aucun workflow n'atteint un retour de 5×, nous vous le dirons."
+    ]
+   ]
+  }
+ },
+ "it": {
+  "h1a": "Agenti che muovono il conto economico.",
+  "rot": [
+   "In produzione, non in un pilota.",
+   "Nelle tue gare.",
+   "Nella tua supply chain.",
+   "Nei tuoi margini.",
+   "Nel tuo team finance."
+  ],
+  "con": {
+   "badge": "Demo · dati fittizi",
+   "hint": "Clicca una vista",
+   "group": "Operatività",
+   "agentsOn": "3 agenti attivi",
+   "agent": "Agente Kofen",
+   "working": "Al lavoro",
+   "approve": "Approva",
+   "play": "Avvia la demo",
+   "pause": "Metti in pausa la demo",
+   "scen": [
+    {
+     "label": "Gare",
+     "url": "gare",
+     "from": "avvisi@gare-pubbliche.example",
+     "subj": "Nuova gara · 4,2 M€ · 3 anni",
+     "body": "Servizi logistici ospedalieri, lotto 2. 184 pagine di capitolato. Scadenza: 21 nov.",
+     "steps": [
+      "Lette tutte le 184 pagine e i due allegati",
+      "63 requisiti obbligatori · 61 già coperti in offerte precedenti",
+      "Lacune: ISO 27001 e un team in sede a Madrid"
+     ],
+     "reply": "Si parte. Punteggio stimato 82/100: perdi punti solo sulle due lacune, e un partner può coprirle entrambe prima della scadenza. Matrice di conformità e prima bozza dell'offerta tecnica sono pronte per il tuo team gare.",
+     "fields": [
+      [
+       "Importo",
+       "4,2 M€ · 3 anni"
+      ],
+      [
+       "Requisiti soddisfatti",
+       "61 su 63"
+      ],
+      [
+       "Punteggio stimato",
+       "82 / 100"
+      ],
+      [
+       "Scadenza",
+       "21 nov"
+      ]
+     ],
+     "wait": "In attesa del responsabile gare",
+     "done": "Approvato · bozza inviata al team"
+    },
+    {
+     "label": "Rischio fornitura",
+     "url": "rischio-fornitura",
+     "from": "logistica@componenti-esempio.it",
+     "subj": "Ritardo spedizione · cod. 7741-B",
+     "body": "Per un fermo impianto, le consegne del codice 7741-B slittano di tre settimane.",
+     "steps": [
+      "Tracciato il 7741-B nel piano di produzione SAP",
+      "14 ordini di produzione e 1,9 M€ di fatturato del Q4 coinvolti",
+      "Trovato un fornitore alternativo qualificato con disponibilità"
+     ],
+     "reply": "Il ritardo colpisce 14 ordini e 1,9 M€ di fatturato del Q4. Spostando il 60% dei volumi sul fornitore alternativo, 12 ordini restano in tempo con 38.000 € in più. Il nuovo piano è pronto per il tuo direttore operativo.",
+     "fields": [
+      [
+       "Fatturato a rischio",
+       "1,9 M€"
+      ],
+      [
+       "Ordini coinvolti",
+       "14"
+      ],
+      [
+       "Salvati dal piano",
+       "12 su 14"
+      ],
+      [
+       "Costo extra",
+       "+38.000 €"
+      ]
+     ],
+     "wait": "In attesa del direttore operativo",
+     "done": "Piano applicato in SAP · fornitori avvisati"
+    },
+    {
+     "label": "Audit dei margini",
+     "url": "audit-margini",
+     "from": "CFO · richiesta interna",
+     "subj": "Acquisti",
+     "body": "«Verifica se da gennaio 2025 i fornitori ci hanno fatturato quanto previsto dai contratti.»",
+     "steps": [
+      "Letti 212 contratti di fornitura",
+      "Confrontate 48.300 righe di fattura con le condizioni contrattuali",
+      "Trovati premi non richiesti e prezzi sopra contratto"
+     ],
+     "reply": "Sono recuperabili 640.000 €: 412.000 € di premi sui volumi mai richiesti e 228.000 € fatturati sopra il prezzo di contratto, su 37 fornitori. Le lettere di reclamo con le prove riga per riga sono pronte.",
+     "fields": [
+      [
+       "Contratti",
+       "212"
+      ],
+      [
+       "Righe di fattura",
+       "48.300"
+      ],
+      [
+       "Recuperabile",
+       "640.000 €"
+      ],
+      [
+       "Fornitori",
+       "37"
+      ]
+     ],
+     "wait": "In attesa del CFO",
+     "done": "Reclami inviati a 37 fornitori"
+    }
+   ]
+  },
+  "comp": {
+   "label": "Descrivi il processo che ti costa di più",
+   "phrases": [
+    "Partecipiamo a 40 gare l'anno e ne vinciamo 6",
+    "Un fornitore in ritardo ci ferma la linea due volte a trimestre",
+    "Nessuno controlla se i fornitori fatturano come da contratto"
+   ],
+   "chips": [
+    [
+     "Gare",
+     "Partecipiamo a gare pubbliche e private."
+    ],
+    [
+     "Fornitura",
+     "I ritardi dei fornitori fanno saltare il piano di produzione."
+    ],
+    [
+     "Margine",
+     "Sospettiamo di pagare troppo i fornitori."
+    ],
+    [
+     "Dimensione",
+     "Fatturato annuo sopra i 50 M€."
+    ]
+   ],
+   "send": "Chiedi una proposta",
+   "note": "La legge un ingegnere, non un bot. Proposta a prezzo fisso entro due giorni lavorativi.",
+   "subject": "Richiesta di proposta"
+  },
+  "num": [
+   "giorni per una diagnosi completa della tua operatività",
+   "di ritorno minimo previsto per avviare un flusso",
+   "giorni lavorativi per una proposta a prezzo fisso",
+   "del lavoro gira sui tuoi sistemi e dati"
+  ],
+  "faq": {
+   "h2": "Le domande del consiglio di amministrazione.",
+   "items": [
+    [
+     "I nostri dati non sono pronti.",
+     "Raramente lo sono. Gli agenti sono costruiti per lavorare con i dati che hai, e la diagnosi mostra cosa sistemare prima di investire."
+    ],
+    [
+     "I nostri pilota non sono mai arrivati in produzione.",
+     "Kofen parte dai sistemi di produzione, con un responsabile dalla tua parte e un business case misurato. Se mancano, non iniziamo."
+    ],
+    [
+     "Non abbiamo un team di IA.",
+     "Per iniziare non serve. Le tue persone costruiscono con i nostri ingegneri e prendono in mano l'operatività man mano che il sistema matura."
+    ],
+    [
+     "Come gestite GDPR e AI Act?",
+     "I dati restano nella tua infrastruttura, con un accordo sul trattamento dei dati. Gli agenti che parlano con i clienti dichiarano di essere IA, e ogni azione è registrata e verificabile."
+    ],
+    [
+     "Perché la diagnosi si paga in anticipo?",
+     "Perché impegna entrambe le parti. Il report resta tuo, che tu prosegua o no."
+    ],
+    [
+     "Possiamo iniziare con qualcosa di più piccolo?",
+     "La diagnosi è il passo più piccolo. Se nessun flusso supera un ritorno di 5×, te lo diremo."
+    ]
+   ]
+  }
+ },
+ "pt": {
+  "h1a": "Agentes que movem os resultados.",
+  "rot": [
+   "Em produção, não em pilotos.",
+   "Nos seus concursos.",
+   "Na sua cadeia de abastecimento.",
+   "Nas suas margens.",
+   "Na sua equipa financeira."
+  ],
+  "con": {
+   "badge": "Demo · dados fictícios",
+   "hint": "Clique numa vista",
+   "group": "Operação",
+   "agentsOn": "3 agentes ativos",
+   "agent": "Agente Kofen",
+   "working": "A trabalhar",
+   "approve": "Aprovar",
+   "play": "Reproduzir demo",
+   "pause": "Pausar demo",
+   "scen": [
+    {
+     "label": "Concursos",
+     "url": "concursos",
+     "from": "alertas@contratacao-publica.example",
+     "subj": "Novo concurso · 4,2 M€ · 3 anos",
+     "body": "Serviços de logística hospitalar, lote 2. 184 páginas de caderno de encargos. Prazo: 21 nov.",
+     "steps": [
+      "Lidas as 184 páginas e os dois anexos",
+      "63 requisitos obrigatórios · 61 já cobertos em propostas anteriores",
+      "Lacunas: ISO 27001 e uma equipa presencial em Madrid"
+     ],
+     "reply": "Avançar. Pontuação estimada 82/100: só perde pontos nas duas lacunas, e um parceiro resolve ambas antes do prazo. A matriz de conformidade e um primeiro rascunho da proposta técnica estão prontos para a sua equipa.",
+     "fields": [
+      [
+       "Valor",
+       "4,2 M€ · 3 anos"
+      ],
+      [
+       "Requisitos cumpridos",
+       "61 de 63"
+      ],
+      [
+       "Pontuação estimada",
+       "82 / 100"
+      ],
+      [
+       "Prazo",
+       "21 nov"
+      ]
+     ],
+     "wait": "A aguardar o diretor de propostas",
+     "done": "Aprovado · rascunho enviado à equipa"
+    },
+    {
+     "label": "Risco de fornecimento",
+     "url": "risco-fornecimento",
+     "from": "logistica@componentes-exemplo.pt",
+     "subj": "Atraso de envio · ref. 7741-B",
+     "body": "Devido a uma paragem de fábrica, as entregas da referência 7741-B atrasam três semanas.",
+     "steps": [
+      "Rastreada a 7741-B no plano de produção do SAP",
+      "14 ordens de produção e 1,9 M€ de faturação do T4 afetados",
+      "Encontrado um fornecedor alternativo qualificado com stock"
+     ],
+     "reply": "O atraso afeta 14 ordens e 1,9 M€ de faturação do T4. Passando 60% do volume para o fornecedor alternativo, 12 ordens saem a tempo por mais 38.000 €. O novo plano está pronto para o seu diretor de operações.",
+     "fields": [
+      [
+       "Faturação em risco",
+       "1,9 M€"
+      ],
+      [
+       "Ordens afetadas",
+       "14"
+      ],
+      [
+       "Salvas pelo plano",
+       "12 de 14"
+      ],
+      [
+       "Custo extra",
+       "+38.000 €"
+      ]
+     ],
+     "wait": "A aguardar o diretor de operações",
+     "done": "Plano aplicado no SAP · fornecedores avisados"
+    },
+    {
+     "label": "Auditoria de margem",
+     "url": "auditoria-margem",
+     "from": "CFO · pedido interno",
+     "subj": "Compras",
+     "body": "«Verifique se os fornecedores nos faturaram o que dizem os contratos desde janeiro de 2025.»",
+     "steps": [
+      "Lidos 212 contratos de fornecedores",
+      "Cruzadas 48.300 linhas de fatura com as condições contratuais",
+      "Encontrados rappels por reclamar e preços acima do contrato"
+     ],
+     "reply": "Há 640.000 € recuperáveis: 412.000 € em rappels de volume nunca reclamados e 228.000 € faturados acima do preço contratual, em 37 fornecedores. As cartas de reclamação com a prova linha a linha estão redigidas.",
+     "fields": [
+      [
+       "Contratos",
+       "212"
+      ],
+      [
+       "Linhas de fatura",
+       "48.300"
+      ],
+      [
+       "Recuperável",
+       "640.000 €"
+      ],
+      [
+       "Fornecedores",
+       "37"
+      ]
+     ],
+     "wait": "A aguardar o CFO",
+     "done": "Reclamações enviadas a 37 fornecedores"
+    }
+   ]
+  },
+  "comp": {
+   "label": "Descreva o processo que mais lhe custa",
+   "phrases": [
+    "Concorremos a 40 concursos por ano e ganhamos 6",
+    "Um fornecedor atrasado pára a nossa linha duas vezes por trimestre",
+    "Ninguém verifica se os fornecedores faturam o que diz o contrato"
+   ],
+   "chips": [
+    [
+     "Concursos",
+     "Concorremos a concursos públicos e privados."
+    ],
+    [
+     "Fornecimento",
+     "Os atrasos de fornecedores estragam o plano de produção."
+    ],
+    [
+     "Margem",
+     "Suspeitamos que pagamos a mais aos fornecedores."
+    ],
+    [
+     "Dimensão",
+     "Faturação anual acima de 50 M€."
+    ]
+   ],
+   "send": "Pedir uma proposta",
+   "note": "Lido por um engenheiro, não por um bot. Proposta a preço fechado em dois dias úteis.",
+   "subject": "Pedido de proposta"
+  },
+  "num": [
+   "dias até um diagnóstico completo da sua operação",
+   "de retorno mínimo previsto para iniciar um fluxo",
+   "dias úteis até uma proposta a preço fechado",
+   "do trabalho corre nos seus próprios sistemas e dados"
+  ],
+  "faq": {
+   "h2": "Perguntas da administração.",
+   "items": [
+    [
+     "Os nossos dados não estão prontos.",
+     "Raramente estão. Os agentes são construídos para trabalhar com os dados que tem, e o diagnóstico mostra o que corrigir antes de investir."
+    ],
+    [
+     "Fizemos pilotos que nunca chegaram a produção.",
+     "A Kofen começa em sistemas de produção, com um responsável do seu lado e um caso de negócio medido. Sem isso, não começamos."
+    ],
+    [
+     "Não temos equipa de IA.",
+     "Não precisa de uma para começar. As suas pessoas constroem com os nossos engenheiros e assumem a operação à medida que o sistema amadurece."
+    ],
+    [
+     "Como tratam o RGPD e o Regulamento da IA?",
+     "Os dados ficam na sua infraestrutura, com contrato de subcontratação. Os agentes que falam com clientes dizem que são IA, e cada ação fica registada e auditável."
+    ],
+    [
+     "Porque é que o diagnóstico é pago adiantado?",
+     "Porque compromete as duas partes. O relatório é seu, avance ou não."
+    ],
+    [
+     "Podemos começar com algo mais pequeno?",
+     "O diagnóstico é o passo mais pequeno. Se nenhum fluxo superar um retorno de 5×, dir-lhe-emos."
+    ]
+   ]
+  }
+ },
+ "zh": {
+  "h1a": "推动利润表的 AI 智能体。",
+  "rot": [
+   "在生产环境中，而非试点里。",
+   "在您的投标中。",
+   "在您的供应链中。",
+   "在您的利润率中。",
+   "在您的财务团队中。"
+  ],
+  "con": {
+   "badge": "演示 · 虚构数据",
+   "hint": "点击一个视图",
+   "group": "运营",
+   "agentsOn": "3 个智能体运行中",
+   "agent": "Kofen 智能体",
+   "working": "处理中",
+   "approve": "批准",
+   "play": "播放演示",
+   "pause": "暂停演示",
+   "scen": [
+    {
+     "label": "投标",
+     "url": "tenders",
+     "from": "alerts@public-tenders.example",
+     "subj": "新招标 · 420 万欧元 · 3 年",
+     "body": "医院物流服务，第 2 标段。招标文件共 184 页。截止日期：11 月 21 日。",
+     "steps": [
+      "已阅读全部 184 页及两个附件",
+      "63 项强制性要求 · 61 项已在以往投标中覆盖",
+      "缺口：ISO 27001 认证和马德里驻场团队"
+     ],
+     "reply": "建议投标。预估得分 82/100：只在两个缺口上失分，且都可在截止前通过合作伙伴补齐。合规矩阵和技术标初稿已为您的投标团队准备好。",
+     "fields": [
+      [
+       "合同金额",
+       "420 万欧元 · 3 年"
+      ],
+      [
+       "满足要求",
+       "63 项中 61 项"
+      ],
+      [
+       "预估得分",
+       "82 / 100"
+      ],
+      [
+       "截止日期",
+       "11 月 21 日"
+      ]
+     ],
+     "wait": "等待投标总监",
+     "done": "已批准投标 · 初稿已发给团队"
+    },
+    {
+     "label": "供应风险",
+     "url": "supply-risk",
+     "from": "logistics@components-example.cn",
+     "subj": "发货延迟 · 零件 7741-B",
+     "body": "由于工厂停产，零件 7741-B 的交付将推迟三周。",
+     "steps": [
+      "已在 SAP 生产计划中追踪零件 7741-B",
+      "14 张生产订单及第四季度 190 万欧元营收受影响",
+      "已找到有库存的合格替代供应商"
+     ],
+     "reply": "此次延迟影响 14 张订单和第四季度 190 万欧元营收。将 60% 的量转给替代供应商，可让 12 张订单按时交付，额外成本 38,000 欧元。新计划已提交给您的 COO。",
+     "fields": [
+      [
+       "风险营收",
+       "190 万欧元"
+      ],
+      [
+       "受影响订单",
+       "14"
+      ],
+      [
+       "计划挽回",
+       "14 张中 12 张"
+      ],
+      [
+       "额外成本",
+       "+38,000 欧元"
+      ]
+     ],
+     "wait": "等待 COO",
+     "done": "计划已在 SAP 中执行 · 已通知供应商"
+    },
+    {
+     "label": "利润审计",
+     "url": "margin-audit",
+     "from": "CFO · 内部请求",
+     "subj": "采购",
+     "body": "“核查自 2025 年 1 月以来，供应商的开票是否与合同一致。”",
+     "steps": [
+      "已阅读 212 份供应商合同",
+      "已将 48,300 行发票与合同条款逐一比对",
+      "发现未索取的返利和高于合同的价格"
+     ],
+     "reply": "可追回 640,000 欧元：从未索取的数量返利 412,000 欧元，以及高于合同价开票的 228,000 欧元，涉及 37 家供应商。附逐行证据的索赔函已起草完毕。",
+     "fields": [
+      [
+       "合同",
+       "212"
+      ],
+      [
+       "发票行",
+       "48,300"
+      ],
+      [
+       "可追回",
+       "640,000 欧元"
+      ],
+      [
+       "供应商",
+       "37"
+      ]
+     ],
+     "wait": "等待 CFO",
+     "done": "索赔函已发给 37 家供应商"
+    }
+   ]
+  },
+  "comp": {
+   "label": "描述最耗费成本的流程",
+   "phrases": [
+    "我们每年投 40 个标，只中 6 个",
+    "供应商一延迟，产线每季度停两次",
+    "没人核查供应商是否按合同开票"
+   ],
+   "chips": [
+    [
+     "投标",
+     "我们参与公开和私人招标。"
+    ],
+    [
+     "供应链",
+     "供应商延迟打乱我们的生产计划。"
+    ],
+    [
+     "利润",
+     "我们怀疑给供应商付多了。"
+    ],
+    [
+     "规模",
+     "年营收超过 5000 万欧元。"
+    ]
+   ],
+   "send": "获取方案",
+   "note": "由工程师阅读，而不是机器人。两个工作日内提供固定价格方案。",
+   "subject": "方案申请"
+  },
+  "num": [
+   "天完成对您运营的全面诊断",
+   "倍：启动一个流程所需的最低预期回报",
+   "个工作日内提供固定价格方案",
+   "的工作运行在您自己的系统和数据上"
+  ],
+  "faq": {
+   "h2": "来自董事会的问题。",
+   "items": [
+    [
+     "我们的数据还没准备好。",
+     "很少有人准备好。智能体就是为您现有的数据而构建的，诊断会在投资之前指出需要修正的地方。"
+    ],
+    [
+     "我们做过的试点从未进入生产。",
+     "Kofen 从生产系统起步，您方有负责人，并有可衡量的商业论证。缺少这些，我们就不启动。"
+    ],
+    [
+     "我们没有 AI 团队。",
+     "起步时并不需要。您的员工与我们的工程师一起构建，并随着系统成熟接手运营。"
+    ],
+    [
+     "你们如何应对 GDPR 和欧盟《人工智能法案》？",
+     "数据保留在您的基础设施中，并签署数据处理协议。面向客户的智能体会表明自己是 AI，每个操作都有日志并可审计。"
+    ],
+    [
+     "为什么诊断要预付？",
+     "因为这让双方都认真投入。无论您是否继续，报告都归您所有。"
+    ],
+    [
+     "能否从更小的范围开始？",
+     "诊断就是最小的一步。如果没有任何流程能达到 5 倍回报，我们会如实告诉您。"
+    ]
+   ]
+  }
+ },
+ "ar": {
+  "h1a": "وكلاء يحرّكون قائمة الأرباح والخسائر.",
+  "rot": [
+   "في الإنتاج، لا في التجارب.",
+   "في مناقصاتك.",
+   "في سلسلة التوريد لديك.",
+   "في هوامش ربحك.",
+   "في فريقك المالي."
+  ],
+  "con": {
+   "badge": "عرض تجريبي · بيانات وهمية",
+   "hint": "انقر على عرض",
+   "group": "العمليات",
+   "agentsOn": "3 وكلاء يعملون",
+   "agent": "وكيل Kofen",
+   "working": "يعمل",
+   "approve": "موافقة",
+   "play": "تشغيل العرض",
+   "pause": "إيقاف العرض مؤقتاً",
+   "scen": [
+    {
+     "label": "المناقصات",
+     "url": "tenders",
+     "from": "alerts@public-tenders.example",
+     "subj": "مناقصة جديدة · 4.2 مليون يورو · 3 سنوات",
+     "body": "خدمات لوجستية للمستشفيات، الحصة 2. 184 صفحة من كراسة الشروط. الموعد النهائي: 21 نوفمبر.",
+     "steps": [
+      "تمت قراءة الصفحات الـ184 والملحقين",
+      "63 متطلباً إلزامياً · 61 منها مغطّى في عروض سابقة",
+      "فجوات: شهادة ISO 27001 وفريق ميداني في مدريد"
+     ],
+     "reply": "تقدّم. الدرجة المتوقعة 82/100: تخسر نقاطاً فقط في الفجوتين، ويمكن لشريك سدّهما قبل الموعد النهائي. مصفوفة الامتثال ومسودة أولى للعرض الفني جاهزتان لفريق العروض لديك.",
+     "fields": [
+      [
+       "قيمة العقد",
+       "4.2 مليون يورو · 3 سنوات"
+      ],
+      [
+       "المتطلبات المستوفاة",
+       "61 من 63"
+      ],
+      [
+       "الدرجة المتوقعة",
+       "82 / 100"
+      ],
+      [
+       "الموعد النهائي",
+       "21 نوفمبر"
+      ]
+     ],
+     "wait": "بانتظار مدير العروض",
+     "done": "تمت الموافقة · أُرسلت المسودة للفريق"
+    },
+    {
+     "label": "مخاطر التوريد",
+     "url": "supply-risk",
+     "from": "logistics@components-example.com",
+     "subj": "تأخير شحنة · القطعة 7741-B",
+     "body": "بسبب توقف المصنع، ستتأخر شحنات القطعة 7741-B ثلاثة أسابيع.",
+     "steps": [
+      "تم تتبّع القطعة 7741-B في خطة الإنتاج على SAP",
+      "14 أمر إنتاج و1.9 مليون يورو من إيرادات الربع الرابع متأثرة",
+      "تم العثور على مورّد بديل معتمد لديه مخزون"
+     ],
+     "reply": "يطال التأخير 14 أمراً و1.9 مليون يورو من إيرادات الربع الرابع. بنقل 60% من الكمية إلى المورّد البديل، تبقى 12 أمراً في موعدها بكلفة إضافية 38,000 يورو. الخطة الجديدة جاهزة لمدير العمليات.",
+     "fields": [
+      [
+       "إيرادات معرّضة للخطر",
+       "1.9 مليون يورو"
+      ],
+      [
+       "الأوامر المتأثرة",
+       "14"
+      ],
+      [
+       "أنقذتها الخطة",
+       "12 من 14"
+      ],
+      [
+       "كلفة إضافية",
+       "+38,000 يورو"
+      ]
+     ],
+     "wait": "بانتظار مدير العمليات",
+     "done": "طُبّقت الخطة في SAP · أُبلغ الموردون"
+    },
+    {
+     "label": "تدقيق الهوامش",
+     "url": "margin-audit",
+     "from": "المدير المالي · طلب داخلي",
+     "subj": "المشتريات",
+     "body": "«تحقّق مما إذا كان الموردون قد فوترونا وفق العقود منذ يناير 2025.»",
+     "steps": [
+      "تمت قراءة 212 عقد توريد",
+      "تمت مطابقة 48,300 بند فاتورة مع شروط العقود",
+      "وُجدت خصومات غير مطالب بها وأسعار أعلى من العقد"
+     ],
+     "reply": "يمكن استرداد 640,000 يورو: 412,000 يورو خصومات كمية لم يُطالَب بها قط، و228,000 يورو فوترت فوق سعر العقد، لدى 37 مورّداً. رسائل المطالبة مع الأدلة بنداً بنداً جاهزة.",
+     "fields": [
+      [
+       "العقود",
+       "212"
+      ],
+      [
+       "بنود الفواتير",
+       "48,300"
+      ],
+      [
+       "قابل للاسترداد",
+       "640,000 يورو"
+      ],
+      [
+       "الموردون",
+       "37"
+      ]
+     ],
+     "wait": "بانتظار المدير المالي",
+     "done": "أُرسلت المطالبات إلى 37 مورّداً"
+    }
+   ]
+  },
+  "comp": {
+   "label": "صف العملية التي تكلّفك أكثر",
+   "phrases": [
+    "نتقدّم إلى 40 مناقصة سنوياً ونربح 6",
+    "مورّد متأخر يوقف خط إنتاجنا مرتين كل ربع",
+    "لا أحد يتحقق مما إذا كان الموردون يفوترون وفق العقد"
+   ],
+   "chips": [
+    [
+     "المناقصات",
+     "نتقدّم إلى مناقصات عامة وخاصة."
+    ],
+    [
+     "سلسلة التوريد",
+     "تأخيرات الموردين تربك خطة الإنتاج."
+    ],
+    [
+     "الهامش",
+     "نشك في أننا ندفع للموردين أكثر من اللازم."
+    ],
+    [
+     "الحجم",
+     "إيراد سنوي يتجاوز 50 مليون يورو."
+    ]
+   ],
+   "send": "اطلب عرضاً",
+   "note": "يقرؤه مهندس، لا روبوت. عرض بسعر ثابت خلال يومَي عمل.",
+   "subject": "طلب عرض"
+  },
+  "num": [
+   "أيام حتى تشخيص كامل لعملياتك",
+   "حدّ أدنى للعائد المتوقع لبدء مسار عمل",
+   "يوما عمل حتى عرض بسعر ثابت",
+   "من العمل يجري على أنظمتك وبياناتك أنت"
+  ],
+  "faq": {
+   "h2": "أسئلة من مجلس الإدارة.",
+   "items": [
+    [
+     "بياناتنا ليست جاهزة.",
+     "نادراً ما تكون كذلك. يُبنى الوكلاء للعمل بالبيانات المتوفرة لديك، ويُظهر التشخيص ما يجب إصلاحه قبل الاستثمار."
+    ],
+    [
+     "أجرينا تجارب لم تصل قط إلى الإنتاج.",
+     "تبدأ Kofen على أنظمة الإنتاج، مع مسؤول من جهتك ودراسة جدوى قابلة للقياس. إن لم يتوفر ذلك، لا نبدأ."
+    ],
+    [
+     "ليس لدينا فريق ذكاء اصطناعي.",
+     "لا تحتاج إليه للبدء. يبني موظفوك مع مهندسينا ويتولّون التشغيل مع نضج النظام."
+    ],
+    [
+     "كيف تتعاملون مع حماية البيانات وقانون الذكاء الاصطناعي الأوروبي؟",
+     "تبقى البيانات في بنيتك التحتية بموجب اتفاقية معالجة بيانات. الوكلاء الذين يتعاملون مع العملاء يفصحون أنهم ذكاء اصطناعي، وكل إجراء مسجّل وقابل للتدقيق."
+    ],
+    [
+     "لماذا يُدفع التشخيص مقدماً؟",
+     "لأنه يُلزم الطرفين. والتقرير لك سواء مضيت قدماً أم لا."
+    ],
+    [
+     "هل يمكن أن نبدأ بشيء أصغر؟",
+     "التشخيص هو أصغر خطوة. وإن لم يتجاوز أي مسار عمل عائد 5 أضعاف، سنخبرك بذلك."
+    ]
+   ]
+  }
+ }
+};
+
+
+const LANGS = [["en", "EN", "English"], ["es", "ES", "Español"], ["de", "DE", "Deutsch"], ["fr", "FR", "Français"], ["it", "IT", "Italiano"], ["pt", "PT", "Português"], ["zh", "ZH", "中文"], ["ar", "AR", "العربية"]];
+const C = (a) => a.map((text) => ({ text }));
+const SYSTEMS = ["SAP", "Microsoft Dynamics 365", "Sage", "Odoo", "Salesforce", "HubSpot", "Microsoft 365", "Google Workspace", "Snowflake", "PostgreSQL", "WhatsApp Business", "Twilio"];
+const ART = [
+  "linear-gradient(160deg, #3a3633 0%, #070707 100%)",
+  "linear-gradient(160deg, #8a847d 0%, #2e2e2e 100%)",
+  "linear-gradient(160deg, #b8aea4 0%, #4a4642 100%)",
+  "linear-gradient(160deg, #2e2e2e 0%, #0e0d0c 100%)",
+  "linear-gradient(160deg, #a89d92 0%, #3a3633 100%)",
+  "linear-gradient(160deg, #d59566 0%, #4a3a2e 100%)",
+  "linear-gradient(160deg, #736f6a 0%, #1c1b1a 100%)"
+];
+
+/* Console timeline (ms, per scene) */
+const DUR = 13200, SCENES = 3, TOTAL = DUR * SCENES;
+const T_AGENT = 650, T_STEPS = [1200, 2000, 2800], T_TYPE = 3500, CPS = 24, T_DONE = 11200;
+const RAIL = [
+  ["SAP", "8%", "-120px", "auto"], ["Outlook", "36%", "-132px", "auto"], ["Excel", "66%", "-104px", "auto"],
+  ["WhatsApp", "14%", "auto", "-136px"], ["Sage", "46%", "auto", "-96px"], ["Twilio", "76%", "auto", "-118px"]
+];
+const NUMS = [[7, "", 0], [5, "×", 0], [2, "", 0], [100, "%", 0]];
+const REVEAL = ["con", "man", "plat", "ph", "caps", "ind", "pri", "faq", "co", "cta"];
+const REVEAL_EL = { con: "try", man: "kofen-man", plat: "deployment", ph: "phases", caps: "platform", ind: "industries", pri: "pricing", faq: "faq", co: "company", cta: "contact" };
+const easeC = (p) => 1 - Math.pow(1 - p, 3);
+const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const seg = (p, a, b) => clamp01((p - a) / (b - a));
+const mmss = (ms) => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+
+class Component extends DCLogic {
+  k() {
+    if (!this._k) this._k = { email: "", t: 0, clock: 0, playing: true, hinted: false, q: "", focused: false, numStart: -1, phaseManual: false, spot: { x: 600, y: 300, on: false }, gx2: 200, rm: false, mounted: false, rv: {}, dg: 1, rail: { idx: 0, pages: 4, step: 300, drag: null, moved: 0, max: 1, at: 0 } };
+    return this._k;
+  }
+
+  componentDidMount() {
+    const k = this.k();
+    try { k.rm = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { k.rm = false; }
+    if (k.rm) { k.playing = false; k.t = T_DONE + 400; k.phaseManual = true; }
+    k.mounted = true;
+    this._last = Date.now();
+    this.measure();
+    this._timer = setInterval(() => this.tick(), 80);
+  }
+
+  componentWillUnmount() { if (this._timer) clearInterval(this._timer); }
+
+  measure() {
+    const k = this.k();
+    if (typeof document === "undefined") return;
+    const vh = window.innerHeight || 800;
+    REVEAL.forEach((id) => {
+      if (k.rv[id] !== undefined) return;
+      const el = document.getElementById(REVEAL_EL[id]);
+      if (!el) { k.rv[id] = 0; return; }
+      const r = el.getBoundingClientRect();
+      if (k.rm || r.top < vh - 100) k.rv[id] = k.clock;
+    });
+    const dEl = document.getElementById("deployment");
+    if (dEl) {
+      const r = dEl.getBoundingClientRect();
+      k.dg = k.rm ? 1 : clamp01((vh * 0.9 - r.top) / Math.max(400, Math.min(r.height, vh * 1.4)));
+    }
+    if (k.numStart < 0) {
+      const el = document.getElementById("kofen-numbers");
+      if (el && el.getBoundingClientRect().top < vh * 0.85) k.numStart = k.rm ? -1e9 : k.clock;
+    }
+    const rail = document.getElementById("kofen-rail");
+    if (rail) {
+      const card = rail.firstElementChild;
+      const step = card ? card.getBoundingClientRect().width + 24 : 300;
+      const max = Math.max(0, rail.scrollWidth - rail.clientWidth);
+      const at = Math.abs(rail.scrollLeft);
+      const pages = Math.max(1, Math.round(max / step) + 1);
+      k.rail.step = step; k.rail.max = max; k.rail.at = at; k.rail.pages = pages;
+      k.rail.idx = Math.min(pages - 1, Math.round(at / step));
+    }
+  }
+
+  tick() {
+    const k = this.k();
+    const now = Date.now();
+    const dt = Math.min(now - this._last, 250);
+    this._last = now;
+    if (typeof document !== "undefined" && document.hidden) return;
+    k.clock += dt;
+    if (k.playing) k.t = (k.t + dt) % TOTAL;
+    this.measure();
+    this.forceUpdate();
+  }
+
+  scrollRail(i) {
+    const k = this.k();
+    const rail = typeof document !== "undefined" ? document.getElementById("kofen-rail") : null;
+    if (!rail) return;
+    const rtl = (this.state || {}).lang === "ar";
+    const left = Math.max(0, Math.min(k.rail.max, i * k.rail.step));
+    try { rail.scrollTo({ left: rtl ? -left : left, behavior: k.rm ? "auto" : "smooth" }); } catch (e) { rail.scrollLeft = rtl ? -left : left; }
+  }
+
+  renderVals() {
+    const s = this.state || {};
+    const k = this.k();
+    const lang = s.lang || this.props.defaultLang || "en";
+    const base = T[lang] || T.en;
+    const x = X[lang] || X.en;
+    const t = Object.assign({}, base, x);
+    const rtl = lang === "ar";
+    const split = (str) => {
+      if (lang === "zh") return { a: str, b: "" };
+      const w = str.split(" ");
+      if (w.length < 5) return { a: str, b: "" };
+      return { a: w.slice(0, -2).join(" "), b: w.slice(-2).join(" ") };
+    };
+    const rvs = (id) => {
+      if (!k.mounted || k.rm) return { o: 1, y: 0 };
+      const at = k.rv[id];
+      return at === undefined ? { o: 0, y: 16 } : { o: 1, y: 0 };
+    };
+    const rv = {}; REVEAL.forEach((id) => { rv[id] = rvs(id); });
+
+    /* Ticker: badge word + sentence */
+    const tk = t.ticker.text.split(" · ");
+    const tick = tk.length > 1 ? { badge: tk[0], text: tk.slice(1).join(" · ") } : { badge: "", text: t.ticker.text };
+
+    /* Rotating second line */
+    const rc = k.rm ? -1 : k.clock - 900;
+    let idx = 0, prev = -1;
+    if (rc >= 0 && rc < 5 * 1700) { idx = Math.floor(rc / 1700); prev = idx > 0 ? idx - 1 : -1; }
+    else if (rc >= 5 * 1700 && rc < 5 * 1700 + 600) { idx = 0; prev = 4; }
+    const rot = x.rot.map((text, i) => ({ text: text, o: i === idx ? 1 : 0.001, y: i === idx ? "0" : (i === prev ? "-70%" : "70%"), b: i === idx ? 0 : 4 }));
+
+    /* Console */
+    const si = Math.floor(k.t / DUR) % SCENES;
+    const lt = k.t - si * DUR;
+    const S = x.con.scen[si];
+    const chars = Array.from(S.reply);
+    const typeN = Math.max(0, Math.floor((lt - T_TYPE) / CPS));
+    const typed = chars.slice(0, typeN).join("");
+    const cardAt = T_TYPE + chars.length * CPS + 250;
+    const isDone = lt >= T_DONE;
+    const scene = {
+      label: S.label, from: S.from, subj: S.subj, body: S.body,
+      showSrc: lt >= 120, showAgent: lt >= T_AGENT,
+      working: lt >= T_AGENT && lt < cardAt,
+      steps: S.steps.map((text, i) => ({ text: text, show: lt >= T_STEPS[i], done: lt >= (T_STEPS[i + 1] || T_TYPE), busy: lt >= T_STEPS[i] && lt < (T_STEPS[i + 1] || T_TYPE) })),
+      showReply: lt >= T_TYPE, typed: typed, typing: lt >= T_TYPE && typed.length < chars.length,
+      showCard: lt >= cardAt,
+      fields: S.fields.map((f) => ({ k: f[0], v: f[1] })),
+      status: isDone ? S.done : S.wait,
+      statusFg: isDone ? "#027a48" : "#b06a38",
+      statusSq: isDone ? "#5fa46b" : "#d59566",
+      isDone: isDone,
+      btn: isDone ? "✓ " + x.con.approve : x.con.approve,
+      btnBg: isDone ? "#f2f2f2" : "#070707",
+      btnFg: isDone ? "#736f6a" : "#ffffff"
+    };
+    const scenes = x.con.scen.map((c, i) => ({
+      label: c.label, active: i === si,
+      bg: i === si ? "#f2f2f2" : "transparent",
+      fg: i === si ? "#070707" : "#736f6a",
+      dot: i === si ? "#d59566" : "#dad5cc",
+      pick: () => { const kk = this.k(); kk.t = i * DUR; kk.playing = true; kk.hinted = true; this.forceUpdate(); }
+    }));
+    const chapters = x.con.scen.map((c, i) => ({
+      label: (i < 9 ? "0" : "") + (i + 1) + " " + c.label,
+      pct: i < si ? 100 : i > si ? 0 : Math.round((lt / DUR) * 1000) / 10,
+      fg: i === si ? "#070707" : "#736f6a",
+      pick: () => { const kk = this.k(); kk.t = i * DUR; kk.hinted = true; this.forceUpdate(); }
+    }));
+
+    /* Composer */
+    let ph = x.comp.phrases[0];
+    if (!k.rm) {
+      const sg = x.comp.phrases.map((p) => { const n = Array.from(p).length; return { p: p, n: n, d: n * 42 + 2600 + n * 22 + 500 }; });
+      const cyc = sg.reduce((a, b) => a + b.d, 0);
+      let r = k.clock % cyc, j = 0;
+      while (r >= sg[j].d) { r -= sg[j].d; j++; }
+      const g = sg[j], cs = Array.from(g.p);
+      let n;
+      if (r < g.n * 42) n = Math.floor(r / 42);
+      else if (r < g.n * 42 + 2600) n = g.n;
+      else if (r < g.n * 42 + 2600 + g.n * 22) n = g.n - Math.floor((r - g.n * 42 - 2600) / 22);
+      else n = 0;
+      ph = cs.slice(0, n).join("");
+    }
+    const chips = x.comp.chips.map((c) => {
+      const used = k.q.indexOf(c[1]) >= 0;
+      return {
+        label: c[0], used: used, sign: used ? "✓" : "+",
+        bg: used ? "#070707" : "#ffffff", bd: used ? "#070707" : "#b8aea4", fg: used ? "#ffffff" : "#2e2e2e",
+        add: () => {
+          const kk = this.k();
+          if (kk.q.indexOf(c[1]) < 0) kk.q = kk.q.trim() ? kk.q.trim() + " " + c[1] : c[1];
+          this.forceUpdate();
+          try { const el = document.getElementById("kofen-q"); if (el) el.focus(); } catch (e) {}
+        }
+      };
+    });
+
+    /* Phases */
+    const phI = k.phaseManual ? (s.phase || 0) : Math.floor(k.clock / 6500) % 3;
+    const phaseProg = k.phaseManual ? 100 : Math.round(((k.clock % 6500) / 6500) * 1000) / 10;
+    const P = t.phases.items[phI];
+
+    /* Diagram (scroll-linked) */
+    const p = k.mounted ? k.dg : 1;
+    const d1 = seg(p, 0, 0.25), d2 = seg(p, 0.15, 0.4), d3 = seg(p, 0.3, 0.52), d4 = seg(p, 0.42, 0.6), fs = seg(p, 0.55, 0.72), lb = seg(p, 0.7, 0.85);
+    const dg = {
+      o1: Math.round(1840 * (1 - d1)), o2: Math.round(1320 * (1 - d2)), o3: Math.round(800 * (1 - d3)), o4: Math.round(304 * (1 - d4)),
+      s: Math.round(272 * (1 - seg(p, 0.35, 0.6))),
+      f1: (0.7 * fs).toFixed(2), f2: (0.55 * seg(p, 0.58, 0.75)).toFixed(2), f3: seg(p, 0.6, 0.78).toFixed(2), f4: seg(p, 0.62, 0.8).toFixed(2),
+      solid: (1 - fs).toFixed(2), dash: fs.toFixed(2), lb: lb.toFixed(2)
+    };
+
+    /* Counters: ease-out cubic, 1.2 s, in sync, once */
+    const np = k.numStart < 0 ? 0 : clamp01((k.clock - k.numStart) / 1200);
+    const nums = NUMS.map((n, i) => ({ final: String(n[0]), cur: String(k.numStart < 0 ? n[0] : Math.round(n[2] + (n[0] - n[2]) * easeC(np))), suffix: n[1], label: x.num[i] }));
+
+    /* Industries rail */
+    const R = k.rail;
+    const dots = [];
+    for (let i = 0; i < R.pages; i++) dots.push({ label: (t.ind.items[i] || [""])[0], active: i === R.idx, bg: i === R.idx ? "#070707" : "#b8aea4", pick: ((ii) => () => this.scrollRail(ii))(i) });
+
+    const demoHref = "mailto:hello@kofen.ai?subject=" + encodeURIComponent("Demo request") + (k.email.trim() ? "&body=" + encodeURIComponent(k.email.trim()) : "");
+
+    return {
+      t: t, lang: lang, dir: rtl ? "rtl" : "ltr", flip: rtl ? -1 : 1,
+      tick: tick, rv: rv,
+      h: { dark: split(t.dark.h2), phases: split(t.phases.h2), caps: split(t.caps.h2), ind: split(t.ind.h2), pri: split(t.pricing.h2), faq: split(t.faq.h2), closer: split(t.closer.h2) },
+      langOpen: !!s.langOpen, langOpen2: !!s.langOpen2,
+      langChev: s.langOpen ? 180 : 0, langChev2: s.langOpen2 ? 0 : 180,
+      langLabel: (LANGS.find((l) => l[0] === lang) || LANGS[0])[1],
+      langName: (LANGS.find((l) => l[0] === lang) || LANGS[0])[2],
+      toggleLang: () => this.setState({ langOpen: !s.langOpen, langOpen2: false }),
+      toggleLang2: () => this.setState({ langOpen2: !s.langOpen2, langOpen: false }),
+      closeLang: () => this.setState({ langOpen: false, langOpen2: false }),
+      langs: LANGS.map(([code, label, name]) => ({ label: label, name: name, active: code === lang, bg: code === lang ? "#f2f2f2" : "transparent", pick: () => this.setState({ lang: code, langOpen: false, langOpen2: false }) })),
+      email: k.email,
+      onEmail: (e) => { const kk = this.k(); kk.email = e.target.value; this.forceUpdate(); },
+      demoHref: demoHref,
+      bookDemo: (e) => { if (e && e.preventDefault) e.preventDefault(); try { const a = document.getElementById("kofen-demo"); if (a) a.click(); } catch (err) {} },
+      rot: rot, rot0: x.rot[0],
+      gx: k.spot.on ? Math.round(k.spot.x - 60) : 40,
+      gx2: k.gx2,
+      heroMove: (e) => { const kk = this.k(); const r = e.currentTarget.getBoundingClientRect(); kk.spot = { x: Math.round(e.clientX - r.left), y: Math.round(e.clientY - r.top), on: true }; },
+      heroLeave: () => { const kk = this.k(); kk.spot = Object.assign({}, kk.spot, { on: false }); },
+      ctaMove: (e) => { const kk = this.k(); const r = e.currentTarget.getBoundingClientRect(); kk.gx2 = Math.round(e.clientX - r.left - 60); },
+      rail: RAIL.map((c, i) => ({ name: c[0], top: c[1], l: c[2], r: c[3], delay: (i * -1370) + "ms" })),
+      scene: scene, scenes: scenes, chapters: chapters,
+      showHint: !k.hinted && k.clock > 1200 && k.clock < 9000,
+      approve: () => { const kk = this.k(); const cur = Math.floor(kk.t / DUR) * DUR; if (kk.t - cur < T_DONE) kk.t = cur + T_DONE; kk.hinted = true; this.forceUpdate(); },
+      playing: k.playing, paused: !k.playing,
+      playLabel: k.playing ? x.con.pause : x.con.play,
+      togglePlay: () => { const kk = this.k(); kk.playing = !kk.playing; this.forceUpdate(); },
+      clock: mmss(k.t) + " / " + mmss(TOTAL),
+      q: k.q,
+      onQ: (e) => { const kk = this.k(); kk.q = e.target.value; this.forceUpdate(); },
+      onFocus: () => { const kk = this.k(); kk.focused = true; this.forceUpdate(); },
+      onBlur: () => { const kk = this.k(); kk.focused = false; this.forceUpdate(); },
+      onKey: (e) => { if (e.key === "Enter") { e.preventDefault(); try { const a = document.getElementById("kofen-send"); if (a) a.click(); } catch (err) {} } },
+      showPh: !k.q && !k.focused, phText: ph, chips: chips,
+      mailHref: "mailto:hello@kofen.ai?subject=" + encodeURIComponent(x.comp.subject) + (k.q.trim() ? "&body=" + encodeURIComponent(k.q.trim()) : ""),
+      marq: SYSTEMS.concat(SYSTEMS).map((name) => ({ name })),
+      deployBtn: t.dark.pillars[0][2],
+      pillars: t.dark.pillars.map((pl, i) => ({ n: "0" + (i + 1), h: pl[0], b: pl[1] })),
+      phases: t.phases.items.map((it, i) => ({ n: "0" + (i + 1), active: i === phI, fg: i === phI ? "#070707" : "#736f6a", bd: i === phI ? "#070707" : "rgba(184,174,164,0.6)", sq: i === phI ? "#d59566" : "transparent", pick: () => { const kk = this.k(); kk.phaseManual = true; this.setState({ phase: i }); } })),
+      phase: { title: P[0], pct: P[1], body: P[2], chips: C(P[3]) },
+      phaseProg: phaseProg,
+      dg: dg,
+      caps: t.caps.items.map((c) => ({ k: c[0], h: c[1], p: c[2] })),
+      nums: nums,
+      industries: t.ind.items.map((it, i) => ({ n: "0" + (i + 1), name: it[0], triad: it[1], art: ART[i % ART.length] })),
+      dots: dots,
+      railAtStart: R.at <= 2, railAtEnd: R.at >= R.max - 2,
+      railPrevO: R.at <= 2 ? 0.4 : 1, railNextO: R.at >= R.max - 2 ? 0.4 : 1,
+      railPrev: () => this.scrollRail(Math.max(0, this.k().rail.idx - 1)),
+      railNext: () => this.scrollRail(Math.min(this.k().rail.pages - 1, this.k().rail.idx + 1)),
+      railDown: (e) => { if (e.pointerType !== "mouse") return; const kk = this.k(); const el = e.currentTarget; kk.rail.drag = { x: e.clientX, sl: el.scrollLeft }; kk.rail.moved = 0; },
+      railMove: (e) => { const kk = this.k(); if (!kk.rail.drag) return; const dx = e.clientX - kk.rail.drag.x; kk.rail.moved = Math.max(kk.rail.moved, Math.abs(dx)); e.currentTarget.scrollLeft = kk.rail.drag.sl - dx; },
+      railUp: () => { const kk = this.k(); kk.rail.drag = null; },
+      railClick: (e) => { const kk = this.k(); if (kk.rail.moved > 6) { e.preventDefault(); kk.rail.moved = 0; } },
+      plans: t.pricing.plans.map((pl, i) => ({ name: pl[0], price: pl[1], note: pl[2], bg: i === 0 ? "#ffffff" : "#2e2e2e", fg: i === 0 ? "#070707" : "#ffffff", muted: i === 0 ? "#736f6a" : "#b8aea4" })),
+      conds: t.pricing.conds.map((text, i) => ({ n: "0" + (i + 1), text: text })),
+      faq: t.faq.items.map((f) => ({ q: f[0], a: f[1] })),
+      footerCols: [
+        { head: t.footer.heads[0], links: t.footer.services.map((sv, i) => ({ text: sv, href: i === 2 ? "#deployment" : "#pricing" })) },
+        { head: t.footer.heads[1], links: t.ind.items.map((it) => ({ text: it[0], href: "#industries" })) },
+        { head: t.footer.heads[2], links: t.footer.company.map((c, i) => ({ text: c, href: i === 2 ? "#contact" : "#company" })) }
+      ],
+      legalLinks: t.footer.legal.map((l) => ({ text: l }))
+    };
+  }
+}
+</script>
+</body>
+</html>
