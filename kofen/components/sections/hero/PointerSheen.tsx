@@ -28,16 +28,25 @@ export function PointerSheen({ targetId, resetTo }: { targetId: string; resetTo?
     el.addEventListener("pointermove", onMove, { passive: true });
     el.addEventListener("pointerleave", onLeave);
 
+    // The lattice is server-rendered paused; start it once the page is idle (keeps the
+    // 18s loop out of the load window), then pause it whenever the hero is off-screen.
     const lattice = el.querySelector<HTMLElement>("[data-hero-lattice]");
-    const io = lattice
-      ? new IntersectionObserver(([e]) => lattice.toggleAttribute("data-paused", !e.isIntersecting))
-      : null;
-    if (lattice) io!.observe(el);
+    let io: IntersectionObserver | null = null;
+    let idle = 0;
+    if (lattice) {
+      const start = () => {
+        io = new IntersectionObserver(([e]) => lattice.toggleAttribute("data-paused", !e.isIntersecting));
+        io.observe(el);
+      };
+      const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 600));
+      idle = ric(start, { timeout: 2000 });
+    }
 
     return () => {
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);
       io?.disconnect();
+      (window.cancelIdleCallback ?? clearTimeout)(idle);
       cancelAnimationFrame(frame);
     };
   }, [targetId, resetTo]);

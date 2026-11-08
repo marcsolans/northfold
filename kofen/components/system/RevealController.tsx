@@ -31,15 +31,17 @@ export function RevealController() {
       { rootMargin: "0px 0px -100px 0px", threshold: 0 },
     );
 
+    // Read every position first, then write: interleaving would force a layout per element.
     const vh = window.innerHeight;
-    for (const el of els) {
-      if (el.getBoundingClientRect().top < vh - 100) {
+    const tops = els.map((el) => el.getBoundingClientRect().top);
+    els.forEach((el, i) => {
+      if (tops[i] < vh - 100) {
         el.dataset.reveal = "in";
       } else {
         el.dataset.reveal = "pending";
         io.observe(el);
       }
-    }
+    });
     document.documentElement.dataset.motion = "";
     return () => io.disconnect();
   }, [pathname]);

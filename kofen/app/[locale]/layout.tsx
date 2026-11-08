@@ -56,7 +56,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
         <RevealController />
         {/* Without JS the accordion cannot open: show every answer. */}
         <noscript>
-          <style>{".faq-a{grid-template-rows:1fr!important;visibility:visible!important}.faq-plus{display:none}"}</style>
+          <style>{".faq-a{grid-template-rows:1fr!important;visibility:visible!important}.faq-plus{display:none}.khgroot[data-paused] :is(.khg,.khp){animation-play-state:running!important}"}</style>
         </noscript>
       </body>
     </html>
