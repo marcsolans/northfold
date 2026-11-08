@@ -395,6 +395,8 @@
     "notFound": {
       "title": "Página no encontrada.",
       "back": "Volver al inicio"
-    }
+    },
+    "mainNav": "Principal",
+    "legalNav": "Legal"
   }
 }

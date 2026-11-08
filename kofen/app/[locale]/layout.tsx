@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing, isRtl } from "@/i18n/routing";
-import { fontClasses } from "@/lib/fonts";
+import { fontClasses, scriptFonts } from "@/lib/fonts";
 import { site } from "@/lib/site";
 import { RevealController } from "@/components/system/RevealController";
 import "../globals.css";
@@ -35,10 +35,17 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "ui" });
+  const script = scriptFonts[locale];
 
   return (
-    <html lang={locale} dir={isRtl(locale) ? "rtl" : "ltr"} className={fontClasses(locale)}>
+    <html
+      lang={locale}
+      dir={isRtl(locale) ? "rtl" : "ltr"}
+      className={fontClasses}
+      style={script ? ({ "--font-script": script.family } as React.CSSProperties) : undefined}
+    >
       <body>
+        {script && <link rel="stylesheet" href={script.href} precedence="default" />}
         <a href="#main" className="skip-link">
           {t("skipToContent")}
         </a>

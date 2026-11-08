@@ -395,6 +395,8 @@
     "notFound": {
       "title": "Page introuvable.",
       "back": "Retour à l’accueil"
-    }
+    },
+    "mainNav": "Principale",
+    "legalNav": "Mentions légales"
   }
 }

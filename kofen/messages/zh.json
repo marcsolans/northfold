@@ -395,6 +395,8 @@
     "notFound": {
       "title": "页面未找到。",
       "back": "返回首页"
-    }
+    },
+    "mainNav": "主导航",
+    "legalNav": "法律信息"
   }
 }

@@ -395,6 +395,8 @@
     "notFound": {
       "title": "Seite nicht gefunden.",
       "back": "Zur Startseite"
-    }
+    },
+    "mainNav": "Hauptnavigation",
+    "legalNav": "Rechtliches"
   }
 }
