@@ -10,6 +10,7 @@ import { Phases } from "@/components/sections/phases/Phases";
 import { Depth } from "@/components/sections/depth/Depth";
 import { Industries } from "@/components/sections/industries/Industries";
 import { Pricing } from "@/components/sections/Pricing";
+import { Faq } from "@/components/sections/faq/Faq";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale: raw } = await params;
@@ -28,6 +29,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <Depth locale={locale} />
         <Industries locale={locale} />
         <Pricing locale={locale} />
+        <Faq locale={locale} />
       </main>
     </>
   );

@@ -54,6 +54,10 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           {children}
         </NextIntlClientProvider>
         <RevealController />
+        {/* Without JS the accordion cannot open: show every answer. */}
+        <noscript>
+          <style>{".faq-a{grid-template-rows:1fr!important;visibility:visible!important}.faq-plus{display:none}"}</style>
+        </noscript>
       </body>
     </html>
   );
