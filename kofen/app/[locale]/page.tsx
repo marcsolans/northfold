@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Hero } from "@/components/sections/hero/Hero";
 import { LiveConsole } from "@/components/sections/console/LiveConsole";
 import { SystemsStrip } from "@/components/sections/SystemsStrip";
+import { Manifesto } from "@/components/sections/Manifesto";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale: raw } = await params;
@@ -16,6 +17,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <Hero locale={locale} />
         <LiveConsole locale={locale} />
         <SystemsStrip locale={locale} />
+        <Manifesto locale={locale} />
         <div className="h-[100vh]" />
       </main>
     </>
