@@ -1,0 +1,400 @@
+{
+  "announcement": {
+    "text": "New · One-week operations diagnostic for enterprise teams",
+    "link": "See how it works →"
+  },
+  "nav": {
+    "deployment": "Deployment",
+    "industries": "Industries",
+    "engagement": "Engagement",
+    "company": "Company",
+    "cta": "Book a demo"
+  },
+  "hero": {
+    "headline": "Agents that move the P&L.",
+    "rotator": [
+      "In production, not in pilots.",
+      "In your tenders.",
+      "In your supply chain.",
+      "In your margins.",
+      "In your finance team."
+    ],
+    "sub": "Kofen embeds engineers and AI agents in your most complex operations, and turns every task they complete into knowledge your company keeps.",
+    "cta": "Book a demo",
+    "emailPlaceholder": "Work email",
+    "unusedHeadline": "Enough AI pilots. Put one into production.",
+    "unusedSecondaryCta": "See the price"
+  },
+  "console": {
+    "demoBadge": "Demo · fictional data",
+    "hint": "Click a view",
+    "group": "Operations",
+    "agentsRunning": "3 agents running",
+    "agentName": "Kofen agent",
+    "working": "Working",
+    "approve": "Approve",
+    "play": "Play demo",
+    "pause": "Pause demo",
+    "scenarios": {
+      "tenders": {
+        "label": "Tenders",
+        "slug": "tenders",
+        "from": "alerts@public-tenders.example",
+        "subject": "New tender · €4.2M · 3 years",
+        "body": "Hospital logistics services, lot 2. 184 pages of specifications. Deadline 21 Nov.",
+        "steps": [
+          "Read all 184 pages and both annexes",
+          "63 mandatory requirements · 61 already covered in past bids",
+          "Gaps: ISO 27001 and an on-site team in Madrid"
+        ],
+        "reply": "Go. Estimated score 82/100: you only lose points on the two gaps, and a partner can close both before the deadline. The compliance matrix and a first draft of the technical bid are ready for your bid team.",
+        "fields": [
+          {
+            "label": "Contract value",
+            "value": "€4.2M · 3 years"
+          },
+          {
+            "label": "Requirements met",
+            "value": "61 of 63"
+          },
+          {
+            "label": "Estimated score",
+            "value": "82 / 100"
+          },
+          {
+            "label": "Deadline",
+            "value": "21 Nov"
+          }
+        ],
+        "waiting": "Waiting for bid director",
+        "done": "Go approved · draft sent to bid team"
+      },
+      "supplyRisk": {
+        "label": "Supply risk",
+        "slug": "supply-risk",
+        "from": "logistics@components-example.com",
+        "subject": "Shipment delay · part 7741-B",
+        "body": "Due to a plant stoppage, deliveries of part 7741-B are delayed by three weeks.",
+        "steps": [
+          "Traced part 7741-B through the SAP production plan",
+          "14 production orders and €1.9M of Q4 revenue affected",
+          "Found a qualified alternate supplier with stock"
+        ],
+        "reply": "The delay hits 14 orders and €1.9M of Q4 revenue. Moving 60% of the volume to the alternate supplier keeps 12 orders on time for €38,000 extra. The new plan is ready for your COO.",
+        "fields": [
+          {
+            "label": "Revenue at risk",
+            "value": "€1.9M"
+          },
+          {
+            "label": "Orders affected",
+            "value": "14"
+          },
+          {
+            "label": "Saved by the plan",
+            "value": "12 of 14"
+          },
+          {
+            "label": "Extra cost",
+            "value": "+€38,000"
+          }
+        ],
+        "waiting": "Waiting for COO",
+        "done": "Plan applied in SAP · suppliers notified"
+      },
+      "marginAudit": {
+        "label": "Margin audit",
+        "slug": "margin-audit",
+        "from": "CFO · internal request",
+        "subject": "Purchasing",
+        "body": "“Check whether our suppliers have billed what the contracts say since January 2025.”",
+        "steps": [
+          "Read 212 supplier contracts",
+          "Matched 48,300 invoice lines against contract terms",
+          "Found unclaimed rebates and prices above contract"
+        ],
+        "reply": "€640,000 is recoverable: €412,000 in volume rebates never claimed and €228,000 billed above contract price, across 37 suppliers. Claim letters with line-by-line evidence are drafted.",
+        "fields": [
+          {
+            "label": "Contracts",
+            "value": "212"
+          },
+          {
+            "label": "Invoice lines",
+            "value": "48,300"
+          },
+          {
+            "label": "Recoverable",
+            "value": "€640,000"
+          },
+          {
+            "label": "Suppliers",
+            "value": "37"
+          }
+        ],
+        "waiting": "Waiting for CFO",
+        "done": "Claims sent to 37 suppliers"
+      }
+    }
+  },
+  "composer": {
+    "label": "Describe the process that costs you most",
+    "placeholders": [
+      "We bid on 40 public tenders a year and win 6",
+      "A late supplier stops our line twice a quarter",
+      "Nobody checks if suppliers bill what the contract says"
+    ],
+    "chips": {
+      "tenders": {
+        "label": "Tenders",
+        "text": "We bid on public and private tenders."
+      },
+      "supplyChain": {
+        "label": "Supply chain",
+        "text": "Supplier delays hit our production plan."
+      },
+      "margin": {
+        "label": "Margin",
+        "text": "We suspect we overpay our suppliers."
+      },
+      "size": {
+        "label": "Size",
+        "text": "Annual revenue above €50M."
+      }
+    },
+    "send": "Request a proposal",
+    "note": "Read by an engineer, not a bot. Fixed-price proposal within two working days.",
+    "emailSubject": "Proposal request"
+  },
+  "systems": {
+    "title": "Deployed on the systems you already run."
+  },
+  "manifesto": {
+    "lead": "Pilots prove that AI can work.",
+    "emphasis": "Kofen proves that it pays."
+  },
+  "platform": {
+    "title": "Agents need engineers on the ground.",
+    "pillars": [
+      {
+        "title": "Forward-deployed engineers.",
+        "body": "A small team works inside your operation, maps how decisions are really made and ships agents into production on your own systems.",
+        "cta": "How we deploy"
+      },
+      {
+        "title": "A roadmap your board can audit.",
+        "body": "Every workflow is ranked by return, owner and risk before a single line of code is written.",
+        "cta": "See the phases"
+      }
+    ]
+  },
+  "phases": {
+    "title": "From the first workflow to an AI-native operation.",
+    "ledByKofen": "Work led by Kofen",
+    "tab": "Phase",
+    "items": {
+      "deploy": {
+        "title": "Deploy the first workflow.",
+        "kofenShare": 75,
+        "body": "Start where the money is. The first agent goes live on your real data in weeks, and its value is measured before anyone talks about scale.",
+        "chips": [
+          "Diagnostic",
+          "Pilot",
+          "Production"
+        ]
+      },
+      "scale": {
+        "title": "Scale across functions.",
+        "kofenShare": 50,
+        "body": "Your team co-builds the next workflows with our engineers. What one agent learns, the next one starts with.",
+        "chips": [
+          "Co-building",
+          "Enablement",
+          "Handover"
+        ]
+      },
+      "run": {
+        "title": "Run it as your own.",
+        "kofenShare": 25,
+        "body": "Your team operates the system. Kofen stays on for evaluation, governance and the hardest edge cases.",
+        "chips": [
+          "Governance",
+          "Evaluation",
+          "Support"
+        ]
+      }
+    }
+  },
+  "depth": {
+    "title": "Built for the hardest work in the company.",
+    "pillars": {
+      "complexity": {
+        "label": "Complexity",
+        "title": "Designed for exceptions",
+        "body": "Agents built for approvals, edge cases and imperfect data, not for the demo path."
+      },
+      "control": {
+        "label": "Control",
+        "title": "Yours, end to end",
+        "body": "Code, prompts, evaluations and data live in your infrastructure. No lock-in, full audit trail."
+      },
+      "compounding": {
+        "label": "Compounding",
+        "title": "Every agent improves the next",
+        "body": "Context captured in one function carries into the next, so each deployment starts further ahead."
+      }
+    },
+    "stats": {
+      "diagnosticDays": "days to a full diagnostic of your operation",
+      "minimumReturn": "minimum projected return to start a workflow",
+      "proposalDays": "working days to a fixed-price proposal",
+      "ownSystems": "of the work runs on your own systems and data"
+    }
+  },
+  "industries": {
+    "title": "One team. Every critical sector.",
+    "cta": "Book a demo",
+    "items": {
+      "manufacturing": {
+        "name": "Manufacturing",
+        "useCases": "Precision · Traceability · Uptime"
+      },
+      "logistics": {
+        "name": "Logistics",
+        "useCases": "Speed · Visibility · Reliability"
+      },
+      "distribution": {
+        "name": "Distribution",
+        "useCases": "Availability · Margin · Service"
+      },
+      "financialServices": {
+        "name": "Financial services",
+        "useCases": "Rigor · Auditability · Trust"
+      },
+      "healthcare": {
+        "name": "Healthcare",
+        "useCases": "Privacy · Discretion · Care"
+      },
+      "construction": {
+        "name": "Construction",
+        "useCases": "Control · Deadlines · Safety"
+      },
+      "publicSector": {
+        "name": "Public sector & Government",
+        "useCases": "Transparency · Compliance · Service"
+      }
+    }
+  },
+  "pricing": {
+    "title": "Start with one week. Scale with evidence.",
+    "intro": "A fixed-price diagnostic shows where agents pay back, and by how much, before you commit to a deployment.",
+    "plans": {
+      "diagnostic": {
+        "name": "Diagnostic",
+        "price": "€7,500",
+        "note": "One week on site. Your workflows ranked by return, with a go or no-go for each one. Paid upfront."
+      },
+      "deployment": {
+        "name": "Deployment",
+        "price": "From €60,000",
+        "note": "One workflow in production. Fixed scope and price, agreed before the build starts, paid by milestone."
+      }
+    },
+    "unusedConditionsTitle": "How we engage.",
+    "unusedConditions": [
+      "A named executive sponsor and a process owner on your side.",
+      "Access to production systems and real data from week one.",
+      "Only workflows with a projected return of at least 5×.",
+      "Fixed scope, fixed price. No discounts, no open-ended hours.",
+      "A limited number of engagements at a time, because our engineers work on site."
+    ]
+  },
+  "faq": {
+    "title": "Questions from the boardroom.",
+    "items": {
+      "dataNotReady": {
+        "question": "Our data isn't ready.",
+        "answer": "It rarely is. Agents are built to work with the data you have, and the diagnostic shows what needs fixing before you invest."
+      },
+      "pilotsStalled": {
+        "question": "Our pilots never reached production.",
+        "answer": "Kofen starts on production systems, with an owner on your side and a measured business case. Without those, we don't start."
+      },
+      "noAiTeam": {
+        "question": "We don't have an AI team.",
+        "answer": "You don't need one to begin. Your people build alongside our engineers and take over operations as the system matures."
+      },
+      "gdprAiAct": {
+        "question": "How do you handle GDPR and the EU AI Act?",
+        "answer": "Data stays in your infrastructure under a data processing agreement. Customer-facing agents disclose that they are AI, and every action is logged and auditable."
+      },
+      "paidUpfront": {
+        "question": "Why is the diagnostic paid upfront?",
+        "answer": "It keeps both sides committed. The report is yours whether or not you go ahead."
+      },
+      "startSmaller": {
+        "question": "Can we start smaller?",
+        "answer": "The diagnostic is the smallest step. If no workflow clears a 5× return, we will tell you."
+      }
+    }
+  },
+  "company": {
+    "title": "We are building the team that puts AI to work in the real economy.",
+    "body": "Engineers who would rather ship in a warehouse, a hospital or a ministry than in a slide deck. Real systems, real clients, real consequences.",
+    "storyCard": "Our story",
+    "positionsCard": "Open positions"
+  },
+  "closing": {
+    "title": "Put agents to work on your most complex workflows.",
+    "cta": "Book a demo"
+  },
+  "footer": {
+    "tagline": "AI agents that move the P&L.",
+    "headings": {
+      "services": "Services",
+      "industries": "Industries",
+      "company": "Company",
+      "legal": "Legal"
+    },
+    "services": {
+      "diagnostic": "Diagnostic",
+      "deployment": "Deployment",
+      "embeddedTeam": "Embedded team"
+    },
+    "company": {
+      "whyKofen": "Why Kofen",
+      "careers": "Careers",
+      "contact": "Contact"
+    },
+    "legal": {
+      "notice": "Legal notice",
+      "privacy": "Privacy",
+      "cookies": "Cookies"
+    }
+  },
+  "ui": {
+    "_note": "Authored for the production site; not in the prototype. Review before launch.",
+    "skipToContent": "Skip to content",
+    "language": "Language",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "close": "Close",
+    "previous": "Previous",
+    "next": "Next",
+    "home": "Kofen, home",
+    "scenarios": "Demo scenarios",
+    "timeline": "Demo chapters",
+    "form": {
+      "required": "Enter your work email.",
+      "invalid": "That email doesn’t look right.",
+      "sending": "Sending…",
+      "success": "Thanks. We’ll be in touch soon.",
+      "error": "Something went wrong. Please email us instead.",
+      "fallback": "Opening your email app…"
+    },
+    "notFound": {
+      "title": "Page not found.",
+      "back": "Back to home"
+    }
+  }
+}

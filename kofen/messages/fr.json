@@ -1,0 +1,400 @@
+{
+  "announcement": {
+    "text": "Nouveau · Diagnostic opérationnel en une semaine pour les grandes entreprises",
+    "link": "Découvrir le fonctionnement →"
+  },
+  "nav": {
+    "deployment": "Déploiement",
+    "industries": "Secteurs",
+    "engagement": "Collaboration",
+    "company": "Entreprise",
+    "cta": "Réserver une démo"
+  },
+  "hero": {
+    "headline": "Des agents qui font bouger votre compte de résultat.",
+    "rotator": [
+      "En production, pas en pilote.",
+      "Dans vos appels d'offres.",
+      "Dans votre supply chain.",
+      "Dans vos marges.",
+      "Dans votre direction financière."
+    ],
+    "sub": "Kofen intègre des ingénieurs et des agents IA au cœur de vos opérations les plus complexes, et transforme chaque tâche accomplie en connaissance qui reste dans votre entreprise.",
+    "cta": "Réserver une démo",
+    "emailPlaceholder": "E-mail professionnel",
+    "unusedHeadline": "Assez de pilotes IA. Mettez-en un en production.",
+    "unusedSecondaryCta": "Voir le prix"
+  },
+  "console": {
+    "demoBadge": "Démo · données fictives",
+    "hint": "Cliquez sur une vue",
+    "group": "Opérations",
+    "agentsRunning": "3 agents actifs",
+    "agentName": "Agent Kofen",
+    "working": "En cours",
+    "approve": "Valider",
+    "play": "Lire la démo",
+    "pause": "Mettre la démo en pause",
+    "scenarios": {
+      "tenders": {
+        "label": "Appels d'offres",
+        "slug": "appels-offres",
+        "from": "alertes@marches-publics.example",
+        "subject": "Nouvel appel d'offres · 4,2 M€ · 3 ans",
+        "body": "Prestations logistiques hospitalières, lot 2. 184 pages de cahier des charges. Date limite : 21 nov.",
+        "steps": [
+          "Lu les 184 pages et les deux annexes",
+          "63 exigences obligatoires · 61 déjà couvertes dans des offres passées",
+          "Écarts : ISO 27001 et une équipe sur site à Madrid"
+        ],
+        "reply": "On y va. Note estimée 82/100 : vous ne perdez des points que sur les deux écarts, et un partenaire peut combler les deux avant la date limite. La matrice de conformité et un premier jet de l'offre technique sont prêts.",
+        "fields": [
+          {
+            "label": "Montant",
+            "value": "4,2 M€ · 3 ans"
+          },
+          {
+            "label": "Exigences couvertes",
+            "value": "61 sur 63"
+          },
+          {
+            "label": "Note estimée",
+            "value": "82 / 100"
+          },
+          {
+            "label": "Date limite",
+            "value": "21 nov."
+          }
+        ],
+        "waiting": "En attente du directeur des offres",
+        "done": "Go validé · brouillon envoyé à l'équipe"
+      },
+      "supplyRisk": {
+        "label": "Risque fournisseur",
+        "slug": "risque-fournisseur",
+        "from": "logistique@composants-exemple.fr",
+        "subject": "Retard de livraison · réf. 7741-B",
+        "body": "Suite à un arrêt d'usine, les livraisons de la référence 7741-B sont retardées de trois semaines.",
+        "steps": [
+          "Réf. 7741-B suivie dans le plan de production SAP",
+          "14 ordres de fabrication et 1,9 M€ de CA du T4 touchés",
+          "Fournisseur alternatif homologué avec du stock trouvé"
+        ],
+        "reply": "Le retard touche 14 ordres et 1,9 M€ de chiffre d'affaires du T4. En basculant 60 % du volume vers le fournisseur alternatif, 12 ordres restent à l'heure pour 38 000 € de surcoût. Le plan est prêt pour votre directeur des opérations.",
+        "fields": [
+          {
+            "label": "CA à risque",
+            "value": "1,9 M€"
+          },
+          {
+            "label": "Ordres touchés",
+            "value": "14"
+          },
+          {
+            "label": "Sauvés par le plan",
+            "value": "12 sur 14"
+          },
+          {
+            "label": "Surcoût",
+            "value": "+38 000 €"
+          }
+        ],
+        "waiting": "En attente du directeur des opérations",
+        "done": "Plan appliqué dans SAP · fournisseurs prévenus"
+      },
+      "marginAudit": {
+        "label": "Audit de marge",
+        "slug": "audit-marge",
+        "from": "DAF · demande interne",
+        "subject": "Achats",
+        "body": "« Vérifiez si nos fournisseurs facturent ce que disent les contrats depuis janvier 2025. »",
+        "steps": [
+          "212 contrats fournisseurs lus",
+          "48 300 lignes de facture rapprochées des conditions contractuelles",
+          "Remises non réclamées et prix au-dessus du contrat détectés"
+        ],
+        "reply": "640 000 € sont récupérables : 412 000 € de remises de volume jamais réclamées et 228 000 € facturés au-dessus du prix contractuel, chez 37 fournisseurs. Les courriers de réclamation, preuves ligne à ligne, sont rédigés.",
+        "fields": [
+          {
+            "label": "Contrats",
+            "value": "212"
+          },
+          {
+            "label": "Lignes de facture",
+            "value": "48 300"
+          },
+          {
+            "label": "Récupérable",
+            "value": "640 000 €"
+          },
+          {
+            "label": "Fournisseurs",
+            "value": "37"
+          }
+        ],
+        "waiting": "En attente du DAF",
+        "done": "Réclamations envoyées à 37 fournisseurs"
+      }
+    }
+  },
+  "composer": {
+    "label": "Décrivez le processus qui vous coûte le plus",
+    "placeholders": [
+      "Nous répondons à 40 appels d'offres par an et en gagnons 6",
+      "Un fournisseur en retard arrête notre ligne deux fois par trimestre",
+      "Personne ne vérifie si les fournisseurs facturent selon le contrat"
+    ],
+    "chips": {
+      "tenders": {
+        "label": "Appels d'offres",
+        "text": "Nous répondons à des appels d'offres publics et privés."
+      },
+      "supplyChain": {
+        "label": "Supply chain",
+        "text": "Les retards fournisseurs cassent notre plan de production."
+      },
+      "margin": {
+        "label": "Marge",
+        "text": "Nous pensons payer trop cher nos fournisseurs."
+      },
+      "size": {
+        "label": "Taille",
+        "text": "Chiffre d'affaires annuel supérieur à 50 M€."
+      }
+    },
+    "send": "Demander une proposition",
+    "note": "Lu par un ingénieur, pas par un bot. Proposition à prix fixe sous deux jours ouvrés.",
+    "emailSubject": "Demande de proposition"
+  },
+  "systems": {
+    "title": "Déployés sur les systèmes que vous utilisez déjà."
+  },
+  "manifesto": {
+    "lead": "Les pilotes prouvent que l'IA peut fonctionner.",
+    "emphasis": "Kofen prouve qu'elle est rentable."
+  },
+  "platform": {
+    "title": "Les agents ont besoin d'ingénieurs sur le terrain.",
+    "pillars": [
+      {
+        "title": "Des ingénieurs déployés chez vous.",
+        "body": "Une petite équipe travaille au sein de vos opérations, comprend comment les décisions se prennent vraiment et met des agents en production sur vos propres systèmes.",
+        "cta": "Notre déploiement"
+      },
+      {
+        "title": "Une feuille de route auditable par votre direction.",
+        "body": "Chaque workflow est priorisé selon son retour, son responsable et son risque avant d'écrire la moindre ligne de code.",
+        "cta": "Voir les phases"
+      }
+    ]
+  },
+  "phases": {
+    "title": "Du premier workflow à une organisation native IA.",
+    "ledByKofen": "Travail piloté par Kofen",
+    "tab": "Phase",
+    "items": {
+      "deploy": {
+        "title": "Déployer le premier workflow.",
+        "kofenShare": 75,
+        "body": "Commencez là où se trouve l'argent. Le premier agent passe en production sur vos données réelles en quelques semaines, et sa valeur est mesurée avant de parler de passage à l'échelle.",
+        "chips": [
+          "Diagnostic",
+          "Pilote",
+          "Production"
+        ]
+      },
+      "scale": {
+        "title": "Étendre à d'autres fonctions.",
+        "kofenShare": 50,
+        "body": "Votre équipe co-construit les workflows suivants avec nos ingénieurs. Ce qu'un agent apprend devient le point de départ du suivant.",
+        "chips": [
+          "Co-construction",
+          "Montée en compétences",
+          "Transmission"
+        ]
+      },
+      "run": {
+        "title": "L'exploiter comme le vôtre.",
+        "kofenShare": 25,
+        "body": "Votre équipe exploite le système. Kofen reste pour l'évaluation, la gouvernance et les cas les plus difficiles.",
+        "chips": [
+          "Gouvernance",
+          "Évaluation",
+          "Support"
+        ]
+      }
+    }
+  },
+  "depth": {
+    "title": "Conçu pour le travail le plus exigeant de l'entreprise.",
+    "pillars": {
+      "complexity": {
+        "label": "Complexité",
+        "title": "Pensé pour les exceptions",
+        "body": "Des agents conçus pour les validations, les cas limites et les données imparfaites, pas pour le scénario de démo."
+      },
+      "control": {
+        "label": "Maîtrise",
+        "title": "À vous, de bout en bout",
+        "body": "Code, prompts, évaluations et données restent dans votre infrastructure. Aucune dépendance, une traçabilité complète."
+      },
+      "compounding": {
+        "label": "Effet cumulatif",
+        "title": "Chaque agent améliore le suivant",
+        "body": "Le contexte capté dans une fonction profite à la suivante : chaque déploiement démarre plus loin."
+      }
+    },
+    "stats": {
+      "diagnosticDays": "jours pour un diagnostic complet de vos opérations",
+      "minimumReturn": "de retour minimum attendu pour lancer un workflow",
+      "proposalDays": "jours ouvrés pour une proposition à prix fixe",
+      "ownSystems": "du travail tourne sur vos propres systèmes et données"
+    }
+  },
+  "industries": {
+    "title": "Une équipe. Chaque secteur critique.",
+    "cta": "Réserver une démo",
+    "items": {
+      "manufacturing": {
+        "name": "Industrie",
+        "useCases": "Précision · Traçabilité · Continuité"
+      },
+      "logistics": {
+        "name": "Logistique",
+        "useCases": "Rapidité · Visibilité · Fiabilité"
+      },
+      "distribution": {
+        "name": "Distribution",
+        "useCases": "Disponibilité · Marge · Service"
+      },
+      "financialServices": {
+        "name": "Services financiers",
+        "useCases": "Rigueur · Auditabilité · Confiance"
+      },
+      "healthcare": {
+        "name": "Santé",
+        "useCases": "Confidentialité · Discrétion · Soin"
+      },
+      "construction": {
+        "name": "Construction",
+        "useCases": "Maîtrise · Délais · Sécurité"
+      },
+      "publicSector": {
+        "name": "Secteur public & Gouvernement",
+        "useCases": "Transparence · Conformité · Service"
+      }
+    }
+  },
+  "pricing": {
+    "title": "Commencez par une semaine. Passez à l'échelle sur preuves.",
+    "intro": "Un diagnostic à prix fixe montre où les agents sont rentables, et à quel point, avant tout engagement sur un déploiement.",
+    "plans": {
+      "diagnostic": {
+        "name": "Diagnostic",
+        "price": "7 500 €",
+        "note": "Une semaine sur site. Vos workflows classés par retour, avec un go ou no-go pour chacun. Payé d'avance."
+      },
+      "deployment": {
+        "name": "Déploiement",
+        "price": "À partir de 60 000 €",
+        "note": "Un workflow en production. Périmètre et prix fixés avant le développement, payés par jalons."
+      }
+    },
+    "unusedConditionsTitle": "Notre façon de collaborer.",
+    "unusedConditions": [
+      "Un sponsor de direction et un responsable du processus identifiés chez vous.",
+      "Un accès aux systèmes de production et aux données réelles dès la première semaine.",
+      "Uniquement des workflows avec un retour attendu d'au moins 5×.",
+      "Périmètre fixe, prix fixe. Ni remise, ni heures ouvertes.",
+      "Un nombre limité de missions en parallèle, car nos ingénieurs travaillent sur site."
+    ]
+  },
+  "faq": {
+    "title": "Les questions du comité de direction.",
+    "items": {
+      "dataNotReady": {
+        "question": "Nos données ne sont pas prêtes.",
+        "answer": "Elles le sont rarement. Les agents sont conçus pour travailler avec vos données actuelles, et le diagnostic montre ce qu'il faut corriger avant d'investir."
+      },
+      "pilotsStalled": {
+        "question": "Nos pilotes ne sont jamais arrivés en production.",
+        "answer": "Kofen démarre sur les systèmes de production, avec un responsable chez vous et un business case mesuré. Sans cela, nous ne commençons pas."
+      },
+      "noAiTeam": {
+        "question": "Nous n'avons pas d'équipe IA.",
+        "answer": "Inutile pour démarrer. Vos équipes construisent avec nos ingénieurs et reprennent l'exploitation à mesure que le système mûrit."
+      },
+      "gdprAiAct": {
+        "question": "Comment gérez-vous le RGPD et l'AI Act ?",
+        "answer": "Les données restent dans votre infrastructure, sous contrat de sous-traitance. Les agents en contact avec les clients indiquent qu'ils sont des IA, et chaque action est journalisée et auditable."
+      },
+      "paidUpfront": {
+        "question": "Pourquoi le diagnostic est-il payé d'avance ?",
+        "answer": "Parce qu'il engage les deux parties. Le rapport vous appartient, que vous poursuiviez ou non."
+      },
+      "startSmaller": {
+        "question": "Peut-on commencer plus petit ?",
+        "answer": "Le diagnostic est la plus petite étape. Si aucun workflow n'atteint un retour de 5×, nous vous le dirons."
+      }
+    }
+  },
+  "company": {
+    "title": "Nous constituons l'équipe qui met l'IA au travail dans l'économie réelle.",
+    "body": "Des ingénieurs qui préfèrent livrer dans un entrepôt, un hôpital ou un ministère plutôt que dans une présentation. De vrais systèmes, de vrais clients, de vraies conséquences.",
+    "storyCard": "Notre histoire",
+    "positionsCard": "Postes ouverts"
+  },
+  "closing": {
+    "title": "Mettez des agents au travail sur vos workflows les plus complexes.",
+    "cta": "Réserver une démo"
+  },
+  "footer": {
+    "tagline": "Des agents IA qui font bouger le compte de résultat.",
+    "headings": {
+      "services": "Services",
+      "industries": "Secteurs",
+      "company": "Entreprise",
+      "legal": "Légal"
+    },
+    "services": {
+      "diagnostic": "Diagnostic",
+      "deployment": "Déploiement",
+      "embeddedTeam": "Équipe intégrée"
+    },
+    "company": {
+      "whyKofen": "Pourquoi Kofen",
+      "careers": "Carrières",
+      "contact": "Contact"
+    },
+    "legal": {
+      "notice": "Mentions légales",
+      "privacy": "Confidentialité",
+      "cookies": "Cookies"
+    }
+  },
+  "ui": {
+    "_note": "Authored for the production site; not in the prototype. Review before launch.",
+    "skipToContent": "Aller au contenu",
+    "language": "Langue",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "close": "Fermer",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "home": "Kofen, accueil",
+    "scenarios": "Scénarios de la démo",
+    "timeline": "Chapitres de la démo",
+    "form": {
+      "required": "Saisissez votre e-mail professionnel.",
+      "invalid": "Cet e-mail ne semble pas valide.",
+      "sending": "Envoi…",
+      "success": "Merci. Nous revenons vers vous rapidement.",
+      "error": "Une erreur est survenue. Écrivez-nous par e-mail.",
+      "fallback": "Ouverture de votre messagerie…"
+    },
+    "notFound": {
+      "title": "Page introuvable.",
+      "back": "Retour à l’accueil"
+    }
+  }
+}

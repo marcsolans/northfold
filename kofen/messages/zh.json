@@ -1,0 +1,400 @@
+{
+  "announcement": {
+    "text": "新 · 面向大型企业的一周运营诊断",
+    "link": "了解运作方式 →"
+  },
+  "nav": {
+    "deployment": "落地部署",
+    "industries": "行业",
+    "engagement": "合作方式",
+    "company": "公司",
+    "cta": "预约演示"
+  },
+  "hero": {
+    "headline": "推动利润表的 AI 智能体。",
+    "rotator": [
+      "在生产环境中，而非试点里。",
+      "在您的投标中。",
+      "在您的供应链中。",
+      "在您的利润率中。",
+      "在您的财务团队中。"
+    ],
+    "sub": "Kofen 将工程师和 AI 智能体嵌入您最复杂的运营流程，并把它们完成的每项任务转化为留在企业内部的知识。",
+    "cta": "预约演示",
+    "emailPlaceholder": "企业邮箱",
+    "unusedHeadline": "AI 试点已经够多了。让一个真正投产。",
+    "unusedSecondaryCta": "查看价格"
+  },
+  "console": {
+    "demoBadge": "演示 · 虚构数据",
+    "hint": "点击一个视图",
+    "group": "运营",
+    "agentsRunning": "3 个智能体运行中",
+    "agentName": "Kofen 智能体",
+    "working": "处理中",
+    "approve": "批准",
+    "play": "播放演示",
+    "pause": "暂停演示",
+    "scenarios": {
+      "tenders": {
+        "label": "投标",
+        "slug": "tenders",
+        "from": "alerts@public-tenders.example",
+        "subject": "新招标 · 420 万欧元 · 3 年",
+        "body": "医院物流服务，第 2 标段。招标文件共 184 页。截止日期：11 月 21 日。",
+        "steps": [
+          "已阅读全部 184 页及两个附件",
+          "63 项强制性要求 · 61 项已在以往投标中覆盖",
+          "缺口：ISO 27001 认证和马德里驻场团队"
+        ],
+        "reply": "建议投标。预估得分 82/100：只在两个缺口上失分，且都可在截止前通过合作伙伴补齐。合规矩阵和技术标初稿已为您的投标团队准备好。",
+        "fields": [
+          {
+            "label": "合同金额",
+            "value": "420 万欧元 · 3 年"
+          },
+          {
+            "label": "满足要求",
+            "value": "63 项中 61 项"
+          },
+          {
+            "label": "预估得分",
+            "value": "82 / 100"
+          },
+          {
+            "label": "截止日期",
+            "value": "11 月 21 日"
+          }
+        ],
+        "waiting": "等待投标总监",
+        "done": "已批准投标 · 初稿已发给团队"
+      },
+      "supplyRisk": {
+        "label": "供应风险",
+        "slug": "supply-risk",
+        "from": "logistics@components-example.cn",
+        "subject": "发货延迟 · 零件 7741-B",
+        "body": "由于工厂停产，零件 7741-B 的交付将推迟三周。",
+        "steps": [
+          "已在 SAP 生产计划中追踪零件 7741-B",
+          "14 张生产订单及第四季度 190 万欧元营收受影响",
+          "已找到有库存的合格替代供应商"
+        ],
+        "reply": "此次延迟影响 14 张订单和第四季度 190 万欧元营收。将 60% 的量转给替代供应商，可让 12 张订单按时交付，额外成本 38,000 欧元。新计划已提交给您的 COO。",
+        "fields": [
+          {
+            "label": "风险营收",
+            "value": "190 万欧元"
+          },
+          {
+            "label": "受影响订单",
+            "value": "14"
+          },
+          {
+            "label": "计划挽回",
+            "value": "14 张中 12 张"
+          },
+          {
+            "label": "额外成本",
+            "value": "+38,000 欧元"
+          }
+        ],
+        "waiting": "等待 COO",
+        "done": "计划已在 SAP 中执行 · 已通知供应商"
+      },
+      "marginAudit": {
+        "label": "利润审计",
+        "slug": "margin-audit",
+        "from": "CFO · 内部请求",
+        "subject": "采购",
+        "body": "“核查自 2025 年 1 月以来，供应商的开票是否与合同一致。”",
+        "steps": [
+          "已阅读 212 份供应商合同",
+          "已将 48,300 行发票与合同条款逐一比对",
+          "发现未索取的返利和高于合同的价格"
+        ],
+        "reply": "可追回 640,000 欧元：从未索取的数量返利 412,000 欧元，以及高于合同价开票的 228,000 欧元，涉及 37 家供应商。附逐行证据的索赔函已起草完毕。",
+        "fields": [
+          {
+            "label": "合同",
+            "value": "212"
+          },
+          {
+            "label": "发票行",
+            "value": "48,300"
+          },
+          {
+            "label": "可追回",
+            "value": "640,000 欧元"
+          },
+          {
+            "label": "供应商",
+            "value": "37"
+          }
+        ],
+        "waiting": "等待 CFO",
+        "done": "索赔函已发给 37 家供应商"
+      }
+    }
+  },
+  "composer": {
+    "label": "描述最耗费成本的流程",
+    "placeholders": [
+      "我们每年投 40 个标，只中 6 个",
+      "供应商一延迟，产线每季度停两次",
+      "没人核查供应商是否按合同开票"
+    ],
+    "chips": {
+      "tenders": {
+        "label": "投标",
+        "text": "我们参与公开和私人招标。"
+      },
+      "supplyChain": {
+        "label": "供应链",
+        "text": "供应商延迟打乱我们的生产计划。"
+      },
+      "margin": {
+        "label": "利润",
+        "text": "我们怀疑给供应商付多了。"
+      },
+      "size": {
+        "label": "规模",
+        "text": "年营收超过 5000 万欧元。"
+      }
+    },
+    "send": "获取方案",
+    "note": "由工程师阅读，而不是机器人。两个工作日内提供固定价格方案。",
+    "emailSubject": "方案申请"
+  },
+  "systems": {
+    "title": "部署在您现有的系统之上。"
+  },
+  "manifesto": {
+    "lead": "试点证明 AI 能够奏效。",
+    "emphasis": "Kofen 证明它能带来回报。"
+  },
+  "platform": {
+    "title": "智能体需要一线工程师。",
+    "pillars": [
+      {
+        "title": "前线部署工程师。",
+        "body": "一支精干团队进驻您的运营现场，弄清决策的真实过程，并在您自己的系统上将智能体投入生产。",
+        "cta": "我们如何部署"
+      },
+      {
+        "title": "一份董事会可以审计的路线图。",
+        "body": "在写下第一行代码之前，每个流程都按回报、负责人和风险排定优先级。",
+        "cta": "查看阶段"
+      }
+    ]
+  },
+  "phases": {
+    "title": "从第一个流程到 AI 原生的运营。",
+    "ledByKofen": "由 Kofen 主导的工作",
+    "tab": "阶段",
+    "items": {
+      "deploy": {
+        "title": "上线第一个流程。",
+        "kofenShare": 75,
+        "body": "从最能创造价值的地方开始。第一个智能体在几周内基于您的真实数据投产，在谈论扩展之前先衡量其价值。",
+        "chips": [
+          "诊断",
+          "试点",
+          "投产"
+        ]
+      },
+      "scale": {
+        "title": "跨职能扩展。",
+        "kofenShare": 50,
+        "body": "您的团队与我们的工程师共同构建后续流程。一个智能体学到的，就是下一个的起点。",
+        "chips": [
+          "共同开发",
+          "赋能",
+          "移交"
+        ]
+      },
+      "run": {
+        "title": "作为自己的系统运行。",
+        "kofenShare": 25,
+        "body": "由您的团队运营系统。Kofen 继续负责评估、治理和最棘手的特殊情况。",
+        "chips": [
+          "治理",
+          "评估",
+          "支持"
+        ]
+      }
+    }
+  },
+  "depth": {
+    "title": "为企业中最艰难的工作而打造。",
+    "pillars": {
+      "complexity": {
+        "label": "复杂性",
+        "title": "为例外情况而设计",
+        "body": "智能体专为审批、边缘情况和不完美的数据而构建，而不是只为演示路径。"
+      },
+      "control": {
+        "label": "掌控",
+        "title": "从头到尾归您所有",
+        "body": "代码、提示词、评估和数据都在您的基础设施中。没有锁定，完整审计追踪。"
+      },
+      "compounding": {
+        "label": "复利效应",
+        "title": "每个智能体都让下一个更好",
+        "body": "在一个职能中获取的上下文会延续到下一个，因此每次部署都起步更高。"
+      }
+    },
+    "stats": {
+      "diagnosticDays": "天完成对您运营的全面诊断",
+      "minimumReturn": "倍：启动一个流程所需的最低预期回报",
+      "proposalDays": "个工作日内提供固定价格方案",
+      "ownSystems": "的工作运行在您自己的系统和数据上"
+    }
+  },
+  "industries": {
+    "title": "一支团队，覆盖每个关键行业。",
+    "cta": "预约演示",
+    "items": {
+      "manufacturing": {
+        "name": "制造业",
+        "useCases": "精准 · 可追溯 · 持续运行"
+      },
+      "logistics": {
+        "name": "物流",
+        "useCases": "速度 · 透明 · 可靠"
+      },
+      "distribution": {
+        "name": "分销",
+        "useCases": "供货 · 利润 · 服务"
+      },
+      "financialServices": {
+        "name": "金融服务",
+        "useCases": "严谨 · 可审计 · 信任"
+      },
+      "healthcare": {
+        "name": "医疗健康",
+        "useCases": "隐私 · 审慎 · 关怀"
+      },
+      "construction": {
+        "name": "建筑业",
+        "useCases": "管控 · 工期 · 安全"
+      },
+      "publicSector": {
+        "name": "公共部门与政府",
+        "useCases": "透明 · 合规 · 服务"
+      }
+    }
+  },
+  "pricing": {
+    "title": "从一周开始，用证据扩展。",
+    "intro": "固定价格的诊断会在您决定部署之前，告诉您智能体在哪里能带来回报、回报多少。",
+    "plans": {
+      "diagnostic": {
+        "name": "诊断",
+        "price": "7,500 欧元",
+        "note": "现场一周。按回报对您的流程排序，并逐一给出做或不做的建议。预付。"
+      },
+      "deployment": {
+        "name": "部署",
+        "price": "60,000 欧元起",
+        "note": "一个流程投入生产。在开发前确定范围和价格，按里程碑付款。"
+      }
+    },
+    "unusedConditionsTitle": "我们的合作方式。",
+    "unusedConditions": [
+      "您方指定一位高管发起人和一位流程负责人。",
+      "从第一周起开放生产系统和真实数据的访问权限。",
+      "只做预期回报至少 5 倍的流程。",
+      "固定范围，固定价格。不打折，不按开放工时计费。",
+      "同时进行的项目数量有限，因为我们的工程师驻场工作。"
+    ]
+  },
+  "faq": {
+    "title": "来自董事会的问题。",
+    "items": {
+      "dataNotReady": {
+        "question": "我们的数据还没准备好。",
+        "answer": "很少有人准备好。智能体就是为您现有的数据而构建的，诊断会在投资之前指出需要修正的地方。"
+      },
+      "pilotsStalled": {
+        "question": "我们做过的试点从未进入生产。",
+        "answer": "Kofen 从生产系统起步，您方有负责人，并有可衡量的商业论证。缺少这些，我们就不启动。"
+      },
+      "noAiTeam": {
+        "question": "我们没有 AI 团队。",
+        "answer": "起步时并不需要。您的员工与我们的工程师一起构建，并随着系统成熟接手运营。"
+      },
+      "gdprAiAct": {
+        "question": "你们如何应对 GDPR 和欧盟《人工智能法案》？",
+        "answer": "数据保留在您的基础设施中，并签署数据处理协议。面向客户的智能体会表明自己是 AI，每个操作都有日志并可审计。"
+      },
+      "paidUpfront": {
+        "question": "为什么诊断要预付？",
+        "answer": "因为这让双方都认真投入。无论您是否继续，报告都归您所有。"
+      },
+      "startSmaller": {
+        "question": "能否从更小的范围开始？",
+        "answer": "诊断就是最小的一步。如果没有任何流程能达到 5 倍回报，我们会如实告诉您。"
+      }
+    }
+  },
+  "company": {
+    "title": "我们正在组建让 AI 在实体经济中真正发挥作用的团队。",
+    "body": "宁愿在仓库、医院或政府部门交付成果，而不是在幻灯片里交付的工程师。真实的系统，真实的客户，真实的后果。",
+    "storyCard": "我们的故事",
+    "positionsCard": "开放职位"
+  },
+  "closing": {
+    "title": "让智能体投入您最复杂的流程。",
+    "cta": "预约演示"
+  },
+  "footer": {
+    "tagline": "推动利润表的 AI 智能体。",
+    "headings": {
+      "services": "服务",
+      "industries": "行业",
+      "company": "公司",
+      "legal": "法律"
+    },
+    "services": {
+      "diagnostic": "诊断",
+      "deployment": "落地部署",
+      "embeddedTeam": "嵌入式团队"
+    },
+    "company": {
+      "whyKofen": "为何是 Kofen",
+      "careers": "加入我们",
+      "contact": "联系方式"
+    },
+    "legal": {
+      "notice": "法律声明",
+      "privacy": "隐私政策",
+      "cookies": "Cookie 政策"
+    }
+  },
+  "ui": {
+    "_note": "Authored for the production site; not in the prototype. Review before launch.",
+    "skipToContent": "跳至内容",
+    "language": "语言",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "close": "关闭",
+    "previous": "上一个",
+    "next": "下一个",
+    "home": "Kofen 首页",
+    "scenarios": "演示场景",
+    "timeline": "演示章节",
+    "form": {
+      "required": "请输入您的工作邮箱。",
+      "invalid": "该邮箱格式似乎不正确。",
+      "sending": "发送中…",
+      "success": "谢谢，我们会尽快与您联系。",
+      "error": "出了点问题，请直接发邮件给我们。",
+      "fallback": "正在打开您的邮件应用…"
+    },
+    "notFound": {
+      "title": "页面未找到。",
+      "back": "返回首页"
+    }
+  }
+}

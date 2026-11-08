@@ -1,0 +1,400 @@
+{
+  "announcement": {
+    "text": "Novo · Diagnóstico operacional numa semana para grandes empresas",
+    "link": "Veja como funciona →"
+  },
+  "nav": {
+    "deployment": "Implementação",
+    "industries": "Setores",
+    "engagement": "Como trabalhamos",
+    "company": "Empresa",
+    "cta": "Agendar demo"
+  },
+  "hero": {
+    "headline": "Agentes que movem os resultados.",
+    "rotator": [
+      "Em produção, não em pilotos.",
+      "Nos seus concursos.",
+      "Na sua cadeia de abastecimento.",
+      "Nas suas margens.",
+      "Na sua equipa financeira."
+    ],
+    "sub": "A Kofen integra engenheiros e agentes de IA nas suas operações mais complexas e transforma cada tarefa concluída em conhecimento que fica na sua empresa.",
+    "cta": "Agendar demo",
+    "emailPlaceholder": "Email profissional",
+    "unusedHeadline": "Chega de pilotos de IA. Ponha um em produção.",
+    "unusedSecondaryCta": "Ver o preço"
+  },
+  "console": {
+    "demoBadge": "Demo · dados fictícios",
+    "hint": "Clique numa vista",
+    "group": "Operação",
+    "agentsRunning": "3 agentes ativos",
+    "agentName": "Agente Kofen",
+    "working": "A trabalhar",
+    "approve": "Aprovar",
+    "play": "Reproduzir demo",
+    "pause": "Pausar demo",
+    "scenarios": {
+      "tenders": {
+        "label": "Concursos",
+        "slug": "concursos",
+        "from": "alertas@contratacao-publica.example",
+        "subject": "Novo concurso · 4,2 M€ · 3 anos",
+        "body": "Serviços de logística hospitalar, lote 2. 184 páginas de caderno de encargos. Prazo: 21 nov.",
+        "steps": [
+          "Lidas as 184 páginas e os dois anexos",
+          "63 requisitos obrigatórios · 61 já cobertos em propostas anteriores",
+          "Lacunas: ISO 27001 e uma equipa presencial em Madrid"
+        ],
+        "reply": "Avançar. Pontuação estimada 82/100: só perde pontos nas duas lacunas, e um parceiro resolve ambas antes do prazo. A matriz de conformidade e um primeiro rascunho da proposta técnica estão prontos para a sua equipa.",
+        "fields": [
+          {
+            "label": "Valor",
+            "value": "4,2 M€ · 3 anos"
+          },
+          {
+            "label": "Requisitos cumpridos",
+            "value": "61 de 63"
+          },
+          {
+            "label": "Pontuação estimada",
+            "value": "82 / 100"
+          },
+          {
+            "label": "Prazo",
+            "value": "21 nov"
+          }
+        ],
+        "waiting": "A aguardar o diretor de propostas",
+        "done": "Aprovado · rascunho enviado à equipa"
+      },
+      "supplyRisk": {
+        "label": "Risco de fornecimento",
+        "slug": "risco-fornecimento",
+        "from": "logistica@componentes-exemplo.pt",
+        "subject": "Atraso de envio · ref. 7741-B",
+        "body": "Devido a uma paragem de fábrica, as entregas da referência 7741-B atrasam três semanas.",
+        "steps": [
+          "Rastreada a 7741-B no plano de produção do SAP",
+          "14 ordens de produção e 1,9 M€ de faturação do T4 afetados",
+          "Encontrado um fornecedor alternativo qualificado com stock"
+        ],
+        "reply": "O atraso afeta 14 ordens e 1,9 M€ de faturação do T4. Passando 60% do volume para o fornecedor alternativo, 12 ordens saem a tempo por mais 38.000 €. O novo plano está pronto para o seu diretor de operações.",
+        "fields": [
+          {
+            "label": "Faturação em risco",
+            "value": "1,9 M€"
+          },
+          {
+            "label": "Ordens afetadas",
+            "value": "14"
+          },
+          {
+            "label": "Salvas pelo plano",
+            "value": "12 de 14"
+          },
+          {
+            "label": "Custo extra",
+            "value": "+38.000 €"
+          }
+        ],
+        "waiting": "A aguardar o diretor de operações",
+        "done": "Plano aplicado no SAP · fornecedores avisados"
+      },
+      "marginAudit": {
+        "label": "Auditoria de margem",
+        "slug": "auditoria-margem",
+        "from": "CFO · pedido interno",
+        "subject": "Compras",
+        "body": "«Verifique se os fornecedores nos faturaram o que dizem os contratos desde janeiro de 2025.»",
+        "steps": [
+          "Lidos 212 contratos de fornecedores",
+          "Cruzadas 48.300 linhas de fatura com as condições contratuais",
+          "Encontrados rappels por reclamar e preços acima do contrato"
+        ],
+        "reply": "Há 640.000 € recuperáveis: 412.000 € em rappels de volume nunca reclamados e 228.000 € faturados acima do preço contratual, em 37 fornecedores. As cartas de reclamação com a prova linha a linha estão redigidas.",
+        "fields": [
+          {
+            "label": "Contratos",
+            "value": "212"
+          },
+          {
+            "label": "Linhas de fatura",
+            "value": "48.300"
+          },
+          {
+            "label": "Recuperável",
+            "value": "640.000 €"
+          },
+          {
+            "label": "Fornecedores",
+            "value": "37"
+          }
+        ],
+        "waiting": "A aguardar o CFO",
+        "done": "Reclamações enviadas a 37 fornecedores"
+      }
+    }
+  },
+  "composer": {
+    "label": "Descreva o processo que mais lhe custa",
+    "placeholders": [
+      "Concorremos a 40 concursos por ano e ganhamos 6",
+      "Um fornecedor atrasado pára a nossa linha duas vezes por trimestre",
+      "Ninguém verifica se os fornecedores faturam o que diz o contrato"
+    ],
+    "chips": {
+      "tenders": {
+        "label": "Concursos",
+        "text": "Concorremos a concursos públicos e privados."
+      },
+      "supplyChain": {
+        "label": "Fornecimento",
+        "text": "Os atrasos de fornecedores estragam o plano de produção."
+      },
+      "margin": {
+        "label": "Margem",
+        "text": "Suspeitamos que pagamos a mais aos fornecedores."
+      },
+      "size": {
+        "label": "Dimensão",
+        "text": "Faturação anual acima de 50 M€."
+      }
+    },
+    "send": "Pedir uma proposta",
+    "note": "Lido por um engenheiro, não por um bot. Proposta a preço fechado em dois dias úteis.",
+    "emailSubject": "Pedido de proposta"
+  },
+  "systems": {
+    "title": "Implementados nos sistemas que já utiliza."
+  },
+  "manifesto": {
+    "lead": "Os pilotos provam que a IA pode funcionar.",
+    "emphasis": "A Kofen prova que compensa."
+  },
+  "platform": {
+    "title": "Os agentes precisam de engenheiros no terreno.",
+    "pillars": [
+      {
+        "title": "Engenheiros integrados na sua empresa.",
+        "body": "Uma pequena equipa trabalha dentro da sua operação, percebe como as decisões são realmente tomadas e põe agentes em produção nos seus próprios sistemas.",
+        "cta": "Como implementamos"
+      },
+      {
+        "title": "Um roteiro que a sua administração pode auditar.",
+        "body": "Cada fluxo é priorizado por retorno, responsável e risco antes de se escrever uma linha de código.",
+        "cta": "Ver as fases"
+      }
+    ]
+  },
+  "phases": {
+    "title": "Do primeiro fluxo a uma operação nativa em IA.",
+    "ledByKofen": "Trabalho liderado pela Kofen",
+    "tab": "Fase",
+    "items": {
+      "deploy": {
+        "title": "Implemente o primeiro fluxo.",
+        "kofenShare": 75,
+        "body": "Comece onde está o dinheiro. O primeiro agente entra em produção com os seus dados reais em semanas, e o seu valor é medido antes de se falar em escalar.",
+        "chips": [
+          "Diagnóstico",
+          "Piloto",
+          "Produção"
+        ]
+      },
+      "scale": {
+        "title": "Escale entre funções.",
+        "kofenShare": 50,
+        "body": "A sua equipa constrói os fluxos seguintes com os nossos engenheiros. O que um agente aprende é o ponto de partida do seguinte.",
+        "chips": [
+          "Codesenvolvimento",
+          "Capacitação",
+          "Passagem"
+        ]
+      },
+      "run": {
+        "title": "Opere-o como seu.",
+        "kofenShare": 25,
+        "body": "A sua equipa opera o sistema. A Kofen fica para a avaliação, a governação e os casos mais difíceis.",
+        "chips": [
+          "Governação",
+          "Avaliação",
+          "Suporte"
+        ]
+      }
+    }
+  },
+  "depth": {
+    "title": "Feito para o trabalho mais difícil da empresa.",
+    "pillars": {
+      "complexity": {
+        "label": "Complexidade",
+        "title": "Desenhado para as exceções",
+        "body": "Agentes pensados para aprovações, casos-limite e dados imperfeitos, não para o caminho da demo."
+      },
+      "control": {
+        "label": "Controlo",
+        "title": "Seu, do início ao fim",
+        "body": "Código, prompts, avaliações e dados ficam na sua infraestrutura. Sem dependência, com rastreabilidade total."
+      },
+      "compounding": {
+        "label": "Efeito cumulativo",
+        "title": "Cada agente melhora o seguinte",
+        "body": "O contexto captado numa função passa para a seguinte, por isso cada implementação começa mais à frente."
+      }
+    },
+    "stats": {
+      "diagnosticDays": "dias até um diagnóstico completo da sua operação",
+      "minimumReturn": "de retorno mínimo previsto para iniciar um fluxo",
+      "proposalDays": "dias úteis até uma proposta a preço fechado",
+      "ownSystems": "do trabalho corre nos seus próprios sistemas e dados"
+    }
+  },
+  "industries": {
+    "title": "Uma equipa. Todos os setores críticos.",
+    "cta": "Agendar demo",
+    "items": {
+      "manufacturing": {
+        "name": "Indústria",
+        "useCases": "Precisão · Rastreabilidade · Continuidade"
+      },
+      "logistics": {
+        "name": "Logística",
+        "useCases": "Rapidez · Visibilidade · Fiabilidade"
+      },
+      "distribution": {
+        "name": "Distribuição",
+        "useCases": "Disponibilidade · Margem · Serviço"
+      },
+      "financialServices": {
+        "name": "Serviços financeiros",
+        "useCases": "Rigor · Auditabilidade · Confiança"
+      },
+      "healthcare": {
+        "name": "Saúde",
+        "useCases": "Privacidade · Discrição · Cuidado"
+      },
+      "construction": {
+        "name": "Construção",
+        "useCases": "Controlo · Prazos · Segurança"
+      },
+      "publicSector": {
+        "name": "Setor público e Administração",
+        "useCases": "Transparência · Conformidade · Serviço"
+      }
+    }
+  },
+  "pricing": {
+    "title": "Comece com uma semana. Escale com evidência.",
+    "intro": "Um diagnóstico a preço fechado mostra onde os agentes se pagam, e quanto, antes de se comprometer com uma implementação.",
+    "plans": {
+      "diagnostic": {
+        "name": "Diagnóstico",
+        "price": "7.500 €",
+        "note": "Uma semana nas suas instalações. Os seus fluxos ordenados por retorno, com um sim ou não para cada um. Pago adiantado."
+      },
+      "deployment": {
+        "name": "Implementação",
+        "price": "A partir de 60.000 €",
+        "note": "Um fluxo em produção. Âmbito e preço fechados antes de construir, pagos por marcos."
+      }
+    },
+    "unusedConditionsTitle": "Como trabalhamos.",
+    "unusedConditions": [
+      "Um patrocinador da administração e um responsável do processo do seu lado.",
+      "Acesso a sistemas de produção e dados reais desde a primeira semana.",
+      "Apenas fluxos com um retorno previsto de pelo menos 5×.",
+      "Âmbito fechado, preço fechado. Sem descontos nem horas em aberto.",
+      "Um número limitado de projetos de cada vez, porque os nossos engenheiros trabalham nas suas instalações."
+    ]
+  },
+  "faq": {
+    "title": "Perguntas da administração.",
+    "items": {
+      "dataNotReady": {
+        "question": "Os nossos dados não estão prontos.",
+        "answer": "Raramente estão. Os agentes são construídos para trabalhar com os dados que tem, e o diagnóstico mostra o que corrigir antes de investir."
+      },
+      "pilotsStalled": {
+        "question": "Fizemos pilotos que nunca chegaram a produção.",
+        "answer": "A Kofen começa em sistemas de produção, com um responsável do seu lado e um caso de negócio medido. Sem isso, não começamos."
+      },
+      "noAiTeam": {
+        "question": "Não temos equipa de IA.",
+        "answer": "Não precisa de uma para começar. As suas pessoas constroem com os nossos engenheiros e assumem a operação à medida que o sistema amadurece."
+      },
+      "gdprAiAct": {
+        "question": "Como tratam o RGPD e o Regulamento da IA?",
+        "answer": "Os dados ficam na sua infraestrutura, com contrato de subcontratação. Os agentes que falam com clientes dizem que são IA, e cada ação fica registada e auditável."
+      },
+      "paidUpfront": {
+        "question": "Porque é que o diagnóstico é pago adiantado?",
+        "answer": "Porque compromete as duas partes. O relatório é seu, avance ou não."
+      },
+      "startSmaller": {
+        "question": "Podemos começar com algo mais pequeno?",
+        "answer": "O diagnóstico é o passo mais pequeno. Se nenhum fluxo superar um retorno de 5×, dir-lhe-emos."
+      }
+    }
+  },
+  "company": {
+    "title": "Estamos a formar a equipa que põe a IA a trabalhar na economia real.",
+    "body": "Engenheiros que preferem entregar num armazém, num hospital ou num ministério do que numa apresentação. Sistemas reais, clientes reais, consequências reais.",
+    "storyCard": "A nossa história",
+    "positionsCard": "Vagas abertas"
+  },
+  "closing": {
+    "title": "Ponha agentes a trabalhar nos seus fluxos mais complexos.",
+    "cta": "Agendar demo"
+  },
+  "footer": {
+    "tagline": "Agentes de IA que movem os resultados.",
+    "headings": {
+      "services": "Serviços",
+      "industries": "Setores",
+      "company": "Empresa",
+      "legal": "Legal"
+    },
+    "services": {
+      "diagnostic": "Diagnóstico",
+      "deployment": "Implementação",
+      "embeddedTeam": "Equipa integrada"
+    },
+    "company": {
+      "whyKofen": "Porque a Kofen",
+      "careers": "Carreiras",
+      "contact": "Contacto"
+    },
+    "legal": {
+      "notice": "Aviso legal",
+      "privacy": "Privacidade",
+      "cookies": "Cookies"
+    }
+  },
+  "ui": {
+    "_note": "Authored for the production site; not in the prototype. Review before launch.",
+    "skipToContent": "Saltar para o conteúdo",
+    "language": "Idioma",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "close": "Fechar",
+    "previous": "Anterior",
+    "next": "Seguinte",
+    "home": "Kofen, início",
+    "scenarios": "Cenários da demo",
+    "timeline": "Capítulos da demo",
+    "form": {
+      "required": "Introduza o seu email profissional.",
+      "invalid": "Esse email não parece válido.",
+      "sending": "A enviar…",
+      "success": "Obrigado. Entraremos em contacto em breve.",
+      "error": "Algo correu mal. Envie-nos um email.",
+      "fallback": "A abrir a sua aplicação de email…"
+    },
+    "notFound": {
+      "title": "Página não encontrada.",
+      "back": "Voltar ao início"
+    }
+  }
+}

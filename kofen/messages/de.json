@@ -1,0 +1,400 @@
+{
+  "announcement": {
+    "text": "Neu · Einwöchige Betriebsdiagnose für Großunternehmen",
+    "link": "So funktioniert es →"
+  },
+  "nav": {
+    "deployment": "Deployment",
+    "industries": "Branchen",
+    "engagement": "Zusammenarbeit",
+    "company": "Unternehmen",
+    "cta": "Demo buchen"
+  },
+  "hero": {
+    "headline": "Agenten, die Ihre GuV bewegen.",
+    "rotator": [
+      "In Produktion, nicht im Pilot.",
+      "In Ihren Ausschreibungen.",
+      "In Ihrer Lieferkette.",
+      "In Ihren Margen.",
+      "In Ihrem Finanzteam."
+    ],
+    "sub": "Kofen bringt Ingenieure und KI-Agenten in Ihre komplexesten Abläufe und macht aus jeder erledigten Aufgabe Wissen, das in Ihrem Unternehmen bleibt.",
+    "cta": "Demo buchen",
+    "emailPlaceholder": "Geschäftliche E-Mail",
+    "unusedHeadline": "Genug KI-Piloten. Bringen Sie einen in Produktion.",
+    "unusedSecondaryCta": "Preis ansehen"
+  },
+  "console": {
+    "demoBadge": "Demo · fiktive Daten",
+    "hint": "Ansicht anklicken",
+    "group": "Betrieb",
+    "agentsRunning": "3 Agenten aktiv",
+    "agentName": "Kofen-Agent",
+    "working": "Arbeitet",
+    "approve": "Freigeben",
+    "play": "Demo abspielen",
+    "pause": "Demo pausieren",
+    "scenarios": {
+      "tenders": {
+        "label": "Ausschreibungen",
+        "slug": "ausschreibungen",
+        "from": "alerts@oeffentliche-vergabe.example",
+        "subject": "Neue Ausschreibung · 4,2 Mio. € · 3 Jahre",
+        "body": "Krankenhauslogistik, Los 2. 184 Seiten Vergabeunterlagen. Frist: 21. Nov.",
+        "steps": [
+          "Alle 184 Seiten und beide Anlagen gelesen",
+          "63 Mussanforderungen · 61 bereits in früheren Angeboten abgedeckt",
+          "Lücken: ISO 27001 und ein Team vor Ort in Madrid"
+        ],
+        "reply": "Go. Geschätzte Bewertung 82/100: Punkte verlieren Sie nur bei den zwei Lücken, und ein Partner schließt beide vor der Frist. Compliance-Matrix und erster Entwurf des technischen Angebots liegen für Ihr Bid-Team bereit.",
+        "fields": [
+          {
+            "label": "Auftragswert",
+            "value": "4,2 Mio. € · 3 Jahre"
+          },
+          {
+            "label": "Anforderungen erfüllt",
+            "value": "61 von 63"
+          },
+          {
+            "label": "Geschätzte Bewertung",
+            "value": "82 / 100"
+          },
+          {
+            "label": "Frist",
+            "value": "21. Nov."
+          }
+        ],
+        "waiting": "Wartet auf Bid-Director",
+        "done": "Go freigegeben · Entwurf ans Bid-Team"
+      },
+      "supplyRisk": {
+        "label": "Lieferrisiko",
+        "slug": "lieferrisiko",
+        "from": "logistik@komponenten-beispiel.de",
+        "subject": "Lieferverzug · Teil 7741-B",
+        "body": "Wegen eines Werksstillstands verzögern sich Lieferungen von Teil 7741-B um drei Wochen.",
+        "steps": [
+          "Teil 7741-B im SAP-Produktionsplan verfolgt",
+          "14 Fertigungsaufträge und 1,9 Mio. € Q4-Umsatz betroffen",
+          "Qualifizierten Zweitlieferanten mit Bestand gefunden"
+        ],
+        "reply": "Der Verzug trifft 14 Aufträge und 1,9 Mio. € Q4-Umsatz. Gehen 60 % des Volumens zum Zweitlieferanten, bleiben 12 Aufträge pünktlich, für 38.000 € Mehrkosten. Der neue Plan liegt für Ihren COO bereit.",
+        "fields": [
+          {
+            "label": "Umsatz im Risiko",
+            "value": "1,9 Mio. €"
+          },
+          {
+            "label": "Betroffene Aufträge",
+            "value": "14"
+          },
+          {
+            "label": "Durch den Plan gerettet",
+            "value": "12 von 14"
+          },
+          {
+            "label": "Mehrkosten",
+            "value": "+38.000 €"
+          }
+        ],
+        "waiting": "Wartet auf COO",
+        "done": "Plan in SAP umgesetzt · Lieferanten informiert"
+      },
+      "marginAudit": {
+        "label": "Margen-Audit",
+        "slug": "margen-audit",
+        "from": "CFO · interne Anfrage",
+        "subject": "Einkauf",
+        "body": "„Prüfen Sie, ob unsere Lieferanten seit Januar 2025 das berechnet haben, was in den Verträgen steht.“",
+        "steps": [
+          "212 Lieferantenverträge gelesen",
+          "48.300 Rechnungspositionen mit den Vertragsbedingungen abgeglichen",
+          "Nicht eingeforderte Boni und Preise über Vertrag gefunden"
+        ],
+        "reply": "640.000 € sind rückforderbar: 412.000 € nie eingeforderte Mengenboni und 228.000 € über dem Vertragspreis berechnet, bei 37 Lieferanten. Forderungsschreiben mit Nachweis pro Position sind vorbereitet.",
+        "fields": [
+          {
+            "label": "Verträge",
+            "value": "212"
+          },
+          {
+            "label": "Rechnungspositionen",
+            "value": "48.300"
+          },
+          {
+            "label": "Rückforderbar",
+            "value": "640.000 €"
+          },
+          {
+            "label": "Lieferanten",
+            "value": "37"
+          }
+        ],
+        "waiting": "Wartet auf CFO",
+        "done": "Forderungen an 37 Lieferanten gesendet"
+      }
+    }
+  },
+  "composer": {
+    "label": "Beschreiben Sie den Prozess, der Sie am meisten kostet",
+    "placeholders": [
+      "Wir bieten auf 40 Ausschreibungen im Jahr und gewinnen 6",
+      "Ein verspäteter Lieferant stoppt zweimal pro Quartal unsere Linie",
+      "Niemand prüft, ob Lieferanten nach Vertrag abrechnen"
+    ],
+    "chips": {
+      "tenders": {
+        "label": "Ausschreibungen",
+        "text": "Wir bieten auf öffentliche und private Ausschreibungen."
+      },
+      "supplyChain": {
+        "label": "Lieferkette",
+        "text": "Lieferverzüge werfen unseren Produktionsplan um."
+      },
+      "margin": {
+        "label": "Marge",
+        "text": "Wir vermuten, dass wir Lieferanten zu viel zahlen."
+      },
+      "size": {
+        "label": "Größe",
+        "text": "Jahresumsatz über 50 Mio. €."
+      }
+    },
+    "send": "Angebot anfordern",
+    "note": "Ein Ingenieur liest es, kein Bot. Festpreisangebot innerhalb von zwei Werktagen.",
+    "emailSubject": "Angebotsanfrage"
+  },
+  "systems": {
+    "title": "Im Einsatz auf den Systemen, die Sie bereits nutzen."
+  },
+  "manifesto": {
+    "lead": "Piloten beweisen, dass KI funktionieren kann.",
+    "emphasis": "Kofen beweist, dass sie sich rechnet."
+  },
+  "platform": {
+    "title": "Agenten brauchen Ingenieure vor Ort.",
+    "pillars": [
+      {
+        "title": "Forward-deployed Engineers.",
+        "body": "Ein kleines Team arbeitet in Ihrem Betrieb, versteht, wie Entscheidungen wirklich fallen, und bringt Agenten auf Ihren eigenen Systemen in Produktion.",
+        "cta": "Wie wir arbeiten"
+      },
+      {
+        "title": "Eine Roadmap, die Ihr Vorstand prüfen kann.",
+        "body": "Jeder Workflow wird nach Rendite, Verantwortung und Risiko priorisiert, bevor eine Zeile Code entsteht.",
+        "cta": "Die Phasen"
+      }
+    ]
+  },
+  "phases": {
+    "title": "Vom ersten Workflow zum KI-nativen Betrieb.",
+    "ledByKofen": "Von Kofen geführte Arbeit",
+    "tab": "Phase",
+    "items": {
+      "deploy": {
+        "title": "Den ersten Workflow live bringen.",
+        "kofenShare": 75,
+        "body": "Beginnen Sie dort, wo das Geld liegt. Der erste Agent läuft in wenigen Wochen auf Ihren echten Daten, und sein Nutzen ist gemessen, bevor über Skalierung gesprochen wird.",
+        "chips": [
+          "Diagnose",
+          "Pilot",
+          "Produktion"
+        ]
+      },
+      "scale": {
+        "title": "Über Funktionen skalieren.",
+        "kofenShare": 50,
+        "body": "Ihr Team baut die nächsten Workflows mit unseren Ingenieuren. Was ein Agent lernt, ist der Ausgangspunkt des nächsten.",
+        "chips": [
+          "Co-Entwicklung",
+          "Befähigung",
+          "Übergabe"
+        ]
+      },
+      "run": {
+        "title": "Als Ihr eigenes System betreiben.",
+        "kofenShare": 25,
+        "body": "Ihr Team betreibt das System. Kofen bleibt für Evaluierung, Governance und die schwierigsten Sonderfälle.",
+        "chips": [
+          "Governance",
+          "Evaluierung",
+          "Support"
+        ]
+      }
+    }
+  },
+  "depth": {
+    "title": "Gebaut für die schwierigste Arbeit im Unternehmen.",
+    "pillars": {
+      "complexity": {
+        "label": "Komplexität",
+        "title": "Für Ausnahmen konzipiert",
+        "body": "Agenten für Freigaben, Sonderfälle und unvollständige Daten, nicht für den Demo-Pfad."
+      },
+      "control": {
+        "label": "Kontrolle",
+        "title": "Ihres, von Anfang bis Ende",
+        "body": "Code, Prompts, Evaluierungen und Daten liegen in Ihrer Infrastruktur. Kein Lock-in, lückenloser Audit-Trail."
+      },
+      "compounding": {
+        "label": "Zinseszins-Effekt",
+        "title": "Jeder Agent verbessert den nächsten",
+        "body": "Kontext aus einer Funktion fließt in die nächste, sodass jedes Deployment weiter vorne beginnt."
+      }
+    },
+    "stats": {
+      "diagnosticDays": "Tage bis zur vollständigen Diagnose Ihres Betriebs",
+      "minimumReturn": "erwartete Mindestrendite, um einen Workflow zu starten",
+      "proposalDays": "Werktage bis zum Festpreisangebot",
+      "ownSystems": "der Arbeit läuft auf Ihren eigenen Systemen und Daten"
+    }
+  },
+  "industries": {
+    "title": "Ein Team. Jede kritische Branche.",
+    "cta": "Demo buchen",
+    "items": {
+      "manufacturing": {
+        "name": "Industrie",
+        "useCases": "Präzision · Rückverfolgbarkeit · Verfügbarkeit"
+      },
+      "logistics": {
+        "name": "Logistik",
+        "useCases": "Tempo · Transparenz · Zuverlässigkeit"
+      },
+      "distribution": {
+        "name": "Großhandel",
+        "useCases": "Verfügbarkeit · Marge · Service"
+      },
+      "financialServices": {
+        "name": "Finanzdienstleistungen",
+        "useCases": "Sorgfalt · Prüfbarkeit · Vertrauen"
+      },
+      "healthcare": {
+        "name": "Gesundheitswesen",
+        "useCases": "Datenschutz · Diskretion · Fürsorge"
+      },
+      "construction": {
+        "name": "Bauwesen",
+        "useCases": "Kontrolle · Termine · Sicherheit"
+      },
+      "publicSector": {
+        "name": "Öffentlicher Sektor & Verwaltung",
+        "useCases": "Transparenz · Rechtskonformität · Bürgernähe"
+      }
+    }
+  },
+  "pricing": {
+    "title": "Mit einer Woche beginnen. Mit Belegen skalieren.",
+    "intro": "Eine Festpreis-Diagnose zeigt, wo sich Agenten rechnen und wie sehr, bevor Sie sich für ein Deployment entscheiden.",
+    "plans": {
+      "diagnostic": {
+        "name": "Diagnose",
+        "price": "7.500 €",
+        "note": "Eine Woche vor Ort. Ihre Workflows nach Rendite priorisiert, mit Go oder No-Go für jeden. Vorkasse."
+      },
+      "deployment": {
+        "name": "Deployment",
+        "price": "Ab 60.000 €",
+        "note": "Ein Workflow in Produktion. Umfang und Preis fest vereinbart vor Baubeginn, bezahlt nach Meilensteinen."
+      }
+    },
+    "unusedConditionsTitle": "So arbeiten wir zusammen.",
+    "unusedConditions": [
+      "Ein benannter Executive Sponsor und ein Prozessverantwortlicher auf Ihrer Seite.",
+      "Zugang zu Produktivsystemen und echten Daten ab der ersten Woche.",
+      "Nur Workflows mit einer erwarteten Rendite von mindestens 5×.",
+      "Fester Umfang, fester Preis. Keine Rabatte, keine offenen Stunden.",
+      "Eine begrenzte Zahl paralleler Projekte, weil unsere Ingenieure vor Ort arbeiten."
+    ]
+  },
+  "faq": {
+    "title": "Fragen aus dem Vorstand.",
+    "items": {
+      "dataNotReady": {
+        "question": "Unsere Daten sind nicht bereit.",
+        "answer": "Das sind sie selten. Die Agenten arbeiten mit den Daten, die Sie haben, und die Diagnose zeigt, was vor einer Investition zu beheben ist."
+      },
+      "pilotsStalled": {
+        "question": "Unsere Piloten haben es nie in die Produktion geschafft.",
+        "answer": "Kofen startet auf Produktivsystemen, mit einem Verantwortlichen auf Ihrer Seite und einem gemessenen Business Case. Fehlt das, fangen wir nicht an."
+      },
+      "noAiTeam": {
+        "question": "Wir haben kein KI-Team.",
+        "answer": "Zum Start brauchen Sie keins. Ihre Leute bauen mit unseren Ingenieuren und übernehmen den Betrieb, während das System reift."
+      },
+      "gdprAiAct": {
+        "question": "Wie gehen Sie mit DSGVO und KI-Verordnung um?",
+        "answer": "Die Daten bleiben in Ihrer Infrastruktur, mit Auftragsverarbeitungsvertrag. Agenten im Kundenkontakt geben sich als KI zu erkennen, und jede Aktion wird protokolliert und ist prüfbar."
+      },
+      "paidUpfront": {
+        "question": "Warum wird die Diagnose im Voraus bezahlt?",
+        "answer": "Weil sie beide Seiten verpflichtet. Der Bericht gehört Ihnen, ob Sie weitermachen oder nicht."
+      },
+      "startSmaller": {
+        "question": "Können wir kleiner anfangen?",
+        "answer": "Die Diagnose ist der kleinste Schritt. Wenn kein Workflow eine Rendite von 5× erreicht, sagen wir es Ihnen."
+      }
+    }
+  },
+  "company": {
+    "title": "Wir bauen das Team, das KI in der Realwirtschaft zum Arbeiten bringt.",
+    "body": "Ingenieure, die lieber in einem Lager, einem Krankenhaus oder einem Ministerium liefern als in einer Präsentation. Echte Systeme, echte Kunden, echte Konsequenzen.",
+    "storyCard": "Unsere Geschichte",
+    "positionsCard": "Offene Stellen"
+  },
+  "closing": {
+    "title": "Setzen Sie Agenten auf Ihre komplexesten Workflows an.",
+    "cta": "Demo buchen"
+  },
+  "footer": {
+    "tagline": "KI-Agenten, die die GuV bewegen.",
+    "headings": {
+      "services": "Leistungen",
+      "industries": "Branchen",
+      "company": "Unternehmen",
+      "legal": "Rechtliches"
+    },
+    "services": {
+      "diagnostic": "Diagnose",
+      "deployment": "Deployment",
+      "embeddedTeam": "Eingebettetes Team"
+    },
+    "company": {
+      "whyKofen": "Warum Kofen",
+      "careers": "Karriere",
+      "contact": "Kontakt"
+    },
+    "legal": {
+      "notice": "Impressum",
+      "privacy": "Datenschutz",
+      "cookies": "Cookies"
+    }
+  },
+  "ui": {
+    "_note": "Authored for the production site; not in the prototype. Review before launch.",
+    "skipToContent": "Zum Inhalt springen",
+    "language": "Sprache",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "close": "Schließen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "home": "Kofen, Startseite",
+    "scenarios": "Demo-Szenarien",
+    "timeline": "Demo-Kapitel",
+    "form": {
+      "required": "Bitte geben Sie Ihre geschäftliche E-Mail-Adresse ein.",
+      "invalid": "Diese E-Mail-Adresse scheint nicht gültig zu sein.",
+      "sending": "Wird gesendet…",
+      "success": "Danke. Wir melden uns in Kürze.",
+      "error": "Etwas ist schiefgelaufen. Bitte schreiben Sie uns eine E-Mail.",
+      "fallback": "Ihr E-Mail-Programm wird geöffnet…"
+    },
+    "notFound": {
+      "title": "Seite nicht gefunden.",
+      "back": "Zur Startseite"
+    }
+  }
+}
