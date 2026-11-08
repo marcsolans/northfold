@@ -520,3 +520,4 @@
   .rail-cap{grid-template-rows:0fr;opacity:0;transition:grid-template-rows .3s var(--ease-brand),opacity .3s var(--ease-brand)}
   .rail-card:is(:hover,:focus-visible) .rail-cap{grid-template-rows:1fr;opacity:1}
 }
+

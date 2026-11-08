@@ -12,3 +12,4 @@ export const site = {
 
 export const mailto = (subject: string, body?: string) =>
   `mailto:${site.email}?subject=${encodeURIComponent(subject)}${body ? `&body=${encodeURIComponent(body)}` : ""}`;
+

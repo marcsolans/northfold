@@ -9,6 +9,7 @@ import { Platform } from "@/components/sections/platform/Platform";
 import { Phases } from "@/components/sections/phases/Phases";
 import { Depth } from "@/components/sections/depth/Depth";
 import { Industries } from "@/components/sections/industries/Industries";
+import { Pricing } from "@/components/sections/Pricing";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale: raw } = await params;
@@ -26,7 +27,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <Phases locale={locale} />
         <Depth locale={locale} />
         <Industries locale={locale} />
-        <div className="h-[100vh]" />
+        <Pricing locale={locale} />
       </main>
     </>
   );
