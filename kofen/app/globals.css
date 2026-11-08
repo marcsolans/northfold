@@ -504,3 +504,19 @@
 .marquee{display:flex;width:max-content;animation:k-marquee 48s linear infinite}
 .marquee-wrap:hover .marquee{animation-play-state:paused}
 .edge-fade{-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+
+/* Industries rail (prototype .kcard / .kcap / .kartz) */
+.rail{scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail.is-dragging{cursor:grabbing;scroll-snap-type:none}
+.rail-card{flex:0 0 78%}
+@media (min-width:768px){.rail-card{flex-basis:calc((100% - 48px) / 3)}}
+@media (min-width:1024px){.rail-card{flex-basis:calc((100% - 72px) / 4)}}
+.rail-art{transition:transform .6s var(--ease-brand)}
+.rail-card:hover .rail-art{transform:scale(1.04)}
+.rail-cap{display:grid;grid-template-rows:1fr;opacity:1}
+.rail-cap>span{overflow:hidden;min-height:0}
+@media (hover:hover) and (min-width:1024px){
+  .rail-cap{grid-template-rows:0fr;opacity:0;transition:grid-template-rows .3s var(--ease-brand),opacity .3s var(--ease-brand)}
+  .rail-card:is(:hover,:focus-visible) .rail-cap{grid-template-rows:1fr;opacity:1}
+}
