@@ -6,6 +6,7 @@ import { LiveConsole } from "@/components/sections/console/LiveConsole";
 import { SystemsStrip } from "@/components/sections/SystemsStrip";
 import { Manifesto } from "@/components/sections/Manifesto";
 import { Platform } from "@/components/sections/platform/Platform";
+import { Phases } from "@/components/sections/phases/Phases";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale: raw } = await params;
@@ -20,6 +21,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <SystemsStrip locale={locale} />
         <Manifesto locale={locale} />
         <Platform locale={locale} />
+        <Phases locale={locale} />
         <div className="h-[100vh]" />
       </main>
     </>
