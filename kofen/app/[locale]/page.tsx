@@ -13,6 +13,7 @@ import { Pricing } from "@/components/sections/Pricing";
 import { Faq } from "@/components/sections/faq/Faq";
 import { Company } from "@/components/sections/Company";
 import { ClosingCta } from "@/components/sections/ClosingCta";
+import { Footer } from "@/components/layout/Footer";
 
 export default async function Home({ params }: PageProps<"/[locale]">) {
   const { locale: raw } = await params;
@@ -35,6 +36,7 @@ export default async function Home({ params }: PageProps<"/[locale]">) {
         <Company locale={locale} />
         <ClosingCta locale={locale} />
       </main>
+      <Footer locale={locale} />
     </>
   );
 }
