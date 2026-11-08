@@ -499,3 +499,8 @@
 @keyframes kRot{to{transform:rotate(360deg)}}
 .kspin{position:absolute;left:50%;top:50%;width:300%;aspect-ratio:1;translate:-50% -50%;background:conic-gradient(rgba(0,0,0,0) 0deg,rgba(213,149,102,.95) 40deg,rgba(0,0,0,0) 90deg);animation:kRot 6s linear infinite;animation-delay:var(--kd,0s)}
 .console-frame[data-paused] .kspin{animation-play-state:paused}
+
+/* Systems marquee (prototype .kmarq / .kfade) */
+.marquee{display:flex;width:max-content;animation:k-marquee 48s linear infinite}
+.marquee-wrap:hover .marquee{animation-play-state:paused}
+.edge-fade{-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
