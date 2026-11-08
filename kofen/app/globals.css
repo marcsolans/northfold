@@ -494,3 +494,8 @@
 
 /* Hero rotator: stacked grid, slide/blur swap */
 .rotator > span{grid-area:1/1;transition:opacity .4s var(--ease-out-soft),transform .4s var(--ease-out-soft),filter .4s var(--ease-out-soft)}
+
+/* Console: orbiting light around the system chips (prototype .kspin) */
+@keyframes kRot{to{transform:rotate(360deg)}}
+.kspin{position:absolute;left:50%;top:50%;width:300%;aspect-ratio:1;translate:-50% -50%;background:conic-gradient(rgba(0,0,0,0) 0deg,rgba(213,149,102,.95) 40deg,rgba(0,0,0,0) 90deg);animation:kRot 6s linear infinite;animation-delay:var(--kd,0s)}
+.console-frame[data-paused] .kspin{animation-play-state:paused}
