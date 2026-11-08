@@ -73,18 +73,21 @@ export function StatCounters({ stats }: { stats: Stat[] }) {
               {s.value}
               {s.suffix}
             </span>
-            <span aria-hidden="true" className="inline-grid">
-              <span className="invisible [grid-area:1/1]">{s.value}</span>
-              <span
-                ref={(el) => {
-                  numRefs.current[i] = el;
-                }}
-                className="[grid-area:1/1]"
-              >
-                {s.value}
+            {/* Number + suffix stay in LTR order (5×, 100%) in RTL locales too. */}
+            <span aria-hidden="true" dir="ltr" className="inline-block">
+              <span className="inline-grid">
+                <span className="invisible [grid-area:1/1]">{s.value}</span>
+                <span
+                  ref={(el) => {
+                    numRefs.current[i] = el;
+                  }}
+                  className="[grid-area:1/1]"
+                >
+                  {s.value}
+                </span>
               </span>
+              <span>{s.suffix}</span>
             </span>
-            <span aria-hidden="true">{s.suffix}</span>
           </dd>
         </div>
       ))}

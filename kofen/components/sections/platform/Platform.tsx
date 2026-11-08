@@ -15,7 +15,7 @@ export async function Platform({ locale }: { locale: Locale }) {
       aria-labelledby="deployment-title"
       className="gutter-x border-t border-hairline bg-signal py-[150px] lg:min-h-[1240px]"
     >
-      <div className="mx-auto flex max-w-[var(--container)] flex-wrap items-start gap-x-20 gap-y-16 lg:min-h-[940px]">
+      <div className="mx-auto flex max-w-[var(--container)] flex-wrap items-start gap-x-20 gap-y-16 lg:min-h-[940px] lg:flex-nowrap">
         <div data-reveal="" className="flex min-w-0 max-w-[560px] flex-[1_1_420px] flex-col gap-10">
           <Eyebrow className="text-concrete-deep">{t("nav.deployment")}</Eyebrow>
           <TwoToneHeading id="deployment-title" text={platform.title} locale={locale} />

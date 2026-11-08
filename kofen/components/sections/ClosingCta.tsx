@@ -43,7 +43,7 @@ export async function ClosingCta({ locale }: { locale: Locale }) {
       style={{ background: "var(--grad-cta)", "--gx": "200px" } as React.CSSProperties}
     >
       <PointerSheen targetId="contact" />
-      <div className="mx-auto flex max-w-[var(--container)] flex-wrap items-center justify-between gap-12">
+      <div className="mx-auto flex max-w-[var(--container)] flex-wrap items-center justify-between gap-12 lg:flex-nowrap">
         <div data-reveal="" className="flex min-w-0 flex-[1_1_520px] flex-col gap-10">
           <h2
             id="contact-title"
