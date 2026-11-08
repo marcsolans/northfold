@@ -13,3 +13,11 @@ export const site = {
 export const mailto = (subject: string, body?: string) =>
   `mailto:${site.email}?subject=${encodeURIComponent(subject)}${body ? `&body=${encodeURIComponent(body)}` : ""}`;
 
+/**
+ * Destinations that have no page yet. "Our story" points at its own section, as in the
+ * prototype; careers opens a prefilled email. Replace when those pages exist.
+ */
+export const links = {
+  story: "#company",
+  careers: (subject: string) => mailto(subject),
+} as const;
