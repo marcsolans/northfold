@@ -7,7 +7,6 @@ export const ogSize = { width: 1200, height: 630 };
  * Runs at build time; returns null if the network is unavailable.
  */
 async function googleFont(family: string, text: string, weight = 400): Promise<ArrayBuffer | null> {
-  "use cache";
   try {
     const api = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&text=${encodeURIComponent(text)}`;
     const css = await (await fetch(api, { signal: AbortSignal.timeout(8000) })).text();

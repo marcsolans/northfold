@@ -12,11 +12,12 @@ type Props = {
   locale: Locale;
   links: NavLink[];
   cta: NavLink;
+  homeHref: string;
   labels: { language: string; openMenu: string; closeMenu: string; home: string; mainNav: string };
 };
 
 /** Main nav: logo, links with underline wipe + hover-dim, language listbox, CTA; hamburger panel under 1024px. */
-export function NavBar({ locale, links, cta, labels }: Props) {
+export function NavBar({ locale, links, cta, homeHref, labels }: Props) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -42,7 +43,7 @@ export function NavBar({ locale, links, cta, labels }: Props) {
       <div className="shell flex h-[68px] items-center justify-between gap-6">
         <div className="flex min-w-0 items-center gap-12">
           <a
-            href="#top"
+            href={homeHref}
             aria-label={labels.home}
             className="inline-flex min-h-11 items-center gap-2 text-[22px] tracking-[-0.05em] text-obsidian"
           >

@@ -4,8 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Fully static marketing site: classic SSG (generateStaticParams + dynamicParams = false)
+  // gives correct 404s for unknown params; Cache Components would not add anything here.
   poweredByHeader: false,
   turbopack: {
     rules: {
