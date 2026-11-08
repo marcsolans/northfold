@@ -163,7 +163,7 @@ export function IndustryRail({ items, href, labels }: { items: Industry[]; href:
               aria-label={items[i]?.name ?? String(i + 1)}
               aria-current={i === m.idx ? "true" : undefined}
               onClick={() => scrollToPage(i)}
-              className="flex h-[30px] w-[22px] items-center justify-center"
+              className="flex h-[42px] w-[22px] items-center justify-center"
             >
               <span className={`size-1.5 transition-colors duration-300 ${i === m.idx ? "bg-obsidian" : "bg-stone"}`} />
             </button>

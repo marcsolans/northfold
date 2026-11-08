@@ -54,10 +54,10 @@ export async function Footer({ locale, base = "" }: { locale: Locale; base?: str
         {columns.map((col) => (
           <nav key={col.head} aria-label={col.head} className="hover-dim flex flex-col gap-3">
             <h2 className="m-0 font-mono text-[10px] font-normal uppercase tracking-[0.16em] text-concrete-deep">{col.head}</h2>
-            <ul className="m-0 flex list-none flex-col gap-1 p-0">
+            <ul className="m-0 -my-2.5 flex list-none flex-col p-0">
               {col.links.map((l) => (
                 <li key={l.text}>
-                  <a href={l.href} className="inline-flex min-h-8 items-center text-[13px] text-carbon">
+                  <a href={l.href} className="inline-flex min-h-11 items-center text-[13px] text-carbon">
                     <span className="ul">{l.text}</span>
                   </a>
                 </li>
