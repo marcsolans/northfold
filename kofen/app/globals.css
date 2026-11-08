@@ -453,3 +453,44 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ------------------------------------------------------------------------
+   Hero lattice (prototype .khg / .khp, keyframes verbatim)
+   ------------------------------------------------------------------------ */
+@keyframes hgA{0%{opacity:1;stroke-dashoffset:var(--L)}8.889%,27.778%{opacity:1;stroke-dashoffset:0}33.278%{opacity:0;stroke-dashoffset:0}33.333%,99.944%{opacity:0;stroke-dashoffset:var(--L)}100%{opacity:1;stroke-dashoffset:var(--L)}}
+@keyframes hgB{0%,33.278%{opacity:0;stroke-dashoffset:var(--L)}33.333%{opacity:1;stroke-dashoffset:var(--L)}42.222%,61.111%{opacity:1;stroke-dashoffset:0}66.611%{opacity:0;stroke-dashoffset:0}66.667%,100%{opacity:0;stroke-dashoffset:var(--L)}}
+@keyframes hgC{0%,66.611%{opacity:0;stroke-dashoffset:var(--L)}66.667%{opacity:1;stroke-dashoffset:var(--L)}75.556%,94.444%{opacity:1;stroke-dashoffset:0}99.944%{opacity:0;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:var(--L)}}
+@keyframes hgAB{0%{opacity:1;stroke-dashoffset:var(--L)}8.889%,61.111%{opacity:1;stroke-dashoffset:0}66.611%{opacity:0;stroke-dashoffset:0}66.667%,99.944%{opacity:0;stroke-dashoffset:var(--L)}100%{opacity:1;stroke-dashoffset:var(--L)}}
+@keyframes hgBC{0%,33.278%{opacity:0;stroke-dashoffset:var(--L)}33.333%{opacity:1;stroke-dashoffset:var(--L)}42.222%,94.444%{opacity:1;stroke-dashoffset:0}99.944%{opacity:0;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:var(--L)}}
+@keyframes hgI{from{stroke-dashoffset:var(--L)}to{stroke-dashoffset:0}}
+@keyframes hpA{0%,2.778%{opacity:0}9.444%,27.778%{opacity:1}33.278%,100%{opacity:0}}
+@keyframes hpB{0%,36.111%{opacity:0}42.778%,61.111%{opacity:1}66.611%,100%{opacity:0}}
+@keyframes hpC{0%,69.444%{opacity:0}76.111%,94.444%{opacity:1}99.944%,100%{opacity:0}}
+
+.khg{stroke-dasharray:var(--L);stroke-dashoffset:var(--L);animation-duration:18s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.65,0,.35,1);animation-fill-mode:both;animation-delay:var(--d,0s)}
+.khg-a{animation-name:hgA}.khg-b{animation-name:hgB}.khg-c{animation-name:hgC}.khg-ab{animation-name:hgAB}.khg-bc{animation-name:hgBC}
+.khg-abc{animation-name:hgI;animation-duration:1.6s;animation-iteration-count:1}
+.khp{opacity:0;animation-duration:18s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.65,0,.35,1);animation-fill-mode:both;animation-delay:var(--d,0s)}
+.khp-a{animation-name:hpA}.khp-b{animation-name:hpB}.khp-c{animation-name:hpC}
+/* Off-screen: freeze the loop (set by the hero's IntersectionObserver). */
+.khgroot[data-paused] :is(.khg,.khp){animation-play-state:paused}
+
+.khgroot{position:absolute;top:0;bottom:-14%;left:-20%;right:0;opacity:.55;pointer-events:none;-webkit-mask-image:linear-gradient(transparent 8%,#000 30%);mask-image:linear-gradient(transparent 8%,#000 30%)}
+.khtiles{opacity:.25}
+@media (min-width:1024px){
+  .khgroot{left:46%;opacity:1;-webkit-mask-image:linear-gradient(to right,transparent,#000 240px),linear-gradient(transparent 8%,#000 30%);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 240px),linear-gradient(transparent 8%,#000 30%);mask-composite:intersect}
+  .khtiles{opacity:1}
+  /* RTL: mirror the composition to the inline end, away from the right-aligned text. */
+  [dir="rtl"] .khgroot{left:0;right:46%;-webkit-mask-image:linear-gradient(to left,transparent,#000 240px),linear-gradient(transparent 8%,#000 30%);mask-image:linear-gradient(to left,transparent,#000 240px),linear-gradient(transparent 8%,#000 30%)}
+}
+[dir="rtl"] .khgroot svg{transform:scaleX(-1)}
+
+/* Reduced motion: a static frame of scene A. */
+@media (prefers-reduced-motion: reduce){
+  .khg-abc,.khg-a,.khg-ab{stroke-dashoffset:0}
+  .khg-b,.khg-c,.khg-bc,.khp-b,.khp-c{opacity:0}
+  .khp-a{opacity:1}
+}
+
+/* Hero rotator: stacked grid, slide/blur swap */
+.rotator > span{grid-area:1/1;transition:opacity .4s var(--ease-out-soft),transform .4s var(--ease-out-soft),filter .4s var(--ease-out-soft)}

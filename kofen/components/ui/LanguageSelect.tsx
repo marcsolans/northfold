@@ -62,11 +62,13 @@ export function LanguageSelect({ locale, label, placement = "down", variant = "s
   const onListKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const i = optionRefs.current.findIndex((el) => el === document.activeElement);
     const focus = (n: number) => optionRefs.current[(n + locales.length) % locales.length]?.focus();
-    if (e.key === "ArrowDown") (e.preventDefault(), focus(i + 1));
-    else if (e.key === "ArrowUp") (e.preventDefault(), focus(i - 1));
-    else if (e.key === "Home") (e.preventDefault(), focus(0));
-    else if (e.key === "End") (e.preventDefault(), focus(locales.length - 1));
-    else if (e.key === "Tab") close(false);
+    const target = { ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: locales.length - 1 }[e.key];
+    if (target !== undefined) {
+      e.preventDefault();
+      focus(target);
+    } else if (e.key === "Tab") {
+      close(false);
+    }
   };
 
   const current = localeNames[locale];
