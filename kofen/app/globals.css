@@ -1,0 +1,455 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------------
+   Design tokens (site-teardown §4, values from the Kofen prototype)
+   ------------------------------------------------------------------------ */
+@theme {
+  /* palette */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-obsidian: #070707;
+  --color-anchor: #0e0d0c;
+  --color-carbon: #2e2e2e;
+  --color-umber: #4a4642;
+  --color-concrete: #736f6a;
+  /* concrete, 4% darker: muted *small* text on signal surfaces (#f2f2f2),
+     where #736f6a is 4.46:1 and misses WCAG AA. */
+  --color-concrete-deep: #6c6863;
+  --color-stone: #b8aea4;
+  --color-signal: #f2f2f2;
+  --color-hull: #fcfcfc;
+  --color-hairline: #dad5cc;
+  --color-rust: #d59566;
+  --color-rust-deep: #b06a38;
+  /* rust for small text on white (#b06a38 is 4.2:1). */
+  --color-rust-ink: #9c5a2c;
+  --color-success: #5fa46b;
+  --color-success-strong: #027a48;
+  --color-alert: #b42318;
+
+  /* typography */
+  --font-sans: var(--font-geist), var(--font-script, system-ui), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), var(--font-script, ui-monospace), ui-monospace, monospace;
+
+  /* radius: square corners everywhere */
+  --radius-*: initial;
+
+  /* motion */
+  --ease-brand: cubic-bezier(0.33, 0, 0.15, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* shadows */
+  --shadow-pop: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-window: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.06);
+
+  /* breakpoints (Tailwind defaults, listed for clarity) */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+}
+
+:root {
+  --container: 1440px;
+  --gutter: 20px;
+  --header-h: 104px; /* announcement 36 + nav 68 */
+  --line: rgb(184 174 164 / 0.5);
+  --line-60: rgb(184 174 164 / 0.6);
+  --grad-hero: linear-gradient(98deg, #dedad5 0%, #f2f0ee 48%, #ffffff 100%);
+  --grad-cta: linear-gradient(98deg, #dcd7d2 0%, #f0eeeb 48%, #ffffff 100%);
+  --fs-display: clamp(44px, 5.4vw, 100px);
+  --fs-h2: clamp(29px, 3.2vw, 46px);
+}
+@media (min-width: 768px) {
+  :root {
+    --gutter: 48px;
+  }
+}
+
+/* Container: 1440px max, 20px gutter → 48px from 768px */
+@utility shell {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Pads a full-bleed section; its inner content then uses max-w-[var(--container)] */
+@utility gutter-x {
+  padding-inline: var(--gutter);
+}
+
+/* ------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: var(--header-h);
+  }
+  body {
+    margin: 0;
+    background: #ffffff;
+    color: #070707;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  :focus-visible {
+    outline: 2px solid #d59566;
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: #d59566;
+    color: #070707;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Recipes (site-teardown §3, prototype classes in comments)
+   ------------------------------------------------------------------------ */
+@layer components {
+  .skip-link {
+    position: fixed;
+    top: 8px;
+    inset-inline-start: 8px;
+    z-index: 100;
+    padding: 12px 16px;
+    background: #070707;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transform: translateY(-200%);
+  }
+  .skip-link:focus-visible {
+    transform: none;
+  }
+
+  /* Primary CTA (.kcta) */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 13px 12px 13px 20px;
+    background: #070707;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 0;
+    border-radius: 0;
+    cursor: pointer;
+    transition:
+      transform 0.35s var(--ease-brand),
+      opacity 0.35s var(--ease-brand),
+      background-color 0.2s,
+      color 0.2s;
+  }
+  .btn:active {
+    transform: scale(0.98);
+  }
+  .btn--ghost {
+    background: #f2f2f2;
+    color: #070707;
+  }
+  .btn:disabled {
+    cursor: default;
+  }
+
+  /* Arrow-swap box (.kar / .karl) */
+  .arrowbox {
+    position: relative;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid currentColor;
+    overflow: hidden;
+    opacity: 0.85;
+    display: inline-block;
+  }
+  .arrowbox--lg {
+    width: 27px;
+    height: 27px;
+  }
+  .arrowbox__rot {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-45deg);
+  }
+  [dir="rtl"] .arrowbox__rot {
+    transform: rotate(-135deg);
+  }
+  .arrowbox svg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: -4.5px 0 0 -4.5px;
+    transition: transform 0.35s var(--ease-brand);
+  }
+  .arrowbox svg:last-child {
+    transform: translateX(-24px);
+  }
+  :is(a, button):is(:hover, :focus-visible) .arrowbox svg:first-child {
+    transform: translateX(24px);
+  }
+  :is(a, button):is(:hover, :focus-visible) .arrowbox svg:last-child {
+    transform: none;
+  }
+
+  /* Underline wipe (.kul) */
+  .ul {
+    position: relative;
+  }
+  .ul::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -4px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s var(--ease-brand);
+  }
+  :is(a, button):is(:hover, :focus-visible) > .ul::after,
+  .ul:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Hover-dim siblings (.kdim) */
+  .hover-dim :is(a, button) {
+    transition:
+      opacity 0.35s var(--ease-brand),
+      color 0.35s var(--ease-brand);
+  }
+  .hover-dim:has(:is(a, button):hover) :is(a, button):not(:hover) {
+    opacity: 0.4;
+  }
+
+  /* Chip with 4-stroke rust border draw (.kchip) */
+  .chip {
+    position: relative;
+  }
+  .chip::before,
+  .chip::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+    box-sizing: border-box;
+    transition:
+      width 0.12s linear,
+      height 0.12s linear,
+      opacity 0.12s linear;
+  }
+  .chip::before {
+    top: 0;
+    left: 0;
+    border-top: 1px solid #d59566;
+    border-right: 1px solid #d59566;
+  }
+  .chip::after {
+    bottom: 0;
+    right: 0;
+    border-bottom: 1px solid #d59566;
+    border-left: 1px solid #d59566;
+  }
+  @media (hover: hover) {
+    .chip:hover::before {
+      opacity: 1;
+      width: 100%;
+      height: 100%;
+      transition:
+        opacity 10ms linear,
+        width 0.14s linear,
+        height 0.14s linear 0.14s;
+    }
+    .chip:hover::after {
+      opacity: 1;
+      width: 100%;
+      height: 100%;
+      transition:
+        opacity 10ms linear 0.28s,
+        width 0.14s linear 0.28s,
+        height 0.14s linear 0.42s;
+    }
+  }
+
+  /* Inline email form: input flush with the button, stacked under 640px (.kform) */
+  .inline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  @media (min-width: 640px) {
+    .inline-form {
+      flex-direction: row;
+      gap: 0;
+    }
+    .inline-form input {
+      border-inline-end: 0 !important;
+    }
+  }
+
+  /* Pointer-following sheen on display headings */
+  .sheen {
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-image: repeating-linear-gradient(
+      105deg,
+      #070707 var(--gx, 40px),
+      #736f6a calc(var(--gx, 40px) + 60%),
+      #070707 calc(var(--gx, 40px) + 120%)
+    );
+    margin-block: -0.1em -0.14em;
+    padding-block: 0.1em 0.14em;
+  }
+  @media (forced-colors: active) {
+    .sheen {
+      color: CanvasText;
+      background: none;
+    }
+  }
+
+  /* Blinking square (.kblink) */
+  .blink-sq {
+    animation: k-blink-sq 2.4s ease-in-out infinite;
+  }
+
+  /* Scroll reveal: visible by default; hidden only once JS has hydrated and
+     marked the element as below the fold. */
+  [data-reveal] {
+    transition:
+      opacity 0.6s var(--ease-out-soft),
+      transform 0.6s var(--ease-out-soft);
+  }
+  html[data-motion] [data-reveal="pending"] {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Keyframes (verbatim from the prototype)
+   ------------------------------------------------------------------------ */
+@keyframes k-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes k-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes k-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes k-menu {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes k-menu-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes k-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes k-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes k-blink-sq {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+@keyframes k-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+@keyframes k-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Reduced motion: no autoplay loops, instant swaps (prototype rule)
+   ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
